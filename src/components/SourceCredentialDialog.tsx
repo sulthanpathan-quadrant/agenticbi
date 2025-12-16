@@ -1,3 +1,299 @@
+// import { useState } from "react";
+// import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
+// import { Loader2 } from "lucide-react";
+
+// import {
+//   S3Credentials,
+//   AzureCredentials,
+//   OneLakeCredentials,
+// } from "@/components/api/api";
+
+// interface SourceCredentialDialogProps {
+//   open: boolean;
+//   onOpenChange: (open: boolean) => void;
+//   sourceName: string;
+//   sourceId: string;
+//   onProceed: (credentials: S3Credentials | AzureCredentials | OneLakeCredentials) => void;
+// }
+
+// export function SourceCredentialDialog({
+//   open,
+//   onOpenChange,
+//   sourceName,
+//   sourceId,
+//   onProceed,
+// }: SourceCredentialDialogProps) {
+//   const [isValidating, setIsValidating] = useState(false);
+
+
+//   const [accessKeyId, setAccessKeyId] = useState("");
+//   const [secretAccessKey, setSecretAccessKey] = useState("");
+//   const [region, setRegion] = useState("us-east-1");
+
+
+//   const [connectionString, setConnectionString] = useState("");
+
+
+//   const [tenantId, setTenantId] = useState("");
+//   const [clientId, setClientId] = useState("");
+//   const [clientSecret, setClientSecret] = useState("");
+
+
+
+//   const handleProceed = async () => {
+//     setIsValidating(true);
+
+
+//     await new Promise(resolve => setTimeout(resolve, 800));
+
+//     if (sourceId === "s3") {
+//       const credentials: S3Credentials = {
+//         aws_access_key_id: accessKeyId,
+//         aws_secret_access_key: secretAccessKey,
+//         region,
+//       };
+//       onProceed(credentials);
+//     }
+
+//     else if (sourceId === "azure") {
+//       const credentials: AzureCredentials = {
+//         connection_string: connectionString,
+//       };
+//       onProceed(credentials);
+//     }
+
+//     else if (sourceId === "onelake") {
+//   const credentials: OneLakeCredentials = {
+//     tenant_id: tenantId,
+//     client_id: clientId,
+//     client_secret: clientSecret,
+//   };
+//   onProceed(credentials);
+// }
+// else if (sourceId === "delta") {
+//   const credentials: OneLakeCredentials = {
+//     tenant_id: tenantId,
+//     client_id: clientId,
+//     client_secret: clientSecret,
+//   };
+//   onProceed(credentials);
+// }
+
+
+//     setIsValidating(false);
+//     onOpenChange(false);
+//   };
+
+
+//   const handleClose = () => {
+//     setAccessKeyId("");
+//     setSecretAccessKey("");
+//     setRegion("us-east-1");
+
+//     setConnectionString("");
+
+//     setTenantId("");
+//     setClientId("");
+//     setClientSecret("");
+
+//     onOpenChange(false);
+//   };
+
+
+//   const isFormValid = () => {
+//     if (sourceId === "s3") {
+//       return accessKeyId && secretAccessKey && region;
+//     }
+//     if (sourceId === "azure") {
+//       return connectionString.trim() !== "";
+//     }
+//     if (sourceId === "onelake") {
+//       return tenantId && clientId && clientSecret;
+//     }
+//     if (sourceId === "delta") {
+//   return tenantId && clientId && clientSecret;
+// }
+//     return false;
+//   };
+
+//   return (
+//     <Dialog open={open} onOpenChange={handleClose}>
+//       <DialogContent className="max-w-md">
+//         <DialogHeader>
+//           <DialogTitle>Connect to {sourceName}</DialogTitle>
+//         </DialogHeader>
+
+//         <div className="space-y-4 py-4">
+
+
+//           {sourceId === "s3" && (
+//             <>
+//               <div className="space-y-2">
+//                 <Label htmlFor="accessKeyId">AWS Access Key ID</Label>
+//                 <Input
+//                   id="accessKeyId"
+//                   type="password"
+//                   placeholder="XXXXXXXXX"
+//                   value={accessKeyId}
+//                   onChange={(e) => setAccessKeyId(e.target.value)}
+//                   disabled={isValidating}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="secretAccessKey">AWS Secret Access Key</Label>
+//                 <Input
+//                   id="secretAccessKey"
+//                   type="password"
+//                   placeholder="XXXXXXXXXXX"
+//                   value={secretAccessKey}
+//                   onChange={(e) => setSecretAccessKey(e.target.value)}
+//                   disabled={isValidating}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="region">Region</Label>
+//                 <Input
+//                   id="region"
+//                   type="text"
+//                   placeholder="XXXXXX"
+//                   value={region}
+//                   onChange={(e) => setRegion(e.target.value)}
+//                   disabled={isValidating}
+//                 />
+//               </div>
+//             </>
+//           )}
+
+
+//           {sourceId === "azure" && (
+//             <div className="space-y-2">
+//               <Label htmlFor="connectionString">Connection String</Label>
+//               <Input
+//                 id="connectionString"
+//                 type="password"
+//                 placeholder="DefaultEndpointsProtocol=https;AccountName=..."
+//                 value={connectionString}
+//                 onChange={(e) => setConnectionString(e.target.value)}
+//                 disabled={isValidating}
+//               />
+//               <p className="text-xs text-muted-foreground">
+//                 Format: DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=...
+//               </p>
+//             </div>
+//           )}
+
+//           {/* ---------------------- */}
+//           {/* OneLake Credentials */}
+//           {/* ---------------------- */}
+//           {sourceId === "onelake" && (
+//             <>
+//               <div className="space-y-2">
+//                 <Label htmlFor="tenantId">Tenant ID</Label>
+//                 <Input
+//                   id="tenantId"
+//                   type="password"
+//                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+//                   value={tenantId}
+//                   onChange={(e) => setTenantId(e.target.value)}
+//                   disabled={isValidating}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="clientId">Client ID</Label>
+//                 <Input
+//                   id="clientId"
+//                   type="password"
+//                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+//                   value={clientId}
+//                   onChange={(e) => setClientId(e.target.value)}
+//                   disabled={isValidating}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="clientSecret">Client Secret</Label>
+//                 <Input
+//                   id="clientSecret"
+//                   type="password"
+//                   placeholder="Enter your client secret"
+//                   value={clientSecret}
+//                   onChange={(e) => setClientSecret(e.target.value)}
+//                   disabled={isValidating}
+//                 />
+//               </div>
+//             </>
+//           )}
+//           {/* Delta Tables Credentials */}
+//           {sourceId === "delta" && (
+//             <>
+//               <div className="space-y-2">
+//                 <Label htmlFor="tenantId">Tenant ID</Label>
+//                 <Input
+//                   id="tenantId"
+//                   type="password"
+//                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+//                   value={tenantId}
+//                   onChange={(e) => setTenantId(e.target.value)}
+//                   disabled={isValidating}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="clientId">Client ID</Label>
+//                 <Input
+//                   id="clientId"
+//                   type="password"
+//                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+//                   value={clientId}
+//                   onChange={(e) => setClientId(e.target.value)}
+//                   disabled={isValidating}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="clientSecret">Client Secret</Label>
+//                 <Input
+//                   id="clientSecret"
+//                   type="password"
+//                   placeholder="Enter your client secret"
+//                   value={clientSecret}
+//                   onChange={(e) => setClientSecret(e.target.value)}
+//                   disabled={isValidating}
+//                 />
+//               </div>
+//               <p className="text-xs text-muted-foreground">
+//                 Microsoft Fabric OneLake authentication for Delta Tables
+//               </p>
+//             </>
+//           )}
+//           {!["s3", "azure", "onelake", "delta"].includes(sourceId) && (
+//             <div className="text-center py-4 text-muted-foreground">
+//               Credentials configuration for {sourceName} coming soon.
+//             </div>
+//           )}
+//         </div>
+
+//         <div className="flex justify-end gap-3">
+//           <Button variant="outline" onClick={handleClose} disabled={isValidating}>
+//             Cancel
+//           </Button>
+
+//           <Button onClick={handleProceed} disabled={!isFormValid() || isValidating}>
+//             {isValidating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+//             {isValidating ? "Validating..." : "Connect"}
+//           </Button>
+//         </div>
+//       </DialogContent>
+//     </Dialog>
+//   );
+// }
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,10 +301,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
+
 import {
   S3Credentials,
   AzureCredentials,
   OneLakeCredentials,
+  DatabricksCredentials,
+  SnowflakeCredentials,
 } from "@/components/api/api";
 
 interface SourceCredentialDialogProps {
@@ -16,7 +315,7 @@ interface SourceCredentialDialogProps {
   onOpenChange: (open: boolean) => void;
   sourceName: string;
   sourceId: string;
-  onProceed: (credentials: S3Credentials | AzureCredentials | OneLakeCredentials) => void;
+  onProceed: (credentials: S3Credentials | AzureCredentials | OneLakeCredentials | DatabricksCredentials | SnowflakeCredentials) => void;
 }
 
 export function SourceCredentialDialog({
@@ -40,6 +339,15 @@ export function SourceCredentialDialog({
   const [tenantId, setTenantId] = useState("");
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
+
+  const [host, setHost] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+
+  const [accountIdentifier, setAccountIdentifier] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [warehouse, setWarehouse] = useState("");
 
 
 
@@ -73,11 +381,21 @@ export function SourceCredentialDialog({
   };
   onProceed(credentials);
 }
-else if (sourceId === "delta") {
-  const credentials: OneLakeCredentials = {
-    tenant_id: tenantId,
-    client_id: clientId,
-    client_secret: clientSecret,
+
+else if (sourceId === "databricks") {
+  const credentials: DatabricksCredentials = {
+    host: host,
+    warehouse_id: warehouseId,
+    access_token: accessToken,
+  };
+  onProceed(credentials);
+}
+else if (sourceId === "snowflake") {  // ADD
+  const credentials: SnowflakeCredentials = {
+    account_identifier: accountIdentifier,
+    username: username,
+    password: password,
+    warehouse: warehouse,
   };
   onProceed(credentials);
 }
@@ -99,6 +417,16 @@ else if (sourceId === "delta") {
     setClientId("");
     setClientSecret("");
 
+    setHost("");
+    setWarehouseId("");
+    setAccessToken("");
+
+
+    setAccountIdentifier("");
+    setUsername("");
+    setPassword("");
+    setWarehouse("");
+
     onOpenChange(false);
   };
 
@@ -113,9 +441,12 @@ else if (sourceId === "delta") {
     if (sourceId === "onelake") {
       return tenantId && clientId && clientSecret;
     }
-    if (sourceId === "delta") {
-  return tenantId && clientId && clientSecret;
-}
+    if (sourceId === "databricks") {
+      return host && warehouseId && accessToken;
+    }
+    if (sourceId === "snowflake") { 
+      return accountIdentifier && username && password && warehouse;
+    }
     return false;
   };
 
@@ -229,50 +560,106 @@ else if (sourceId === "delta") {
               </div>
             </>
           )}
-          {/* Delta Tables Credentials */}
-          {sourceId === "delta" && (
+          {/* Databricks Credentials */}
+          {sourceId === "databricks" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="tenantId">Tenant ID</Label>
+                <Label htmlFor="host">Host</Label>
                 <Input
-                  id="tenantId"
-                  type="password"
-                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                  value={tenantId}
-                  onChange={(e) => setTenantId(e.target.value)}
+                  id="host"
+                  type="text"
+                  placeholder="adb-1234567890123456.7.azuredatabricks.net"
+                  value={host}
+                  onChange={(e) => setHost(e.target.value)}
                   disabled={isValidating}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="clientId">Client ID</Label>
+                <Label htmlFor="warehouseId">Warehouse ID</Label>
                 <Input
-                  id="clientId"
-                  type="password"
-                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
+                  id="warehouseId"
+                  type="text"
+                  placeholder="abc123def456"
+                  value={warehouseId}
+                  onChange={(e) => setWarehouseId(e.target.value)}
                   disabled={isValidating}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="clientSecret">Client Secret</Label>
+                <Label htmlFor="accessToken">Access Token</Label>
                 <Input
-                  id="clientSecret"
+                  id="accessToken"
                   type="password"
-                  placeholder="Enter your client secret"
-                  value={clientSecret}
-                  onChange={(e) => setClientSecret(e.target.value)}
+                  placeholder="dapi********************************"
+                  value={accessToken}
+                  onChange={(e) => setAccessToken(e.target.value)}
                   disabled={isValidating}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Microsoft Fabric OneLake authentication for Delta Tables
+                Databricks SQL Warehouse connection credentials
               </p>
             </>
           )}
-          {!["s3", "azure", "onelake", "delta"].includes(sourceId) && (
+
+          {/* Snowflake Credentials */}
+          {sourceId === "snowflake" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="accountIdentifier">Account Identifier</Label>
+                <Input
+                  id="accountIdentifier"
+                  type="text"
+                  placeholder="QUXDTNC-EO36596"
+                  value={accountIdentifier}
+                  onChange={(e) => setAccountIdentifier(e.target.value)}
+                  disabled={isValidating}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="PARAS016"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={isValidating}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isValidating}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="warehouse">Warehouse</Label>
+                <Input
+                  id="warehouse"
+                  type="text"
+                  placeholder="COMPUTE_WH"
+                  value={warehouse}
+                  onChange={(e) => setWarehouse(e.target.value)}
+                  disabled={isValidating}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Snowflake connection credentials
+              </p>
+            </>
+          )}
+          {!["s3", "azure", "onelake", "databricks", "snowflake"].includes(sourceId) && (
             <div className="text-center py-4 text-muted-foreground">
               Credentials configuration for {sourceName} coming soon.
             </div>

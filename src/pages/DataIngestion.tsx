@@ -3,12 +3,13 @@
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
 // import { Button } from "@/components/ui/button";
 // import { Card } from "@/components/ui/card";
-// import { Database, Cloud, Snowflake, FileText, FolderOpen, X, FileSpreadsheet, Table, Upload, ArrowLeft, Settings, Lock } from "lucide-react";
+// import { Database, Cloud, Snowflake, FileText, FolderOpen, X, FileSpreadsheet, Table, Upload, ArrowLeft } from "lucide-react";
 // import { FilePickerDialog } from "@/components/FilePickerDialog";
 // import { SchemaPreviewDialog } from "@/components/SchemaPreviewDialog";
 // import { DatabaseConnectionDialog } from "@/components/DatabaseConnectionDialog";
 // import { SourceCredentialDialog } from "@/components/SourceCredentialDialog";
 // import { toast } from "sonner";
+// import { S3Credentials, AzureCredentials, OneLakeCredentials } from "@/components/api/api";
 
 // interface SelectedItem {
 //   id: string;
@@ -31,64 +32,58 @@
 // ];
 
 // const sourceFiles: Record<string, Array<{ id: string; name: string; size: string; rows: string }>> = {
-//   s3: [
-//     { id: "s3-1", name: "customer_data_q1_2024.csv", size: "2.4 MB", rows: "15,302 rows" },
-//     { id: "s3-2", name: "customer_data_partitioned.parquet", size: "256 MB", rows: "~25M rows" },
-//   ],
-//   azure: [
-//     { id: "azure-1", name: "product_catalog_2024.json", size: "12 MB", rows: "540,000 rows" },
-//     { id: "azure-2", name: "orders_snapshot_march.csv", size: "9 MB", rows: "132,000 rows" },
-//   ],
+//   s3: [],
+//   azure: [],
 //   snowflake: [
-//     { id: "snowflake-1", name: "dbo.customers", size: "51.2 MB", rows: "1,204,891 rows" },
-//     { id: "snowflake-2", name: "fact_sales", size: "78 MB", rows: "3,540,220 rows" },
+//     // { id: "snowflake-1", name: "dbo.customers", size: "51.2 MB", rows: "1,204,891 rows" },
+//     // { id: "snowflake-2", name: "fact_sales", size: "78 MB", rows: "3,540,220 rows" },
 //   ],
 //   sap: [
-//     { id: "sap-1", name: "sap_material_master.csv", size: "33 MB", rows: "802,330 rows" },
-//     { id: "sap-2", name: "sap_inventory_view.csv", size: "18 MB", rows: "402,110 rows" },
+//     // { id: "sap-1", name: "sap_material_master.csv", size: "33 MB", rows: "802,330 rows" },
+//     // { id: "sap-2", name: "sap_inventory_view.csv", size: "18 MB", rows: "402,110 rows" },
 //   ],
 //   databases: [
-//     { id: "db-1", name: "dbo.users", size: "5.4 MB", rows: "104,500 rows" },
-//     { id: "db-2", name: "dbo.transactions", size: "127 MB", rows: "8,240,000 rows" },
+//     // { id: "db-1", name: "dbo.users", size: "5.4 MB", rows: "104,500 rows" },
+//     // { id: "db-2", name: "dbo.transactions", size: "127 MB", rows: "8,240,000 rows" },
 //   ],
-//   onelake: [
-//     { id: "onelake-1", name: "workspace1/lakehouse1/sales_data.parquet", size: "45 MB", rows: "650,000 rows" },
-//     { id: "onelake-2", name: "workspace2/lakehouse2/customer_360.csv", size: "28 MB", rows: "350,000 rows" },
-//   ],
+//   onelake: [],
 //   delta: [
-//     { id: "delta-1", name: "workspace1/lakehouse1/transactions", size: "120 MB", rows: "2,500,000 rows" },
-//     { id: "delta-2", name: "workspace2/lakehouse2/orders", size: "85 MB", rows: "1,800,000 rows" },
+//     // { id: "delta-1", name: "workspace1/lakehouse1/transactions", size: "120 MB", rows: "2,500,000 rows" },
+//     // { id: "delta-2", name: "workspace2/lakehouse2/orders", size: "85 MB", rows: "1,800,000 rows" },
 //   ],
 //   local: [],
 // };
 
+
+
 // export default function DataIngestion() {
 //   const navigate = useNavigate();
+
 //   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([
-//     {
-//       id: "1",
-//       name: "sales_q1_2024.csv",
-//       source: "Local File",
-//       size: "2.4 MB",
-//       rows: "15,302 rows",
-//       icon: "file"
-//     },
-//     {
-//       id: "2",
-//       name: "dbo.customers",
-//       source: "Snowflake",
-//       size: "51.2 MB",
-//       rows: "1,204,891 rows",
-//       icon: "table"
-//     },
-//     {
-//       id: "3",
-//       name: "customer_data_partitioned.parquet",
-//       source: "S3 Storage",
-//       size: "256 MB",
-//       rows: "~25M rows",
-//       icon: "folder"
-//     }
+//     // {
+//     //   id: "1",
+//     //   name: "sales_q1_2024.csv",
+//     //   source: "Local File",
+//     //   size: "2.4 MB",
+//     //   rows: "15,302 rows",
+//     //   icon: "file"
+//     // },
+//     // {
+//     //   id: "2",
+//     //   name: "dbo.customers",
+//     //   source: "Snowflake",
+//     //   size: "51.2 MB",
+//     //   rows: "1,204,891 rows",
+//     //   icon: "table"
+//     // },
+//     // {
+//     //   id: "3",
+//     //   name: "customer_data_partitioned.parquet",
+//     //   source: "S3 Storage",
+//     //   size: "256 MB",
+//     //   rows: "~25M rows",
+//     //   icon: "folder"
+//     // }
 //   ]);
 
 //   const [filePickerOpen, setFilePickerOpen] = useState(false);
@@ -98,7 +93,10 @@
 //   const [databaseDialogOpen, setDatabaseDialogOpen] = useState(false);
 //   const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
 //   const [pendingSourceId, setPendingSourceId] = useState<string>("");
-//   const [sourcesEnabled, setSourcesEnabled] = useState(false);
+//   const [s3Credentials, setS3Credentials] = useState<S3Credentials | null>(null);
+//   const [azureCredentials, setAzureCredentials] = useState<AzureCredentials | null>(null);
+//   const [oneLakeCredentials, setOneLakeCredentials] = useState<OneLakeCredentials | null>(null);
+//   const [deltaCredentials, setDeltaCredentials] = useState<OneLakeCredentials | null>(null);
 
 //   const removeItem = (id: string) => {
 //     setSelectedItems(selectedItems.filter(item => item.id !== id));
@@ -117,67 +115,86 @@
 //     }
 //   };
 
-//   const handleProceed = () => {
-//     navigate("/workflow/landing-zone");
-//   };
+// const handleProceed = () => {
+//   navigate("/workflow/landing-zone");
+// };
 
-//   const openFilePicker = (sourceId: string) => {
-//     if (!sourcesEnabled) {
-//       toast.error("Please click Configure to enable sources first");
-//       return;
+// const openFilePicker = (sourceId: string) => {
+//   const source = sources.find(s => s.id === sourceId);
+
+//   if (sourceId === "local") {
+//     const input = document.createElement("input");
+//     input.type = "file";
+//     input.multiple = true;
+//     input.accept = ".csv,.xlsx,.json,.parquet";
+//     input.onchange = (e) => {
+//       const files = (e.target as HTMLInputElement).files;
+//       if (files) {
+//         const newItems: SelectedItem[] = Array.from(files).map((file, idx) => ({
+//           id: `local-${Date.now()}-${idx}`,
+//           name: file.name,
+//           source: "Local File",
+//           size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+//           rows: "Calculating...",
+//           icon: "file"
+//         }));
+//         setSelectedItems([...selectedItems, ...newItems]);
+//       }
+//     };
+//     input.click();
+//   } else if (sourceId === "databases") {
+//     setDatabaseDialogOpen(true);
+//   } else if (source?.requiresCredentials) {
+//     setPendingSourceId(sourceId);
+//     setCredentialDialogOpen(true);
+//   } else {
+//     setCurrentSource(sourceId);
+//     setFilePickerOpen(true);
+//   }
+// };
+//   const handleCredentialProceed = (credentials: S3Credentials | AzureCredentials | OneLakeCredentials) => {
+//     if (pendingSourceId === "s3") {
+//       setS3Credentials(credentials as S3Credentials);
+//     } else if (pendingSourceId === "azure") {
+//       setAzureCredentials(credentials as AzureCredentials);
+//     } else if (pendingSourceId === "onelake") {
+//       setOneLakeCredentials(credentials as OneLakeCredentials);
+//     } else if (pendingSourceId === "delta") {
+//       setDeltaCredentials(credentials as OneLakeCredentials);
 //     }
-
-//     const source = sources.find(s => s.id === sourceId);
-
-//     if (sourceId === "local") {
-//       const input = document.createElement("input");
-//       input.type = "file";
-//       input.multiple = true;
-//       input.accept = ".csv,.xlsx,.json,.parquet";
-//       input.onchange = (e) => {
-//         const files = (e.target as HTMLInputElement).files;
-//         if (files) {
-//           const newItems: SelectedItem[] = Array.from(files).map((file, idx) => ({
-//             id: `local-${Date.now()}-${idx}`,
-//             name: file.name,
-//             source: "Local File",
-//             size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-//             rows: "Calculating...",
-//             icon: "file"
-//           }));
-//           setSelectedItems([...selectedItems, ...newItems]);
-//         }
-//       };
-//       input.click();
-//     } else if (sourceId === "databases") {
-//       setDatabaseDialogOpen(true);
-//     } else if (source?.requiresCredentials) {
-//       // Show credential dialog first
-//       setPendingSourceId(sourceId);
-//       setCredentialDialogOpen(true);
-//     } else {
-//       setCurrentSource(sourceId);
-//       setFilePickerOpen(true);
-//     }
-//   };
-
-//   const handleCredentialProceed = () => {
-//     // After credentials validated, open file picker
 //     setCurrentSource(pendingSourceId);
 //     setFilePickerOpen(true);
 //   };
 
-//   const handleDatabaseConnect = (config: any) => {
-//     const newItem: SelectedItem = {
-//       id: `db-${Date.now()}`,
-//       name: config.databaseName || "Connected Database",
-//       source: config.dataSource,
-//       size: "N/A",
-//       rows: "N/A",
-//       icon: "table"
-//     };
-//     setSelectedItems([...selectedItems, newItem]);
-//   };
+//   // const handleDatabaseConnect = (config: any) => {
+//   //   const newItem: SelectedItem = {
+//   //     id: `db-${Date.now()}`,
+//   //     name: config.databaseName || "Connected Database",
+//   //     source: config.dataSource,
+//   //     size: "N/A",
+//   //     rows: "N/A",
+//   //     icon: "table"
+//   //   };
+//   //   setSelectedItems([...selectedItems, newItem]);
+//   // };
+
+//   const handleDatabaseConnect = (config: {
+//   server: string;
+//   database: string;
+//   username: string;
+//   selectedTables: string[];
+// }) => {
+//   const newItems: SelectedItem[] = config.selectedTables.map((table) => ({
+//     id: `db-${config.database}-${table}`,
+//     name: table,
+//     source: "Database",
+//     size: "N/A",
+//     rows: "N/A",
+//     icon: "table",
+//   }));
+
+//   setSelectedItems((prev) => [...prev, ...newItems]);
+// };
 
 //   const handleFileSelection = (files: Array<{ id: string; name: string; size: string; rows: string }>) => {
 //     const newItems: SelectedItem[] = files.map(file => ({
@@ -207,16 +224,10 @@
 //               Connect to your sources and select the files or tables you want to process.
 //             </p>
 //           </div>
-//           <div className="flex gap-3">
-//             <Button variant="outline" onClick={() => navigate("/jobs")}>
-//               <ArrowLeft className="h-4 w-4 mr-2" />
-//               Back to Jobs
-//             </Button>
-//             <Button onClick={() => { setSourcesEnabled(true); toast.success("All sources enabled"); }}>
-//               <Settings className="h-4 w-4 mr-2" />
-//               Configure
-//             </Button>
-//           </div>
+//           <Button variant="outline" onClick={() => navigate("/jobs")}>
+//             <ArrowLeft className="h-4 w-4 mr-2" />
+//             Back to Jobs
+//           </Button>
 //         </div>
 
 //         {/* Select a Source */}
@@ -225,27 +236,15 @@
 //           <div className="grid grid-cols-4 gap-4">
 //             {sources.map((source) => {
 //               const IconComponent = source.icon;
-//               const isDisabled = !sourcesEnabled;
 //               return (
 //                 <Card
 //                   key={source.id}
-//                   className={`p-6 cursor-pointer transition-colors border border-border group relative ${
-//                     isDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-accent/30"
-//                   }`}
+//                   className="p-6 cursor-pointer transition-colors border border-border hover:bg-accent/30 group"
 //                   onClick={() => openFilePicker(source.id)}
 //                 >
-//                   {isDisabled && (
-//                     <div className="absolute top-2 right-2">
-//                       <Lock className="h-4 w-4 text-muted-foreground" />
-//                     </div>
-//                   )}
 //                   <div className="flex flex-col items-center text-center space-y-3">
-//                     <div className={`w-12 h-12 rounded-lg bg-card-hover border border-border flex items-center justify-center transition-colors ${
-//                       !isDisabled ? "group-hover:border-primary" : ""
-//                     }`}>
-//                       <IconComponent className={`h-6 w-6 text-muted-foreground transition-colors ${
-//                         !isDisabled ? "group-hover:text-primary" : ""
-//                       }`} />
+//                     <div className="w-12 h-12 rounded-lg bg-card-hover border border-border flex items-center justify-center group-hover:border-primary transition-colors">
+//                       <IconComponent className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
 //                     </div>
 //                     <div>
 //                       <p className="font-medium text-foreground text-sm">{source.name}</p>
@@ -268,20 +267,20 @@
 //                   <div className="flex items-center gap-4 flex-1">
 //                     {getItemIcon(item.icon)}
 //                     <div className="flex-1">
-//                       <p className="font-medium text-foreground">{item.name}</p>
+//                       <p className="font-medium text-foreground">{item.name.split('/').pop()}</p>
 //                       <p className="text-sm text-muted-foreground">
-//                         {item.source} • {item.size} • {item.rows}
+//                         {item.source} 
 //                       </p>
 //                     </div>
 //                   </div>
 //                   <div className="flex items-center gap-4">
-//                     <Button
+//                     {/* <Button
 //                       variant="link"
 //                       className="text-primary hover:text-primary/80"
 //                       onClick={() => openSchemaPreview(item.name)}
 //                     >
 //                       Preview Schema
-//                     </Button>
+//                     </Button> */}
 //                     <Button
 //                       variant="ghost"
 //                       size="icon"
@@ -308,31 +307,37 @@
 //           </Button>
 //         </div>
 
-//         {/* Source Credential Dialog */}
+//         {/* Dialogs */}
 //         <SourceCredentialDialog
 //           open={credentialDialogOpen}
 //           onOpenChange={setCredentialDialogOpen}
 //           sourceName={sources.find(s => s.id === pendingSourceId)?.name || ""}
+//           sourceId={pendingSourceId}
 //           onProceed={handleCredentialProceed}
 //         />
 
-//         {/* File Picker Dialog */}
 //         <FilePickerDialog
 //           open={filePickerOpen}
 //           onOpenChange={setFilePickerOpen}
 //           sourceName={sources.find(s => s.id === currentSource)?.name || ""}
 //           files={sourceFiles[currentSource] || []}
 //           onSelect={handleFileSelection}
+//           s3Credentials={s3Credentials}
+//           isS3={currentSource === "s3"}
+//           azureCredentials={azureCredentials}
+//           oneLakeCredentials={oneLakeCredentials}
+//           deltaCredentials={deltaCredentials}
+//           isAzure={currentSource === "azure"}
+//           isOneLake={currentSource === "onelake"}
+//           isDelta={currentSource === "delta"}
 //         />
 
-//         {/* Schema Preview Dialog */}
 //         <SchemaPreviewDialog
 //           open={schemaPreviewOpen}
 //           onOpenChange={setSchemaPreviewOpen}
 //           fileName={previewFileName}
 //         />
 
-//         {/* Database Connection Dialog */}
 //         <DatabaseConnectionDialog
 //           open={databaseDialogOpen}
 //           onOpenChange={setDatabaseDialogOpen}
@@ -342,6 +347,7 @@
 //     </WorkflowLayout>
 //   );
 // }
+
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -354,7 +360,7 @@ import { SchemaPreviewDialog } from "@/components/SchemaPreviewDialog";
 import { DatabaseConnectionDialog } from "@/components/DatabaseConnectionDialog";
 import { SourceCredentialDialog } from "@/components/SourceCredentialDialog";
 import { toast } from "sonner";
-import { S3Credentials, AzureCredentials, OneLakeCredentials } from "@/components/api/api";
+import { S3Credentials, AzureCredentials, OneLakeCredentials, DatabricksCredentials, SnowflakeCredentials} from "@/components/api/api";
 
 interface SelectedItem {
   id: string;
@@ -372,7 +378,7 @@ const sources = [
   { id: "sap", name: "SAP", description: "Database", icon: Database, requiresCredentials: true },
   { id: "databases", name: "Databases", description: "Generic SQL", icon: Database, requiresCredentials: false },
   { id: "onelake", name: "OneLake", description: "Microsoft Fabric", icon: Database, requiresCredentials: true },
-  { id: "delta", name: "Delta Tables", description: "Delta Lake", icon: Table, requiresCredentials: true },
+  { id: "databricks", name: "Databricks", description: "Delta Lake", icon: Table, requiresCredentials: true },
   { id: "local", name: "Local files", description: "Upload", icon: Upload, requiresCredentials: false },
 ];
 
@@ -441,7 +447,8 @@ export default function DataIngestion() {
   const [s3Credentials, setS3Credentials] = useState<S3Credentials | null>(null);
   const [azureCredentials, setAzureCredentials] = useState<AzureCredentials | null>(null);
   const [oneLakeCredentials, setOneLakeCredentials] = useState<OneLakeCredentials | null>(null);
-  const [deltaCredentials, setDeltaCredentials] = useState<OneLakeCredentials | null>(null);
+  const [databricksCredentials, setDatabricksCredentials] = useState<DatabricksCredentials | null>(null);
+  const [snowflakeCredentials, setSnowflakeCredentials] = useState<SnowflakeCredentials | null>(null);
 
   const removeItem = (id: string) => {
     setSelectedItems(selectedItems.filter(item => item.id !== id));
@@ -460,80 +467,104 @@ export default function DataIngestion() {
     }
   };
 
-const handleProceed = () => {
-  navigate("/workflow/landing-zone");
-};
+  const handleProceed = () => {
+    navigate("/workflow/landing-zone");
+  };
 
-const openFilePicker = (sourceId: string) => {
-  const source = sources.find(s => s.id === sourceId);
+  const openFilePicker = (sourceId: string) => {
+    const source = sources.find(s => s.id === sourceId);
 
-  if (sourceId === "local") {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.multiple = true;
-    input.accept = ".csv,.xlsx,.json,.parquet";
-    input.onchange = (e) => {
-      const files = (e.target as HTMLInputElement).files;
-      if (files) {
-        const newItems: SelectedItem[] = Array.from(files).map((file, idx) => ({
-          id: `local-${Date.now()}-${idx}`,
-          name: file.name,
-          source: "Local File",
-          size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-          rows: "Calculating...",
-          icon: "file"
-        }));
-        setSelectedItems([...selectedItems, ...newItems]);
-      }
-    };
-    input.click();
-  } else if (sourceId === "databases") {
-    setDatabaseDialogOpen(true);
-  } else if (source?.requiresCredentials) {
-    setPendingSourceId(sourceId);
-    setCredentialDialogOpen(true);
-  } else {
-    setCurrentSource(sourceId);
-    setFilePickerOpen(true);
-  }
-};
-  const handleCredentialProceed = (credentials: S3Credentials | AzureCredentials | OneLakeCredentials) => {
+    if (sourceId === "local") {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.multiple = true;
+      input.accept = ".csv,.xlsx,.json,.parquet";
+      input.onchange = (e) => {
+        const files = (e.target as HTMLInputElement).files;
+        if (files) {
+          const newItems: SelectedItem[] = Array.from(files).map((file, idx) => ({
+            id: `local-${Date.now()}-${idx}`,
+            name: file.name,
+            source: "Local File",
+            size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+            rows: "Calculating...",
+            icon: "file"
+          }));
+          setSelectedItems([...selectedItems, ...newItems]);
+        }
+      };
+      input.click();
+    } else if (sourceId === "databases") {
+      setDatabaseDialogOpen(true);
+    } else if (source?.requiresCredentials) {
+      setPendingSourceId(sourceId);
+      setCredentialDialogOpen(true);
+    } else {
+      setCurrentSource(sourceId);
+      setFilePickerOpen(true);
+    }
+  };
+  const handleCredentialProceed = (credentials: S3Credentials | AzureCredentials | OneLakeCredentials | DatabricksCredentials | SnowflakeCredentials) => {
     if (pendingSourceId === "s3") {
       setS3Credentials(credentials as S3Credentials);
     } else if (pendingSourceId === "azure") {
       setAzureCredentials(credentials as AzureCredentials);
     } else if (pendingSourceId === "onelake") {
       setOneLakeCredentials(credentials as OneLakeCredentials);
-    } else if (pendingSourceId === "delta") {
-      setDeltaCredentials(credentials as OneLakeCredentials);
+    } else if (pendingSourceId === "databricks") {
+      setDatabricksCredentials(credentials as DatabricksCredentials);
+    }
+    else if (pendingSourceId === "snowflake") {  // ADD
+      setSnowflakeCredentials(credentials as SnowflakeCredentials);
     }
     setCurrentSource(pendingSourceId);
     setFilePickerOpen(true);
   };
 
-  const handleDatabaseConnect = (config: any) => {
-    const newItem: SelectedItem = {
-      id: `db-${Date.now()}`,
-      name: config.databaseName || "Connected Database",
-      source: config.dataSource,
-      size: "N/A",
-      rows: "N/A",
-      icon: "table"
-    };
-    setSelectedItems([...selectedItems, newItem]);
-  };
+   const handleDatabaseConnect = (config: {
+      server: string;
+      database: string;
+      username: string;
+      selectedTables: string[];
+    }) => {
+      const newItems: SelectedItem[] = config.selectedTables.map((table) => ({
+        id: `db-${config.database}-${table}`,
+        name: table,
+        source: "Database",
+        size: "N/A",
+        rows: "N/A",
+        icon: "table",
+      }));
 
-  const handleFileSelection = (files: Array<{ id: string; name: string; size: string; rows: string }>) => {
-    const newItems: SelectedItem[] = files.map(file => ({
+      setSelectedItems((prev) => [...prev, ...newItems]);
+    };
+
+ const handleFileSelection = (files: Array<{ id: string; name: string; size: string; rows: string }>) => {
+  const newItems: SelectedItem[] = files.map(file => {
+    let icon: "file" | "table" | "folder" = "file";
+    
+    // Determine icon based on source type and file characteristics
+    if (currentSource === "snowflake" || currentSource === "databricks") {
+      icon = "table";
+    } else if (currentSource === "databases" || file.name.includes("dbo.")) {
+      icon = "table";
+    } else if (file.name.endsWith(".parquet")) {
+      icon = "folder";
+    } else if (file.rows === "Table" || file.size.includes("Table")) {
+      icon = "table";
+    }
+    
+    return {
       id: file.id,
       name: file.name,
       source: sources.find(s => s.id === currentSource)?.name || "Unknown",
       size: file.size,
       rows: file.rows,
-      icon: file.name.includes("dbo.") ? "table" : file.name.endsWith(".parquet") ? "folder" : "file"
-    }));
-    setSelectedItems([...selectedItems, ...newItems]);
-  };
+      icon: icon
+    };
+  });
+  setSelectedItems([...selectedItems, ...newItems]);
+};
 
   const openSchemaPreview = (fileName: string) => {
     setPreviewFileName(fileName);
@@ -596,7 +627,7 @@ const openFilePicker = (sourceId: string) => {
                     <div className="flex-1">
                       <p className="font-medium text-foreground">{item.name.split('/').pop()}</p>
                       <p className="text-sm text-muted-foreground">
-                        {item.source} 
+                        {item.source}
                       </p>
                     </div>
                   </div>
@@ -653,10 +684,13 @@ const openFilePicker = (sourceId: string) => {
           isS3={currentSource === "s3"}
           azureCredentials={azureCredentials}
           oneLakeCredentials={oneLakeCredentials}
-          deltaCredentials={deltaCredentials}
+          databricksCredentials={databricksCredentials}
+          snowflakeCredentials={snowflakeCredentials}
           isAzure={currentSource === "azure"}
           isOneLake={currentSource === "onelake"}
-          isDelta={currentSource === "delta"}
+          isDatabricks={currentSource === "databricks"}
+          isSnowflake={currentSource === "snowflake"}
+
         />
 
         <SchemaPreviewDialog

@@ -446,6 +446,19 @@ export function DatabaseConnectionDialog({
   const [selectedTables, setSelectedTables] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
 
+
+  const resetDialog = () => {
+  setServer("");
+  setDatabase("");
+  setUsername("");
+  setPassword("");
+  setTables([]);
+  setSelectedTables([]);
+  setConnected(false);
+  setLoading(false);
+};
+
+
   const handleConnect = async () => {
     try {
       setLoading(true);
@@ -458,11 +471,11 @@ export function DatabaseConnectionDialog({
 
       setTables(res.tables || []);
       setConnected(true);
+toast({
+  title: "Database connected successfully",
+  duration: 1000, // disappears after 1 second
+});
 
-      toast({
-        title: "Connected",
-        description: "Select tables to continue",
-      });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -489,11 +502,20 @@ export function DatabaseConnectionDialog({
       username,
       selectedTables,
     });
+    resetDialog();
     onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    // <Dialog open={open} onOpenChange={onOpenChange}>
+     <Dialog
+  open={open}
+  onOpenChange={(isOpen) => {
+    if (!isOpen) resetDialog();
+    onOpenChange(isOpen);
+  }}
+>
+
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">Database Connection</DialogTitle>
@@ -544,9 +566,19 @@ export function DatabaseConnectionDialog({
       </div>
 
       <div className="flex justify-end gap-3 pt-4">
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
+        {/* <Button variant="outline" onClick={() => onOpenChange(false)}>
           Cancel
-        </Button>
+        </Button> */}
+        <Button
+  variant="outline"
+  onClick={() => {
+    resetDialog();
+    onOpenChange(false);
+  }}
+>
+  Cancel
+</Button>
+
 
         <Button onClick={handleConnect} disabled={loading}>
           {loading ? (

@@ -310,3 +310,110 @@ export const listDatabaseTables = async (
 
   return result;
 };
+
+
+
+// ---------------- DATABRICKS ----------------
+export interface DatabricksCredentials {
+  host: string;
+  warehouse_id: string;
+  access_token: string;
+}
+
+export const getDatabricksCatalogs = async (
+  credentials: DatabricksCredentials
+): Promise<string[]> => {
+  const res = await fetch(`${API_BASE}/databricks/list-catalogs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(credentials),
+  });
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch catalogs");
+  return result.catalogs || [];
+};
+
+export const getDatabricksSchemas = async (
+  catalog: string,
+  credentials: DatabricksCredentials
+): Promise<string[]> => {
+  const res = await fetch(`${API_BASE}/databricks/list-schemas?catalog=${encodeURIComponent(catalog)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(credentials),
+  });
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch schemas");
+  return result.schemas || [];  // Response has { catalog: "...", schemas: [...] }
+};
+
+export const getDatabricksTables = async (
+  catalog: string,
+  schema: string,
+  credentials: DatabricksCredentials
+): Promise<string[]> => {
+  const res = await fetch(
+    `${API_BASE}/databricks/list-tables?catalog=${encodeURIComponent(catalog)}&schema=${encodeURIComponent(schema)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(credentials),
+    }
+  );
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch tables");
+  return result.tables || [];  // Response has { catalog: "...", schema: "...", tables: [...] }
+};
+
+// ---------------- SNOWFLAKE ----------------
+export interface SnowflakeCredentials {
+  account_identifier: string;
+  username: string;
+  password: string;
+  warehouse: string;
+}
+
+export const getSnowflakeDatabases = async (
+  credentials: SnowflakeCredentials
+): Promise<string[]> => {
+  const res = await fetch(`${API_BASE}/snowflake/list-databases`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(credentials),
+  });
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch databases");
+  return result.databases || [];
+};
+
+export const getSnowflakeSchemas = async (
+  database: string,
+  credentials: SnowflakeCredentials
+): Promise<string[]> => {
+  const res = await fetch(`${API_BASE}/snowflake/list-schemas?database=${encodeURIComponent(database)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(credentials),
+  });
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch schemas");
+  return result.schemas || [];
+};
+
+export const getSnowflakeTables = async (
+  database: string,
+  schema: string,
+  credentials: SnowflakeCredentials
+): Promise<string[]> => {
+  const res = await fetch(
+    `${API_BASE}/snowflake/list-tables?database=${encodeURIComponent(database)}&schema=${encodeURIComponent(schema)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(credentials),
+    }
+  );
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch tables");
+  return result.tables || [];
+};

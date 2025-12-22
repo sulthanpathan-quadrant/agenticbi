@@ -319,15 +319,15 @@
 //   );
 // }
 
-
+ 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
-import { MapPin, RefreshCw, Smile, CheckCircle, XCircle } from "lucide-react";
+import { MapPin, RefreshCw, Smile, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
  
 interface EntityMatch {
   type: string;
@@ -344,6 +344,7 @@ export default function NER() {
   const [nerResults, setNerResults] = useState(false);
   const [entityMatches, setEntityMatches] = useState<EntityMatch[]>([]);
   const [stats, setStats] = useState({ accepted: 0, rejected: 0, pending: 0 });
+  const [runningNER, setRunningNER] = useState(false);
  
   const [files, setFiles] = useState<
     Array<{ name: string; source: string; type: string; size: string }>
@@ -375,13 +376,11 @@ export default function NER() {
   // ---------------- RUN NER ----------------
   const handleRunNER = async () => {
     if (!azureBlobPath.trim()) {
-      toast({
-        title: "Blob path required",
-        description: "Please enter Azure blob path",
-        variant: "destructive",
-      });
+      toast.error("Please enter Azure blob path");
       return;
     }
+ 
+    setRunningNER(true);
  
     try {
       const res = await fetch(
@@ -394,7 +393,7 @@ export default function NER() {
           },
           body: JSON.stringify({
             input_type: "azure",
-            azure_blob_path: azureBlobPath,
+            azure_blob_path: azureBlobPath.trim(),
           }),
         }
       );
@@ -411,18 +410,15 @@ export default function NER() {
  
       setNerResults(true);
  
-      toast({
-        title: "NER Completed",
-        description:
-          resolutions.length > 0
-            ? `${resolutions.length} entities found`
-            : "No entities are present",
-      });
-    } catch {
-      toast({
-        title: "NER Failed",
-        variant: "destructive",
-      });
+      if (resolutions.length > 0) {
+        toast.success(`${resolutions.length} entities found`);
+      } else {
+        toast.info("No entities are present");
+      }
+    } catch (err) {
+      toast.error("NER Failed. Please try again.");
+    } finally {
+      setRunningNER(false);
     }
   };
  
@@ -440,17 +436,15 @@ export default function NER() {
           body: JSON.stringify({
             input_type: "azure",
             chosen: entityMatches,
-            azure_blob_path: azureBlobPath,
+            azure_blob_path: azureBlobPath.trim(),
           }),
         }
       );
  
       const json = await res.json();
  
-      toast({
-        title: "All entities are passed",
-        description: json.message,
-      });
+      toast.success("All entities are passed");
+      toast.success(json.message || "Successfully applied resolutions");
  
       setStats({
         accepted: entityMatches.length,
@@ -458,10 +452,7 @@ export default function NER() {
         pending: 0,
       });
     } catch {
-      toast({
-        title: "Apply Failed",
-        variant: "destructive",
-      });
+      toast.error("Apply Failed");
     }
   };
  
@@ -478,9 +469,18 @@ export default function NER() {
               Review and resolve entity matches in your data
             </p>
           </div>
-          <Button onClick={handleRunNER}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Run NER
+          <Button onClick={handleRunNER} disabled={runningNER}>
+            {runningNER ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Running NER...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Run NER
+              </>
+            )}
           </Button>
         </div>
  
@@ -489,15 +489,15 @@ export default function NER() {
           value={azureBlobPath}
           onChange={(e) => setAzureBlobPath(e.target.value)}
           placeholder="powerbikpi/test1.csv"
-          className="w-full mb-6 px-3 py-2 border rounded"
+          className="w-full mb-6 px-3 py-2 border rounded text-foreground bg-background"
         />
  
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <Stat label="Total Matches" value={entityMatches.length} />
-          <Stat label="Pending" value={stats.pending} icon={<Smile />} />
-          <Stat label="Accepted" value={stats.accepted} icon={<CheckCircle />} />
-          <Stat label="Rejected" value={stats.rejected} icon={<XCircle />} />
+          <Stat label="Pending" value={stats.pending} icon={<Smile className="h-5 w-5 text-yellow-500" />} />
+          <Stat label="Accepted" value={stats.accepted} icon={<CheckCircle className="h-5 w-5 text-green-500" />} />
+          <Stat label="Rejected" value={stats.rejected} icon={<XCircle className="h-5 w-5 text-red-500" />} />
         </div>
  
         {/* File Selection */}
@@ -602,5 +602,4 @@ function Stat({
     </div>
   );
 }
- 
  

@@ -69,7 +69,7 @@ const [fileToDelete, setFileToDelete] = useState<string | null>(null);
     const fetchDocuments = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://4.227.238.34:8000/view-documents/${userId}/${jobId}`);
+        const response = await fetch(`https://4.227.238.34/view-documents/${userId}/${jobId}`);
  
         if (!response.ok) throw new Error("Failed to fetch files");
  
@@ -114,7 +114,7 @@ const [fileToDelete, setFileToDelete] = useState<string | null>(null);
     try {
       const encodedFileName = encodeURIComponent(fileName);
       const response = await fetch(
-        `http://4.227.238.34:8000/preview-file/${userId}/${jobId}/${encodedFileName}`
+        `https://4.227.238.34/preview-file/${userId}/${jobId}/${encodedFileName}`
       );
  
       if (response.ok) {
@@ -174,7 +174,7 @@ const confirmDelete = async () => {
   try {
     const encodedFileName = encodeURIComponent(fileToDelete);
     const response = await fetch(
-      `http://4.227.238.34:8000/delete-file/${userId}/${jobId}/${encodedFileName}`,
+      `https://4.227.238.34/delete-file/${userId}/${jobId}/${encodedFileName}`,
       { method: "DELETE" }
     );
 

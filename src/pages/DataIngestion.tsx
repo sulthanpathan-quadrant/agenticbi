@@ -585,7 +585,7 @@ const handleProceed = async () => {
     setIsIngesting(true); // 🔒 lock button
 
     const response = await fetch(
-      `http://4.227.238.34:8000/ingest-now?user_id=${userId}`,
+      `https://4.227.238.34/ingest-now?user_id=${userId}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

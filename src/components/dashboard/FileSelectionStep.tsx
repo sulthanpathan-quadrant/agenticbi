@@ -155,7 +155,7 @@ export function FileSelectionStep({ onGenerate }: FileSelectionStepProps) {
     setIsGenerating(true);
  
     try {
-      const response = await fetch("http://4.227.238.34:8000/generate_dashboard", {
+      const response = await fetch("https://4.227.238.34/generate_dashboard", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

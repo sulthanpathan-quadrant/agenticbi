@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://4.227.238.34:8000";
+// const API_BASE_URL = "http://4.227.238.34:8000";
+const API_BASE_URL = "https://4.227.238.34";
+
 export const API_BASE = API_BASE_URL;
 
 const safeJsonParse = async (response: Response) => {

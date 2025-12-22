@@ -3,6 +3,8 @@ import { NavLink } from "./NavLink";
 import { Separator } from "./ui/separator";
 
 export function WorkflowSidebar() {
+
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-60 bg-card border-r border-border flex flex-col">
       {/* Header */}
@@ -98,7 +100,8 @@ export function WorkflowSidebar() {
       {/* Bottom Actions */}
       <div className="p-3 border-t border-border space-y-1">
         <button
-          onClick={() => window.location.href = '/'}
+          onClick={() => {localStorage.clear(); window.location.href = '/'}
+          }
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors hover:bg-accent"
         >
           <LogOut className="h-4 w-4" />

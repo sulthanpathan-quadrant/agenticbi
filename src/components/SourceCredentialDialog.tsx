@@ -211,7 +211,7 @@ else if (sourceId === "snowflake") {  // ADD
               <Input
                 id="connectionString"
                 type="password"
-                placeholder="DefaultEndpointsProtocol=https;AccountName=..."
+                placeholder="XXXXXXXX"
                 value={connectionString}
                 onChange={(e) => setConnectionString(e.target.value)}
                 disabled={isValidating}
@@ -232,7 +232,7 @@ else if (sourceId === "snowflake") {  // ADD
                 <Input
                   id="tenantId"
                   type="password"
-                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  placeholder="xxxxxxxx"
                   value={tenantId}
                   onChange={(e) => setTenantId(e.target.value)}
                   disabled={isValidating}
@@ -244,7 +244,7 @@ else if (sourceId === "snowflake") {  // ADD
                 <Input
                   id="clientId"
                   type="password"
-                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  placeholder="xxxxxxx"
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   disabled={isValidating}
@@ -272,7 +272,7 @@ else if (sourceId === "snowflake") {  // ADD
                 <Input
                   id="host"
                   type="text"
-                  placeholder="adb-1234567890123456.7.azuredatabricks.net"
+                  placeholder="XXXXXXXXX"
                   value={host}
                   onChange={(e) => setHost(e.target.value)}
                   disabled={isValidating}
@@ -284,7 +284,7 @@ else if (sourceId === "snowflake") {  // ADD
                 <Input
                   id="warehouseId"
                   type="text"
-                  placeholder="abc123def456"
+                  placeholder="XXXXXXXXX"
                   value={warehouseId}
                   onChange={(e) => setWarehouseId(e.target.value)}
                   disabled={isValidating}
@@ -296,15 +296,12 @@ else if (sourceId === "snowflake") {  // ADD
                 <Input
                   id="accessToken"
                   type="password"
-                  placeholder="dapi********************************"
+                  placeholder="********"
                   value={accessToken}
                   onChange={(e) => setAccessToken(e.target.value)}
                   disabled={isValidating}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Databricks SQL Warehouse connection credentials
-              </p>
             </>
           )}
 
@@ -316,7 +313,7 @@ else if (sourceId === "snowflake") {  // ADD
                 <Input
                   id="accountIdentifier"
                   type="text"
-                  placeholder="QUXDTNC-EO36596"
+                  placeholder="XXXXXXXX"
                   value={accountIdentifier}
                   onChange={(e) => setAccountIdentifier(e.target.value)}
                   disabled={isValidating}
@@ -328,7 +325,7 @@ else if (sourceId === "snowflake") {  // ADD
                 <Input
                   id="username"
                   type="text"
-                  placeholder="PARAS016"
+                  placeholder="XXXXXXX"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={isValidating}
@@ -352,15 +349,12 @@ else if (sourceId === "snowflake") {  // ADD
                 <Input
                   id="warehouse"
                   type="text"
-                  placeholder="COMPUTE_WH"
+                  placeholder="XXXXXXXX"
                   value={warehouse}
                   onChange={(e) => setWarehouse(e.target.value)}
                   disabled={isValidating}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Snowflake connection credentials
-              </p>
             </>
           )}
           {!["s3", "azure", "onelake", "databricks", "snowflake"].includes(sourceId) && (

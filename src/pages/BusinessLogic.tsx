@@ -2,39 +2,110 @@
 // import { useNavigate } from "react-router-dom";
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
 // import { Button } from "@/components/ui/button";
-// import { Code, AlertTriangle, CheckCircle, Play, Plus, FileText, ArrowLeft, ArrowRight, SkipForward, Download, Edit, Trash } from "lucide-react";
+// import {
+//   Code,
+//   AlertTriangle,
+//   CheckCircle,
+//   Play,
+//   Plus,
+//   FileText,
+//   ArrowLeft,
+//   ArrowRight,
+//   SkipForward,
+//   Download,
+//   Edit,
+//   Trash,
+//   Loader2,
+// } from "lucide-react";
+// import { Badge } from "@/components/ui/badge";
+// import { Checkbox } from "@/components/ui/checkbox";
 // import { AddBusinessRuleDialog } from "@/components/AddBusinessRuleDialog";
 // import { BusinessRuleValidationDialog } from "@/components/BusinessRuleValidationDialog";
 // import { BusinessRuleCompleteDialog } from "@/components/BusinessRuleCompleteDialog";
-// import { Checkbox } from "@/components/ui/checkbox";
-// import { toast } from "@/hooks/use-toast";
+// import { toast } from "sonner";
+// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+// interface Rule {
+//   name: string;
+//   description: string;
+//   logic: string;
+//   status: string;
+// }
+
+// interface ValidationResult {
+//   passed_rules: number;
+//   failed_rules: number;
+//   details: Record<string, { passed_count: number; failed_count: number }>;
+// }
+
+// interface Dataset {
+//   filename: string;
+//   last_modified: string;
+// }
 
 // export default function BusinessLogic() {
 //   const navigate = useNavigate();
-//   const [selectedFiles, setSelectedFiles] = useState<string[]>(["Sales_Q3.csv"]);
+
+//   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 //   const [showAddRuleDialog, setShowAddRuleDialog] = useState(false);
 //   const [showValidationDialog, setShowValidationDialog] = useState(false);
-//   const [validationProgress, setValidationProgress] = useState(0);
 //   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
-//   const [rules, setRules] = useState<any[]>([]);
+//   const [rules, setRules] = useState<Rule[]>([]);
 //   const [editingRule, setEditingRule] = useState<number | null>(null);
+//   const [validating, setValidating] = useState(false);
+//   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
-//   // Load custom created tables from Data Creation
-//   const [files, setFiles] = useState<Array<{name: string; source: string; size: string; rows: string}>>([]);
+//   // Dynamic datasets from API
+//   const [datasets, setDatasets] = useState<Dataset[]>([]);
+//   const [loadingDatasets, setLoadingDatasets] = useState(true);
 
+//   // Get dynamic userId and jobId from localStorage
+//   const userId = localStorage.getItem("user")
+//     ? JSON.parse(localStorage.getItem("user") || "{}").id
+//     : null;
+//   const jobId = localStorage.getItem("current_job_id");
+
+//   // Fetch available datasets on mount
 //   useEffect(() => {
-//     const customTables = localStorage.getItem("customCreatedTables");
-//     if (customTables) {
-//       const tables = JSON.parse(customTables);
-//       const customFiles = tables.map((table: any) => ({
-//         name: `${table.name}.csv`,
-//         source: "Data Creation",
-//         size: "N/A",
-//         rows: "N/A",
-//       }));
-//       setFiles(customFiles);
+//     if (!userId || !jobId) {
+//       toast.error("Missing user or job information. Please log in again.");
+//       setLoadingDatasets(false);
+//       return;
 //     }
-//   }, []);
+
+//     const fetchDatasets = async () => {
+//       setLoadingDatasets(true);
+//       try {
+//         const url = `http://20.81.213.147:8000/list-datasets?user_id=${userId}&job_id=${jobId}`;
+
+//         const res = await fetch(url, {
+//           headers: {
+//             accept: "application/json",
+//           },
+//         });
+
+//         if (!res.ok) {
+//           throw new Error(`Failed to load datasets: ${res.status}`);
+//         }
+
+//         const data = await res.json();
+
+//         if (data.datasets && Array.isArray(data.datasets)) {
+//           setDatasets(data.datasets);
+//         } else {
+//           setDatasets([]);
+//           toast.info(data.message || "No datasets available");
+//         }
+//       } catch (err) {
+//         console.error("Error fetching datasets:", err);
+//         toast.error("Could not load available datasets");
+//       } finally {
+//         setLoadingDatasets(false);
+//       }
+//     };
+
+//     fetchDatasets();
+//   }, [userId, jobId]);
 
 //   const toggleFileSelection = (fileName: string) => {
 //     setSelectedFiles((prev) =>
@@ -50,15 +121,12 @@
 //       updatedRules[editingRule] = { ...rule, status: "testing" };
 //       setRules(updatedRules);
 //       setEditingRule(null);
+//       toast.success("Rule Updated Successfully");
 //     } else {
 //       setRules([...rules, { ...rule, status: "testing" }]);
+//       toast.success("Rule Added Successfully");
 //     }
 //     setShowAddRuleDialog(false);
-//     toast({
-//       title: editingRule !== null ? "Rule Updated" : "Rule Added",
-//       description: `Business rule has been ${editingRule !== null ? 'updated' : 'added'} successfully`,
-//       duration: 1000,
-//     });
 //   };
 
 //   const handleEditRule = (index: number) => {
@@ -68,19 +136,17 @@
 
 //   const handleDeleteRule = (index: number) => {
 //     setRules(rules.filter((_, i) => i !== index));
-//     toast({
-//       title: "Rule Deleted",
-//       description: "Business rule has been deleted",
-//       duration: 1000,
-//     });
+//     toast.success("Rule Deleted Successfully");
 //   };
 
 //   const handleDownloadCSV = () => {
 //     const csvContent = [
 //       ["Rule Name", "Description", "Logic", "Status"],
-//       ...rules.map(rule => [rule.name, rule.description, rule.logic, rule.status])
-//     ].map(row => row.join(",")).join("\n");
-    
+//       ...rules.map((rule) => [rule.name, rule.description, rule.logic, rule.status]),
+//     ]
+//       .map((row) => row.join(","))
+//       .join("\n");
+
 //     const blob = new Blob([csvContent], { type: "text/csv" });
 //     const url = window.URL.createObjectURL(blob);
 //     const a = document.createElement("a");
@@ -88,41 +154,87 @@
 //     a.download = "business_rules.csv";
 //     a.click();
 //     window.URL.revokeObjectURL(url);
-    
-//     toast({
-//       title: "CSV Downloaded",
-//       description: "Business rules exported to CSV",
-//       duration: 1000,
-//     });
+
+//     toast.success("Business rules exported to CSV");
 //   };
 
-//   const handleRunAllRules = () => {
-//     if (rules.length === 0) return;
-    
-//     setShowValidationDialog(true);
-//     setValidationProgress(0);
+//   const handleRunAllRules = async () => {
+//     if (rules.length === 0) {
+//       toast.error("No rules to run");
+//       return;
+//     }
 
-//     const interval = setInterval(() => {
-//       setValidationProgress((prev) => {
-//         if (prev >= 100) {
-//           clearInterval(interval);
-//           setTimeout(() => {
-//             setShowValidationDialog(false);
-//             setShowCompleteDialog(true);
-//           }, 500);
-//           return 100;
-//         }
-//         return prev + 10;
+//     if (selectedFiles.length === 0) {
+//       toast.error("Please select at least one file");
+//       return;
+//     }
+
+//     const selectedFile = selectedFiles[0]; // backend expects filename (no .csv needed?)
+
+//     setValidating(true);
+//     setShowValidationDialog(true);
+//     setValidationResult(null);
+
+//     const rulesPayload: Record<string, string> = {};
+//     rules.forEach((rule, index) => {
+//       rulesPayload[`rule${index + 1}`] = rule.description;
+//     });
+
+//     const payload = {
+//       input_type: "azure",
+//       azure_blob_path: selectedFile,
+//       rules: rulesPayload,
+//     };
+
+//     try {
+//       const response = await fetch("https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/invoke-bl", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Accept: "application/json",
+//         },
+//         body: JSON.stringify(payload),
 //       });
-//     }, 200);
+
+//       const result = await response.json();
+
+//       if (response.ok && result.body) {
+//         const body = result.body;
+//         setValidationResult({
+//           passed_rules: body.passed_rules || 0,
+//           failed_rules: body.failed_rules || 0,
+//           details: body.details || {},
+//         });
+//         toast.success("Business rules validation completed!");
+//       } else {
+//         throw new Error(result.detail || "Validation failed");
+//       }
+//     } catch (error: any) {
+//       toast.error(error.message || "Failed to run business rules");
+//       setValidationResult(null);
+//     } finally {
+//       setValidating(false);
+//       setTimeout(() => {
+//         setShowValidationDialog(false);
+//         setShowCompleteDialog(true);
+//       }, 1000);
+//     }
 //   };
 
 //   const stats = {
 //     activeRules: rules.filter((r) => r.status === "active").length,
 //     testing: rules.filter((r) => r.status === "testing").length,
 //     totalRules: rules.length,
-//     successRate: rules.length > 0 ? "N/A" : "N/A",
+//     successRate: validationResult
+//       ? `${Math.round(
+//           (validationResult.passed_rules /
+//             (validationResult.passed_rules + validationResult.failed_rules || 1)) *
+//             100
+//         )}%`
+//       : "N/A",
 //   };
+
+//   const canRunRules = rules.length > 0 && selectedFiles.length > 0;
 
 //   return (
 //     <WorkflowLayout>
@@ -142,9 +254,22 @@
 //               <Download className="h-4 w-4 mr-2" />
 //               Download CSV
 //             </Button>
-//             <Button variant="outline" onClick={handleRunAllRules} disabled={rules.length === 0}>
-//               <Play className="h-4 w-4 mr-2" />
-//               Run All Rules
+//             <Button
+//               variant="outline"
+//               onClick={handleRunAllRules}
+//               disabled={!canRunRules || validating}
+//             >
+//               {validating ? (
+//                 <>
+//                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+//                   Running...
+//                 </>
+//               ) : (
+//                 <>
+//                   <Play className="h-4 w-4 mr-2" />
+//                   Run All Rules
+//                 </>
+//               )}
 //             </Button>
 //             <Button onClick={() => { setEditingRule(null); setShowAddRuleDialog(true); }}>
 //               <Plus className="h-4 w-4 mr-2" />
@@ -188,50 +313,64 @@
 //           </div>
 //         </div>
 
-//         {/* File Selection */}
+//         {/* File Selection – now dynamic */}
 //         <div className="mb-6">
-//           <h2 className="text-lg font-semibold text-foreground mb-3">Select a file to apply rules</h2>
+//           <div className="flex items-center justify-between mb-3">
+//             <h2 className="text-lg font-semibold text-foreground">
+//               Select a file to apply rules
+//             </h2>
+//           </div>
 //           <p className="text-sm text-muted-foreground mb-4">
-//             Files ingested from your connected data sources.
+//             Datasets available from your current job/ingestion.
 //           </p>
 
-//           <div className="border border-border rounded-lg overflow-hidden">
-//             <table className="w-full">
-//               <thead className="bg-muted/50 border-b border-border">
-//                 <tr>
-//                   <th className="text-left p-4 text-sm font-medium text-muted-foreground w-12"></th>
-//                   <th className="text-left p-4 text-sm font-medium text-muted-foreground">File Name</th>
-//                   <th className="text-left p-4 text-sm font-medium text-muted-foreground">Source</th>
-//                   <th className="text-left p-4 text-sm font-medium text-muted-foreground">Size</th>
-//                   <th className="text-left p-4 text-sm font-medium text-muted-foreground">Rows</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {files.map((file) => (
-//                   <tr
-//                     key={file.name}
-//                     className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-//                     onClick={() => toggleFileSelection(file.name)}
-//                   >
-//                     <td className="p-4">
-//                       <Checkbox
-//                         checked={selectedFiles.includes(file.name)}
-//                         onCheckedChange={() => toggleFileSelection(file.name)}
-//                       />
-//                     </td>
-//                     <td className="p-4">
-//                       <div className="flex items-center gap-2">
-//                         <FileText className="h-5 w-5 text-primary" />
-//                         <span className="font-medium text-foreground">{file.name}</span>
-//                       </div>
-//                     </td>
-//                     <td className="p-4 text-sm text-muted-foreground">{file.source}</td>
-//                     <td className="p-4 text-sm text-muted-foreground">{file.size}</td>
-//                     <td className="p-4 text-sm text-muted-foreground">{file.rows}</td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
+//           <div className="border border-border rounded-lg overflow-hidden min-h-[200px]">
+//             {loadingDatasets ? (
+//               <div className="flex flex-col items-center justify-center h-64">
+//                 <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+//                 <p className="text-muted-foreground">Loading available datasets...</p>
+//               </div>
+//             ) : datasets.length === 0 ? (
+//               <div className="flex flex-col items-center justify-center h-64 text-center px-6">
+//                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+//                 <p className="text-lg font-medium text-muted-foreground">
+//                   No datasets available
+//                 </p>
+//                 <p className="text-sm text-muted-foreground mt-2">
+//                   Complete previous steps or check job configuration
+//                 </p>
+//               </div>
+//             ) : (
+//               <Table>
+//                 <TableHeader>
+//                   <TableRow className="bg-muted/50 border-b border-border">
+//                     <TableHead className="w-12"></TableHead>
+//                     <TableHead className="font-medium">File Name</TableHead>
+//                     <TableHead className="font-medium">Last Modified</TableHead>
+//                   </TableRow>
+//                 </TableHeader>
+//                 <TableBody>
+//                   {datasets.map((file) => {
+//                     const isSelected = selectedFiles.includes(file.filename);
+//                     return (
+//                       <TableRow
+//                         key={file.filename}
+//                         className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+//                         onClick={() => toggleFileSelection(file.filename)}
+//                       >
+//                         <TableCell>
+//                           <Checkbox checked={isSelected} />
+//                         </TableCell>
+//                         <TableCell className="font-medium">{file.filename}</TableCell>
+//                         <TableCell className="text-sm text-muted-foreground">
+//                           {file.last_modified}
+//                         </TableCell>
+//                       </TableRow>
+//                     );
+//                   })}
+//                 </TableBody>
+//               </Table>
+//             )}
 //           </div>
 //         </div>
 
@@ -313,7 +452,7 @@
 //       <BusinessRuleValidationDialog
 //         open={showValidationDialog}
 //         onOpenChange={setShowValidationDialog}
-//         progress={validationProgress}
+//         progress={validating ? 75 : 100}
 //         rulesCount={rules.length}
 //       />
 
@@ -325,18 +464,32 @@
 //     </WorkflowLayout>
 //   );
 // }
-
- 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
-import { Code, AlertTriangle, CheckCircle, Play, Plus, FileText, ArrowLeft, ArrowRight, SkipForward, Download, Edit, Trash, Loader2, Upload } from "lucide-react";
+import {
+  Code,
+  AlertTriangle,
+  CheckCircle,
+  Play,
+  Plus,
+  FileText,
+  ArrowLeft,
+  ArrowRight,
+  SkipForward,
+  Download,
+  Edit,
+  Trash,
+  Loader2,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AddBusinessRuleDialog } from "@/components/AddBusinessRuleDialog";
 import { BusinessRuleValidationDialog } from "@/components/BusinessRuleValidationDialog";
 import { BusinessRuleCompleteDialog } from "@/components/BusinessRuleCompleteDialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  
 interface Rule {
   name: string;
@@ -351,11 +504,9 @@ interface ValidationResult {
   details: Record<string, { passed_count: number; failed_count: number }>;
 }
  
-interface FileItem {
-  name: string;
-  source: string;
-  size: string;
-  rows: string;
+interface Dataset {
+  filename: string;
+  last_modified: string;
 }
  
 export default function BusinessLogic() {
@@ -370,46 +521,57 @@ export default function BusinessLogic() {
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
  
-  // All files: ingested + uploaded local
-  const [files, setFiles] = useState<FileItem[]>([]);
+  // Dynamic datasets from API
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [loadingDatasets, setLoadingDatasets] = useState(true);
  
-  // Load ingested/custom files from localStorage
+  // Get dynamic userId and jobId from localStorage
+  const userId = localStorage.getItem("user")
+    ? JSON.parse(localStorage.getItem("user") || "{}").id
+    : null;
+  const jobId = localStorage.getItem("current_job_id");
+ 
+  // Fetch available datasets on mount
   useEffect(() => {
-    const customTables = localStorage.getItem("customCreatedTables");
-    if (customTables) {
-      const tables = JSON.parse(customTables);
-      const customFiles = tables.map((table: any) => ({
-        name: `${table.name}.csv`,
-        source: "Data Creation",
-        size: "N/A",
-        rows: "N/A",
-      }));
-      setFiles(prev => [...prev, ...customFiles]);
+    if (!userId || !jobId) {
+      toast.error("Missing user or job information. Please log in again.");
+      setLoadingDatasets(false);
+      return;
     }
-  }, []);
  
-  // Handle local file upload
-  const handleLocalUpload = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.multiple = true;
-    input.accept = ".csv,.xlsx,.xls,.json,.parquet";
-    input.onchange = (e) => {
-      const uploadedFiles = (e.target as HTMLInputElement).files;
-      if (uploadedFiles && uploadedFiles.length > 0) {
-        const newFiles: FileItem[] = Array.from(uploadedFiles).map((file) => ({
-          name: file.name,
-          source: "Local Upload",
-          size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-          rows: "Unknown",
-        }));
+    const fetchDatasets = async () => {
+      setLoadingDatasets(true);
+      try {
+        const url = `http://20.81.213.147:8000/list-datasets?user_id=${userId}&job_id=${jobId}`;
  
-        setFiles(prev => [...prev, ...newFiles]);
-        toast.success(`${uploadedFiles.length} file(s) uploaded successfully`);
+        const res = await fetch(url, {
+          headers: {
+            accept: "application/json",
+          },
+        });
+ 
+        if (!res.ok) {
+          throw new Error(`Failed to load datasets: ${res.status}`);
+        }
+ 
+        const data = await res.json();
+ 
+        if (data.datasets && Array.isArray(data.datasets)) {
+          setDatasets(data.datasets);
+        } else {
+          setDatasets([]);
+          toast.info(data.message || "No datasets available");
+        }
+      } catch (err) {
+        console.error("Error fetching datasets:", err);
+        toast.error("Could not load available datasets");
+      } finally {
+        setLoadingDatasets(false);
       }
     };
-    input.click();
-  };
+ 
+    fetchDatasets();
+  }, [userId, jobId]);
  
   const toggleFileSelection = (fileName: string) => {
     setSelectedFiles((prev) =>
@@ -446,8 +608,10 @@ export default function BusinessLogic() {
   const handleDownloadCSV = () => {
     const csvContent = [
       ["Rule Name", "Description", "Logic", "Status"],
-      ...rules.map(rule => [rule.name, rule.description, rule.logic, rule.status])
-    ].map(row => row.join(",")).join("\n");
+      ...rules.map((rule) => [rule.name, rule.description, rule.logic, rule.status]),
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
  
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -471,6 +635,8 @@ export default function BusinessLogic() {
       return;
     }
  
+    const selectedFile = selectedFiles[0]; // backend expects filename (no .csv needed?)
+ 
     setValidating(true);
     setShowValidationDialog(true);
     setValidationResult(null);
@@ -482,8 +648,8 @@ export default function BusinessLogic() {
  
     const payload = {
       input_type: "azure",
-      azure_blob_path: selectedFiles[0],
-      rules: rulesPayload
+      azure_blob_path: selectedFile,
+      rules: rulesPayload,
     };
  
     try {
@@ -491,9 +657,9 @@ export default function BusinessLogic() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json"
+          Accept: "application/json",
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
  
       const result = await response.json();
@@ -503,7 +669,7 @@ export default function BusinessLogic() {
         setValidationResult({
           passed_rules: body.passed_rules || 0,
           failed_rules: body.failed_rules || 0,
-          details: body.details || {}
+          details: body.details || {},
         });
         toast.success("Business rules validation completed!");
       } else {
@@ -526,7 +692,11 @@ export default function BusinessLogic() {
     testing: rules.filter((r) => r.status === "testing").length,
     totalRules: rules.length,
     successRate: validationResult
-      ? `${Math.round((validationResult.passed_rules / (validationResult.passed_rules + validationResult.failed_rules || 1)) * 100)}%`
+      ? `${Math.round(
+          (validationResult.passed_rules /
+            (validationResult.passed_rules + validationResult.failed_rules || 1)) *
+            100
+        )}%`
       : "N/A",
   };
  
@@ -609,64 +779,64 @@ export default function BusinessLogic() {
           </div>
         </div>
  
-        {/* File Selection with Upload Button */}
+        {/* File Selection – now dynamic */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-foreground">Select a file to apply rules</h2>
-            <Button variant="outline" onClick={handleLocalUpload}>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Local File
-            </Button>
+            <h2 className="text-lg font-semibold text-foreground">
+              Select a file to apply rules
+            </h2>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Files from ingestion or uploaded from your device.
+            Datasets available from your current job/ingestion.
           </p>
  
-          <div className="border border-border rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-muted/50 border-b border-border">
-                <tr>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground w-12"></th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">File Name</th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Source</th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Size</th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Rows</th>
-                </tr>
-              </thead>
-              <tbody>
-                {files.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-12 text-muted-foreground">
-                      No files available. Upload a file or complete data ingestion first.
-                    </td>
-                  </tr>
-                ) : (
-                  files.map((file) => (
-                    <tr
-                      key={file.name}
-                      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-                      onClick={() => toggleFileSelection(file.name)}
-                    >
-                      <td className="p-4">
-                        <Checkbox
-                          checked={selectedFiles.includes(file.name)}
-                          onCheckedChange={() => toggleFileSelection(file.name)}
-                        />
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-primary" />
-                          <span className="font-medium text-foreground">{file.name}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm text-muted-foreground">{file.source}</td>
-                      <td className="p-4 text-sm text-muted-foreground">{file.size}</td>
-                      <td className="p-4 text-sm text-muted-foreground">{file.rows}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div className="border border-border rounded-lg overflow-hidden min-h-[200px]">
+            {loadingDatasets ? (
+              <div className="flex flex-col items-center justify-center h-64">
+                <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground">Loading available datasets...</p>
+              </div>
+            ) : datasets.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 text-center px-6">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium text-muted-foreground">
+                  No datasets available
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Complete previous steps or check job configuration
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 border-b border-border">
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="font-medium">File Name</TableHead>
+                    <TableHead className="font-medium">Last Modified</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {datasets.map((file) => {
+                    const isSelected = selectedFiles.includes(file.filename);
+                    return (
+                      <TableRow
+                        key={file.filename}
+                        className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => toggleFileSelection(file.filename)}
+                      >
+                        <TableCell>
+                          <Checkbox checked={isSelected} />
+                        </TableCell>
+                        <TableCell className="font-medium">{file.filename}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {file.last_modified}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </div>
  
@@ -750,14 +920,12 @@ export default function BusinessLogic() {
         onOpenChange={setShowValidationDialog}
         progress={validating ? 75 : 100}
         rulesCount={rules.length}
-        // validating={validating}
       />
  
       <BusinessRuleCompleteDialog
         open={showCompleteDialog}
         onOpenChange={setShowCompleteDialog}
         onContinue={() => navigate("/workflow/path-selection")}
-        // validationResult={validationResult}
       />
     </WorkflowLayout>
   );

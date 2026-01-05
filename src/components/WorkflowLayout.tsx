@@ -1,22 +1,3 @@
-// import { ReactNode } from "react";
-// import { WorkflowSidebar } from "./WorkflowSidebar";
-
-// interface WorkflowLayoutProps {
-//   children: ReactNode;
-// }
-
-// export function WorkflowLayout({ children }: WorkflowLayoutProps) {
-//   return (
-//     <div className="min-h-screen bg-background">
-//       <WorkflowSidebar />
-//       <main className="ml-60 min-h-screen">
-//         {children}
-//       </main>
-//     </div>
-//   );
-// }
-
-
 import { ReactNode } from "react";
 import { WorkflowSidebar } from "./WorkflowSidebar";
 import { useLocation } from "react-router-dom";

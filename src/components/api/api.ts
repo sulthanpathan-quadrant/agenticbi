@@ -422,7 +422,7 @@
 
 // Two different base URLs for different API endpoints
 const API_BASE_URL = "https://4.227.238.34";
-const MODELING_API_BASE = "http://20.81.213.147:8000";
+const MODELING_API_BASE = "https://20.81.213.147/docs";
  
 export const API_BASE = API_BASE_URL;
 export const MODELING_API = MODELING_API_BASE;
@@ -712,7 +712,7 @@ export interface DatabaseCredentials {
 }
  
 export interface ListTablesResponse {
-  success?: boolean;
+  success?: boolean; 
   tables?: string[];
   message?: string;
 }
@@ -720,7 +720,7 @@ export interface ListTablesResponse {
 export const listDatabaseTables = async (
   credentials: DatabaseCredentials
 ): Promise<ListTablesResponse> => {
-  const res = await fetch(`${MODELING_API}/list-tables-sql`, {
+  const res = await fetch(`${API_BASE}/list-tables-sql`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

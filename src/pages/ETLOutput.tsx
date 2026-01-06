@@ -111,7 +111,7 @@ export default function ETLOutput() {
           if (table.columns.length > 0) return table;
           try {
             const response = await fetch(
-              `http://20.81.213.147:8000/dataset-list-columns?user_id=${user_id}&job_id=${job_id}&filename=${table.name}`,
+              `https://20.81.213.147/docs/dataset-list-columns?user_id=${user_id}&job_id=${job_id}&filename=${table.name}`,
               { headers: { accept: "application/json" } }
             );
             if (!response.ok) throw new Error(`Failed to fetch columns for ${table.name}`);
@@ -141,7 +141,7 @@ export default function ETLOutput() {
     
       try {
         const response = await fetch(
-          `http://20.81.213.147:8000/preview-dataset?user_id=${user_id}&job_id=${job_id}&datasetname=${builtDataset.name}`,
+          `https://20.81.213.147/docs/preview-dataset?user_id=${user_id}&job_id=${job_id}&datasetname=${builtDataset.name}`,
           { headers: { accept: "application/json" } }
         );
         if (!response.ok) throw new Error("Failed to fetch full preview");
@@ -261,7 +261,7 @@ export default function ETLOutput() {
 
     try {
       // 1. Create microdataset
-      const createResponse = await fetch("http://20.81.213.147:8000/createmicrodataset", {
+      const createResponse = await fetch("https://20.81.213.147/docs/createmicrodataset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -274,7 +274,7 @@ export default function ETLOutput() {
 
       // 2. Get preview
       const previewResponse = await fetch(
-        `http://20.81.213.147:8000/preview-dataset?user_id=${user_id}&job_id=${job_id}&datasetname=${customDatasetName}`,
+        `https://20.81.213.147/docs/preview-dataset?user_id=${user_id}&job_id=${job_id}&datasetname=${customDatasetName}`,
         { headers: { accept: "application/json" } }
       );
 

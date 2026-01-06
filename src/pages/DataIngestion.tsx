@@ -94,7 +94,9 @@ export default function DataIngestion() {
             else if (sourceType === "onelake") fullPath = entry.file_path || "";
             else if (sourceType === "databricks") fullPath = `${entry.catalog}/${entry.schema}/${entry.table}`;
             else if (sourceType === "snowflake") fullPath = `${entry.snowflakeDatabase}/${entry.snowflake_schema}/${entry.snowflake_table}`;
- 
+            else if (["sqlserver", "databases"].includes(sourceType)) {
+            fullPath = `${entry.database}/${entry.table}`;
+          }
             name = fullPath.split("/").pop() || fullPath || "Unknown";
  
             return {
@@ -103,7 +105,7 @@ export default function DataIngestion() {
               source: sourceName,
               size: "N/A",
               rows: "N/A",
-              icon: ["snowflake", "databricks", "sqlserver"].includes(sourceType) ? "table" : "file",
+              icon: ["snowflake", "databricks", "sqlserver","databases"].includes(sourceType) ? "table" : "file",
               sourceType,
               fullPath
             };
@@ -114,7 +116,7 @@ export default function DataIngestion() {
         console.error("Failed to restore items:", err);
       }
     }
-  }, []);
+  }, []); 
  
   const removeItem = (id: string) => {
     setSelectedItems(prev => prev.filter(item => item.id !== id));
@@ -212,6 +214,18 @@ export default function DataIngestion() {
             snowflakeUser: credentials?.username,
             snowflakePassword: credentials?.password
           };
+          
+       case "databases":   // ← or "sqlserver" if you change the id
+        return {
+          ...base,
+          source_type: "sqlserver",   // ← recommended: use specific type for backend
+          server: credentials?.server,
+          database: credentials?.database,
+          username: credentials?.username,
+          password: credentials?.password,
+          table: file.fullPath || file.name   // usually table name like "dbo.Customers"
+        };
+
  
         default:
           return null;
@@ -351,19 +365,59 @@ const handleProceed = async () => {
     setFilePickerOpen(true);
   };
  
-  const handleDatabaseConnect = (config: { server: string; database: string; username: string; selectedTables: string[] }) => {
-    const newItems: SelectedItem[] = config.selectedTables.map(table => ({
-      id: `db-${config.database}-${table}`,
-      name: table,
-      source: "Database",
-      size: "N/A",
-      rows: "N/A",
-      icon: "table",
-      sourceType: "databases",
-      fullPath: `${config.database}/${table}`
-    }));
-    setSelectedItems(prev => [...prev, ...newItems]);
+  // const handleDatabaseConnect = (config: { server: string; database: string; username: string; selectedTables: string[] }) => {
+  //   const newItems: SelectedItem[] = config.selectedTables.map(table => ({
+  //     id: `db-${config.database}-${table}`,
+  //     name: table,
+  //     source: "Database",
+  //     size: "N/A",
+  //     rows: "N/A",
+  //     icon: "table",
+  //     sourceType: "databases",
+  //     fullPath: `${config.database}/${table}`
+  //   }));
+  //   setSelectedItems(prev => [...prev, ...newItems]);
+  // };
+
+  const handleDatabaseConnect = (config: {
+  server: string;
+  database: string;
+  username: string;
+  password: string;           // ← make sure you receive password too!
+  selectedTables: string[];
+}) => {
+  // 1. Create UI items (what you already have)
+  const newItems: SelectedItem[] = config.selectedTables.map(table => ({
+    id: `db-${config.database}-${table}-${Date.now()}`,
+    name: table,
+    source: "Database",
+    size: "N/A",
+    rows: "N/A",
+    icon: "table" as const,
+    sourceType: "databases",
+    fullPath: `${config.database}/${table}`
+  }));
+
+  setSelectedItems(prev => [...prev, ...newItems]);
+
+  // 2. IMPORTANT: Save to localStorage in the same format as other sources
+  const credentials = {
+    server: config.server,
+    database: config.database,
+    username: config.username,
+    password: config.password,     // ← hope you collect this in dialog
   };
+
+  // Reuse the same save function
+  saveSelectionToStorage(
+    config.selectedTables.map(table => ({
+      name: table,
+      fullPath: table,             // table name itself
+    })),
+    credentials,
+    "databases"                    // or "sqlserver" — see note below
+  );
+};  
  
   return (
     <WorkflowLayout>

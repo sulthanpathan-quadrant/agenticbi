@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Database, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { listDatabaseTables } from "@/components/api/api";
+import { listDatabaseTables } from "@/components/api/api"; 
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +21,7 @@ interface DatabaseConnectionDialogProps {
     server: string;
     database: string;
     username: string;
+    password:string;
     selectedTables: string[];
   }) => void;
 }
@@ -96,6 +97,7 @@ toast({
       server,
       database,
       username,
+      password,
       selectedTables,
     });
     resetDialog();

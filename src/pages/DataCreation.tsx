@@ -75,7 +75,7 @@ export default function DataCreation() {
       setLoadingTables(true);
       try {
         const res = await fetch(
-          `http://20.81.213.147:8000/onelake/get-all-job-tables?user_id=${userId}&job_id=${jobId}`
+          `https://20.81.213.147/docs/onelake/get-all-job-tables?user_id=${userId}&job_id=${jobId}`
         );
         if (!res.ok) throw new Error(`Failed to load tables: ${res.status}`);
         const data = await res.json();
@@ -102,7 +102,7 @@ export default function DataCreation() {
     setLoadingHistory(true);
     try {
       const res = await fetch(
-        `http://20.81.213.147:8000/list-datasets?user_id=${userId}&job_id=${jobId}`
+        `https://20.81.213.147/docs/list-datasets?user_id=${userId}&job_id=${jobId}`
       );
 
       if (!res.ok) {
@@ -223,7 +223,7 @@ export default function DataCreation() {
     };
 
     try {
-      const response = await fetch("http://20.81.213.147:8000/create-dataset", {
+      const response = await fetch("https://20.81.213.147/docs/create-dataset", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -557,7 +557,7 @@ export default function DataCreation() {
 
               try {
                 const response = await fetch(
-                  `http://20.81.213.147:8000/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
+                  `https://20.81.213.147/docs/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
                    {
           method: "POST",           // ← Changed from GET to POST
           headers: {

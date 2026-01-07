@@ -73,7 +73,7 @@ export default function DataQuality() {
       setLoadingFiles(true);
       try {
         const response = await fetch(
-          `https://20.81.213.147/docs/list-datasets?user_id=${userId}&job_id=${jobId}`,
+          `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`,
           { headers: { accept: "application/json" } }
         );
  

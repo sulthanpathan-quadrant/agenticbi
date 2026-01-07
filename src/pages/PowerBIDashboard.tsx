@@ -40,7 +40,7 @@ const PowerBIDashboard = () => {
 
         setLoadingFiles(true);
         const response = await fetch(
-          `https://20.81.213.147/docs/list-datasets?user_id=${userId}&job_id=${jobId}`
+          `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`
         );
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -131,7 +131,7 @@ const PowerBIDashboard = () => {
     const csvBlobPath = `${userId}/${jobId}/${selectedFile.name}`;
 
     try {
-      const response = await fetch('https://20.81.213.147/docs/generate_dashboard_from_prompt', {
+      const response = await fetch('https://20.81.213.147/generate_dashboard_from_prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

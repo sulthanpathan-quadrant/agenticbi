@@ -96,7 +96,7 @@ export function AnalysisPanel({
 
     const fetchKPIs = async () => {
       try {
-        const response = await fetch('https://20.81.213.147/docs/discover_kpis', {
+        const response = await fetch('https://20.81.213.147/discover_kpis', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ csv_blob: csvBlobPath })
@@ -159,7 +159,7 @@ export function AnalysisPanel({
       .map(kpi => kpi.name);
 
     try {
-      const response = await fetch('https://20.81.213.147/docs/compute_kpis', {
+      const response = await fetch('https://20.81.213.147/compute_kpis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -243,7 +243,7 @@ export function AnalysisPanel({
     }));
 
     try {
-      const response = await fetch('https://20.81.213.147/docs/generate_visuals', {
+      const response = await fetch('https://20.81.213.147/generate_visuals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

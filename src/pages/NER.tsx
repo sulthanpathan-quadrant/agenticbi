@@ -70,7 +70,7 @@ export default function NER() {
     const fetchDatasets = async () => {
       setLoadingDatasets(true);
       try {
-        const url = `https://20.81.213.147/docs/list-datasets?user_id=${userId}&job_id=${jobId}`;
+        const url = `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`;
  
         const res = await fetch(url, {
           headers: {

@@ -422,7 +422,7 @@
 
 // Two different base URLs for different API endpoints
 const API_BASE_URL = "https://4.227.238.34";
-const MODELING_API_BASE = "https://20.81.213.147/docs";
+const MODELING_API_BASE = "https://20.81.213.147";
  
 export const API_BASE = API_BASE_URL;
 export const MODELING_API = MODELING_API_BASE;

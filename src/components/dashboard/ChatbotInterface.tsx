@@ -1,177 +1,382 @@
-// import { useState } from 'react';
-// import { DataFile, KPI } from '@/components/types/dashboard';
+// import { useState, useRef, useEffect } from 'react';
+
+// import { DataFile } from '@/components/types/dashboard';
+
 // import { 
+
 //   ArrowLeft,
-//   Sparkles,
+
 //   Send,
+
 //   FileText,
+
 //   Table,
-//   FileJson
+
+//   FileJson,
+
+//   User,
+
+//   Bot,
+
+//   Save,
+
+//   Sparkles
+
 // } from 'lucide-react';
+
 // import { cn } from '@/lib/utils';
+
 // import { Button } from '@/components/ui/button';
+
 // import { Input } from '@/components/ui/input';
 
+// import { ScrollArea } from '@/components/ui/scroll-area';
+ 
 // interface ChatbotInterfaceProps {
+
 //   file: DataFile;
+
 //   onGenerateDashboard: (query: string) => void;
+
 //   onBack: () => void;
+
 //   isLoading: boolean;
+
 // }
+ 
+// interface Message {
 
+//   id: string;
+
+//   role: 'user' | 'assistant';
+
+//   content: string;
+
+// }
+ 
 // const fileIcons = {
+
 //   csv: FileText,
+
 //   excel: Table,
+
 //   json: FileJson,
-// };
 
+// };
+ 
 // const fileColors = {
+
 //   csv: 'text-emerald-400',
+
 //   excel: 'text-green-400',
+
 //   json: 'text-amber-400',
+
 // };
+ 
+ 
+// const assistantResponses = [
 
-// const suggestions = [
-//   'Show monthly sales trends',
-//   'Compare product categories',
-//   'Top performing regions',
-//   'Quarterly growth analysis',
+//   "I understand you want to analyze that. I can create visualizations showing trends, comparisons, and key metrics for this data.",
+
+//   "Great choice! I'll prepare charts and KPIs to help you understand this better.",
+
+//   "I can build that dashboard for you. It will include relevant charts and performance indicators.",
+
+//   "Excellent request! I'll create interactive visualizations to display this information clearly.",
+
 // ];
-
+ 
 // export function ChatbotInterface({ file, onGenerateDashboard, onBack, isLoading }: ChatbotInterfaceProps) {
+
 //   const [query, setQuery] = useState('');
 
+//   const [messages, setMessages] = useState<Message[]>([]);
+
+//   const scrollRef = useRef<HTMLDivElement>(null);
+ 
 //   const Icon = fileIcons[file.type];
+
 //   const iconColor = fileColors[file.type];
+ 
+//   useEffect(() => {
 
+//     if (scrollRef.current) {
+
+//       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+
+//     }
+
+//   }, [messages]);
+ 
 //   const handleSubmit = (e?: React.FormEvent) => {
+
 //     e?.preventDefault();
+
 //     if (!query.trim() || isLoading) return;
-//     onGenerateDashboard(query.trim());
-//   };
 
+//     const userMessage: Message = {
+
+//       id: Date.now().toString(),
+
+//       role: 'user',
+
+//       content: query.trim()
+
+//     };
+
+//     setMessages(prev => [...prev, userMessage]);
+
+//     // Simulate assistant response
+
+//     setTimeout(() => {
+
+//       const assistantMessage: Message = {
+
+//         id: (Date.now() + 1).toString(),
+
+//         role: 'assistant',
+
+//         content: assistantResponses[Math.floor(Math.random() * assistantResponses.length)]
+
+//       };
+
+//       setMessages(prev => [...prev, assistantMessage]);
+
+//     }, 500);
+
+//     setQuery('');
+
+//   };
+ 
 //   const handleSuggestionClick = (suggestion: string) => {
+
 //     setQuery(suggestion);
+
 //   };
+ 
+//   const handleSaveAndGenerate = () => {
 
+//     if (messages.length === 0) return;
+
+//     const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
+
+//     onGenerateDashboard(userMessages.join('; '));
+
+//   };
+ 
 //   return (
-//     <div className="flex-1 flex flex-col h-full">
-//       {/* Simple Header */}
-//       <div className="p-4 border-b border-border/50">
-//         <Button 
+// <div className="flex-1 flex flex-col h-full">
+
+//       {/* Header */}
+// <div className="p-4 border-b border-border/50 flex items-center justify-between">
+// <Button 
+
 //           variant="ghost" 
+
 //           size="sm" 
+
 //           onClick={onBack} 
-//           className="gap-2 text-muted-foreground hover:text-foreground mb-4"
-//         >
-//           <ArrowLeft className="w-4 h-4" />
+
+//           className="gap-2 text-muted-foreground hover:text-foreground"
+// >
+// <ArrowLeft className="w-4 h-4" />
+
 //           Back to Recommendations
-//         </Button>
-//       </div>
+// </Button>
+// <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm">
+// <Icon className={cn('w-4 h-4', iconColor)} />
 
-//       {/* Main Content */}
-//       <div className="flex-1 flex items-center justify-center p-8">
-//         <div className="w-full max-w-2xl space-y-8 animate-fade-in">
-//           {/* Title */}
-//           <div className="text-center space-y-3">
-//             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm">
-//               <Icon className={cn('w-4 h-4', iconColor)} />
-//               {file.name}
-//             </div>
-//             <h1 className="text-3xl font-bold text-foreground">
-//               Build Your Own Dashboard
-//             </h1>
-//             <p className="text-muted-foreground text-lg max-w-md mx-auto">
-//               Describe what insights you want to see, and we'll generate a custom dashboard for you
-//             </p>
-//           </div>
+//           {file.name}
+// </div>
+// </div>
+ 
+//       {/* Chat Area */}
+// <div className="flex-1 flex flex-col overflow-hidden">
 
-//           {/* Input Area */}
-//           <form onSubmit={handleSubmit} className="space-y-4">
-//             <div className="relative">
-//               <Input
-//                 value={query}
-//                 onChange={(e) => setQuery(e.target.value)}
-//                 placeholder="e.g., Show me sales by region over the past year..."
-//                 disabled={isLoading}
-//                 className="h-14 pl-5 pr-14 text-base rounded-xl border-2 border-border bg-card/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-//               />
-//               <Button
-//                 type="submit"
-//                 disabled={!query.trim() || isLoading}
-//                 variant="glow"
-//                 size="icon"
-//                 className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-lg"
-//               >
-//                 {isLoading ? (
-//                   <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-//                 ) : (
-//                   <Send className="w-4 h-4" />
-//                 )}
-//               </Button>
-//             </div>
+//         {messages.length === 0 ? (
 
-//             {isLoading && (
-//               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-//                 <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-//                 Generating your dashboard...
-//               </div>
-//             )}
-//           </form>
+//           /* Empty State */
+// <div className="flex-1 flex flex-col items-center justify-center p-8 -mt-20">
+// <div className="w-full max-w-3xl space-y-8 animate-fade-in text-center">
+// <div className="space-y-2">
+// <h1 className="text-2xl font-bold text-foreground">
 
-//           {/* Quick Suggestions */}
-//           <div className="space-y-3">
-//             <p className="text-sm text-muted-foreground text-center">Quick suggestions</p>
-//             <div className="flex flex-wrap justify-center gap-2">
-//               {suggestions.map((suggestion, index) => (
-//                 <button
-//                   key={index}
-//                   onClick={() => handleSuggestionClick(suggestion)}
+//                   Build Your Own Dashboard
+// </h1>
+// <p className="text-muted-foreground">
+
+//                   Describe what insights you want to see
+// </p>
+// </div>
+
+//               {/* Input in empty state */}
+// <form onSubmit={handleSubmit} className="relative">
+// <Input
+
+//                   value={query}
+
+//                   onChange={(e) => setQuery(e.target.value)}
+
+//                   placeholder="e.g., Show me sales by region over the past year..."
+
 //                   disabled={isLoading}
-//                   className={cn(
-//                     "px-4 py-2 rounded-full text-sm font-medium border transition-all",
-//                     "bg-secondary/50 text-muted-foreground border-border",
-//                     "hover:bg-secondary hover:text-foreground hover:border-primary/50",
-//                     "disabled:opacity-50 disabled:cursor-not-allowed"
-//                   )}
-//                 >
-//                   {suggestion}
-//                 </button>
-//               ))}
-//             </div>
-//           </div>
 
-//           {/* Example queries */}
-//           <div className="pt-4 border-t border-border/50">
-//             <p className="text-xs text-muted-foreground text-center mb-3">Examples of what you can ask:</p>
-//             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
-//               <div className="flex items-start gap-2 p-2 rounded-lg bg-secondary/30">
-//                 <span className="text-primary">•</span>
-//                 "Show me sales by region over time"
-//               </div>
-//               <div className="flex items-start gap-2 p-2 rounded-lg bg-secondary/30">
-//                 <span className="text-primary">•</span>
-//                 "Compare product categories by revenue"
-//               </div>
-//               <div className="flex items-start gap-2 p-2 rounded-lg bg-secondary/30">
-//                 <span className="text-primary">•</span>
-//                 "Analyze customer trends with key metrics"
-//               </div>
-//               <div className="flex items-start gap-2 p-2 rounded-lg bg-secondary/30">
-//                 <span className="text-primary">•</span>
-//                 "Display quarterly growth with YoY comparison"
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
+//                   className="h-14 pl-5 pr-14 text-base rounded-xl border-2 border-border bg-card/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+
+//                 />
+// <Button
+
+//                   type="submit"
+
+//                   disabled={!query.trim() || isLoading}
+
+//                   variant="glow"
+
+//                   size="icon"
+
+//                   className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-lg"
+// >
+// <Send className="w-4 h-4" />
+// </Button>
+// </form>
+// </div>
+// </div>
+
+//         ) : (
+
+//           /* Messages */
+// <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+// <div className="max-w-3xl mx-auto space-y-4">
+
+//               {messages.map((message) => (
+// <div
+
+//                   key={message.id}
+
+//                   className={cn(
+
+//                     "flex gap-3 animate-fade-in",
+
+//                     message.role === 'user' ? 'justify-end' : 'justify-start'
+
+//                   )}
+// >
+
+//                   {message.role === 'assistant' && (
+// <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+// <Bot className="w-4 h-4 text-primary" />
+// </div>
+
+//                   )}
+// <div
+
+//                     className={cn(
+
+//                       "max-w-[80%] px-4 py-3 rounded-2xl",
+
+//                       message.role === 'user'
+
+//                         ? 'bg-primary text-primary-foreground rounded-br-md'
+
+//                         : 'bg-secondary/80 text-foreground rounded-bl-md'
+
+//                     )}
+// >
+// <p className="text-sm">{message.content}</p>
+// </div>
+
+//                   {message.role === 'user' && (
+// <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+// <User className="w-4 h-4 text-muted-foreground" />
+// </div>
+
+//                   )}
+// </div>
+
+//               ))}
+// </div>
+// </ScrollArea>
+
+//         )}
+ 
+//         {/* Input Area - Fixed at bottom (only shown when there are messages) */}
+
+//         {messages.length > 0 && (
+// <div className="border-t border-border/50 p-4 bg-background/80 backdrop-blur-sm">
+// <div className="max-w-3xl mx-auto space-y-3">
+// <form onSubmit={handleSubmit} className="relative">
+// <Input
+
+//                   value={query}
+
+//                   onChange={(e) => setQuery(e.target.value)}
+
+//                   placeholder="e.g., Show me sales by region over the past year..."
+
+//                   disabled={isLoading}
+
+//                   className="h-14 pl-5 pr-14 text-base rounded-xl border-2 border-border bg-card/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+
+//                 />
+// <Button
+
+//                   type="submit"
+
+//                   disabled={!query.trim() || isLoading}
+
+//                   variant="glow"
+
+//                   size="icon"
+
+//                   className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-lg"
+// >
+// <Send className="w-4 h-4" />
+// </Button>
+// </form>
+ 
+//               {/* Save and Generate Dashboard Button */}
+// <div className="flex justify-end pt-2">
+// <Button
+
+//                   onClick={handleSaveAndGenerate}
+
+//                   disabled={isLoading}
+
+//                   className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+// >
+
+//                   {isLoading ? (
+// <>
+// <Sparkles className="w-4 h-4 animate-pulse" />
+
+//                       Generating...
+// </>
+
+//                   ) : (
+// <>
+// <Save className="w-4 h-4" />
+
+//                       Save and Generate Dashboard
+// </>
+
+//                   )}
+// </Button>
+// </div>
+// </div>
+// </div>
+
+//         )}
+// </div>
+// </div>
+
 //   );
+
 // }
 
 import { useState, useRef, useEffect } from 'react';
-
-import { DataFile } from '@/components/types/dashboard';
+import { DataFile, KPI } from '@/components/types/dashboard';
+import { sendMessage,downloadChat,deleteThread, deleteAllFilesFromAgent } from '../api/api';
 
 import { 
 
@@ -246,17 +451,17 @@ const fileColors = {
 };
  
  
-const assistantResponses = [
+// const assistantResponses = [
 
-  "I understand you want to analyze that. I can create visualizations showing trends, comparisons, and key metrics for this data.",
+//   "I understand you want to analyze that. I can create visualizations showing trends, comparisons, and key metrics for this data.",
 
-  "Great choice! I'll prepare charts and KPIs to help you understand this better.",
+//   "Great choice! I'll prepare charts and KPIs to help you understand this better.",
 
-  "I can build that dashboard for you. It will include relevant charts and performance indicators.",
+//   "I can build that dashboard for you. It will include relevant charts and performance indicators.",
 
-  "Excellent request! I'll create interactive visualizations to display this information clearly.",
+//   "Excellent request! I'll create interactive visualizations to display this information clearly.",
 
-];
+// ];
  
 export function ChatbotInterface({ file, onGenerateDashboard, onBack, isLoading }: ChatbotInterfaceProps) {
 
@@ -280,45 +485,81 @@ export function ChatbotInterface({ file, onGenerateDashboard, onBack, isLoading 
 
   }, [messages]);
  
-  const handleSubmit = (e?: React.FormEvent) => {
+const handleSubmit = async (e?: React.FormEvent) => {
+  e?.preventDefault();
+  if (!query.trim() || isLoading) return;
 
-    e?.preventDefault();
+  const userMessage: Message = {
+    id: Date.now().toString(),
+    role: 'user',
+    content: query.trim()
+  };
 
-    if (!query.trim() || isLoading) return;
+  setMessages(prev => [...prev, userMessage]);
+  const currentQuery = query.trim();
+  setQuery('');
 
-    const userMessage: Message = {
-
-      id: Date.now().toString(),
-
-      role: 'user',
-
-      content: query.trim()
-
+  // Get thread_id from localStorage
+  const threadId = localStorage.getItem('thread_id');
+  
+  if (!threadId) {
+    const errorMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: 'assistant',
+      content: 'Error: No thread ID found. Please try refreshing the page.'
     };
+    setMessages(prev => [...prev, errorMessage]);
+    return;
+  }
 
-    setMessages(prev => [...prev, userMessage]);
+  // Add typing indicator
+  const typingId = (Date.now() + 1).toString();
+  const typingMessage: Message = {
+    id: typingId,
+    role: 'assistant',
+    content: '...'
+  };
+  setMessages(prev => [...prev, typingMessage]);
 
-    // Simulate assistant response
+  try {
+    // Call the API
+    const response = await sendMessage({
+      thread_id: threadId,
+      question: currentQuery
+    });
 
-    setTimeout(() => {
+    // Remove typing indicator and add real response
+    setMessages(prev => {
+      const filtered = prev.filter(m => m.id !== typingId);
+      
+      // Extract content from responses array
+      const content = response.responses && response.responses.length > 0
+        ? response.responses.map(r => r.content).join('\n')
+        : 'No response received.';
 
       const assistantMessage: Message = {
-
-        id: (Date.now() + 1).toString(),
-
+        id: Date.now().toString(),
         role: 'assistant',
-
-        content: assistantResponses[Math.floor(Math.random() * assistantResponses.length)]
-
+        content: content
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      return [...filtered, assistantMessage];
+    });
+  } catch (error) {
+    // Remove typing indicator and show error
+    setMessages(prev => {
+      const filtered = prev.filter(m => m.id !== typingId);
+      
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `Error: ${error instanceof Error ? error.message : 'Failed to send message. Please try again.'}`
+      };
 
-    }, 500);
-
-    setQuery('');
-
-  };
+      return [...filtered, errorMessage];
+    });
+  }
+};
  
   const handleSuggestionClick = (suggestion: string) => {
 
@@ -326,16 +567,67 @@ export function ChatbotInterface({ file, onGenerateDashboard, onBack, isLoading 
 
   };
  
-  const handleSaveAndGenerate = () => {
+  const handleSaveAndGenerate = async () => {
+  if (messages.length === 0) return;
 
-    if (messages.length === 0) return;
+  const threadId = localStorage.getItem('thread_id');
+  
+  if (!threadId) {
+    alert('No thread ID found.');
+    return;
+  }
 
+  try {
+    // First, call delete_thread API
+    const deleteThreadResult = await deleteThread(threadId);
+    console.log('Thread deleted:', deleteThreadResult);
+
+    // Then, call delete_all_files_from_agent API
+    const deleteFilesResult = await deleteAllFilesFromAgent();
+    console.log('Files deleted:', deleteFilesResult);
+
+    // After both APIs succeed, proceed with dashboard generation
     const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
-
     onGenerateDashboard(userMessages.join('; '));
 
-  };
- 
+  } catch (error) {
+    console.error('Error during cleanup:', error);
+    alert(`Failed to cleanup: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+ const handleDownload = async () => {
+  const threadId = localStorage.getItem('thread_id');
+  
+  if (!threadId) {
+    alert('No thread ID found. Please start a conversation first.');
+    return;
+  }
+
+  try {
+    // Call the API to get the file blob
+    const blob = await downloadChat(threadId);
+    
+    // Extract filename from response or create default
+    const filename = `chat_${threadId}_${new Date().toISOString().replace(/[:.]/g, '-')}.txt`;
+    
+    // Create download link and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Download error:', error);
+    alert(`Failed to download chat: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
   return (
 <div className="flex-1 flex flex-col h-full">
 
@@ -355,11 +647,24 @@ export function ChatbotInterface({ file, onGenerateDashboard, onBack, isLoading 
 
           Back to Recommendations
 </Button>
-<div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm">
+
+<div className='flex gap-3'>
+<button 
+  onClick={handleDownload}
+  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  disabled={messages.length === 0}
+>
+  Download
+</button>
+  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm">
+  
 <Icon className={cn('w-4 h-4', iconColor)} />
 
           {file.name}
 </div>
+
+</div>
+   
 </div>
  
       {/* Chat Area */}
@@ -454,8 +759,17 @@ export function ChatbotInterface({ file, onGenerateDashboard, onBack, isLoading 
 
                     )}
 >
-<p className="text-sm">{message.content}</p>
-</div>
+<p className="text-sm">
+  {message.content === '...' ? (
+    <span className="flex gap-1">
+      <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+      <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+      <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+    </span>
+  ) : (
+    message.content
+  )}
+</p></div>
 
                   {message.role === 'user' && (
 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -528,7 +842,7 @@ export function ChatbotInterface({ file, onGenerateDashboard, onBack, isLoading 
 <>
 <Save className="w-4 h-4" />
 
-                      Save and Generate Dashboard
+                       Generate Dashboard
 </>
 
                   )}
@@ -544,5 +858,3 @@ export function ChatbotInterface({ file, onGenerateDashboard, onBack, isLoading 
   );
 
 }
-
- 

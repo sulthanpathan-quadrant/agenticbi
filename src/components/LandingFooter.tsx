@@ -1,4 +1,6 @@
 import { Mail, Linkedin, Github } from "lucide-react";
+import { Instagram } from "lucide-react";
+
 
 // X (Twitter) icon component
 const XIcon = ({ size = 18 }: { size?: number }) => (
@@ -25,7 +27,8 @@ const LandingFooter = () => {
             </p>
             <div className="flex gap-3">
               <a
-                href="https://linkedin.com"
+                // href="https://linkedin.com"
+                href="https://www.linkedin.com/company/quadranttechnologies-1"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg bg-card border border-border hover:border-primary hover:bg-primary/10 flex items-center justify-center transition-all duration-300 hover:scale-110"
@@ -33,21 +36,29 @@ const LandingFooter = () => {
                 <Linkedin size={18} className="text-foreground" />
               </a>
               <a
-                href="https://twitter.com"
+                href="https://x.com/Quadranttech2"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg bg-card border border-border hover:border-secondary hover:bg-secondary/10 flex items-center justify-center transition-all duration-300 hover:scale-110"
               >
                 <XIcon size={18} />
               </a>
-              <a
+              {/* <a
                 href="https://github.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg bg-card border border-border hover:border-accent hover:bg-accent/10 flex items-center justify-center transition-all duration-300 hover:scale-110"
               >
                 <Github size={18} className="text-foreground" />
-              </a>
+              </a> */}
+            <a
+              href="https://www.instagram.com/accounts/login/?next=%2FquadrantTechnologies1%2F&source=omni_redirect"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-lg bg-card border border-border hover:border-accent hover:bg-accent/10 flex items-center justify-center transition-all duration-300 hover:scale-110"
+            >
+              <Instagram size={18} className="text-foreground" />
+            </a>
             </div>
           </div>
 
@@ -114,7 +125,7 @@ const LandingFooter = () => {
                 className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
               >
                 <Mail size={16} className="group-hover:scale-110 transition-transform" />
-                <span>contact@veritasai.com</span>
+                <span>info@quadranttechnologies.com</span>
               </a>
               <p className="text-muted-foreground">
                 Ready to transform your data pipeline? Get started today.

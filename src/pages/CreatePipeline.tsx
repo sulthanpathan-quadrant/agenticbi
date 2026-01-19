@@ -1,3 +1,5 @@
+// 
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +16,7 @@ import {
   Edit,
 } from "lucide-react";
 import { toast } from "sonner";
-
+ 
 interface Job {
   id: string;
   name: string;
@@ -27,23 +29,25 @@ interface Job {
     dataTransformations: "skipped" | "executed";
   };
 }
-
+ 
 interface CanvasJob extends Job {
   x: number;
   y: number;
 }
-
+ 
 interface Connection {
   from: string;
   to: string;
 }
-
+ 
+const API_BASE = "https://20.81.213.147";
+ 
 const CreatePipeline = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
   const canvasRef = useRef<HTMLDivElement>(null);
-
+ 
   const [pipelineName, setPipelineName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [availableJobs, setAvailableJobs] = useState<Job[]>([]);
@@ -53,83 +57,116 @@ const CreatePipeline = () => {
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
   const [draggingJob, setDraggingJob] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-
+  const [loadingJobs, setLoadingJobs] = useState(true);
+  const [loadingPipeline, setLoadingPipeline] = useState(isEditing);
+ 
+  // Get user_id
+  const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") || "{}") : {};
+  const userId = user?.id || user?.user_id || "661ff9b1-6f16-4276-a393-bb13aec8f9a4";
+ 
+  // Fetch ALL available jobs (sidebar)
   useEffect(() => {
-    const savedJobs = localStorage.getItem("jobs");
-    if (savedJobs) {
-      const jobs = JSON.parse(savedJobs);
-      setAvailableJobs(
-        jobs.map((j: any) => ({
-          id: j.id,
-          name: j.name,
-          category: j.category || "SCHEDULE",
+    const fetchAvailableJobs = async () => {
+      setLoadingJobs(true);
+      try {
+        const response = await fetch(
+          `https://4.227.238.34/get-all-jobs?user_id=${userId}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+ 
+        if (!response.ok) throw new Error(`Failed to fetch jobs: ${response.status}`);
+ 
+        const data = await response.json();
+ 
+        const jobs: Job[] = (data.jobs || []).map((j: any) => ({
+          id: j.job_id,
+          name: j.job_name || "Unnamed Job",
+          category: "Unknown",
           stages: 4,
-          steps: j.steps || {
+          steps: {
             dqRules: "skipped",
             ner: "skipped",
             businessLogic: "skipped",
             dataTransformations: "skipped",
           },
-        }))
-      );
-    } else {
-      const sampleJobs: Job[] = [
-        { id: "1", name: "testjob", category: "SCHEDULE", stages: 4, steps: { dqRules: "skipped", ner: "skipped", businessLogic: "executed", dataTransformations: "executed" } },
-        { id: "2", name: "VeritasJob02", category: "SCHEDULE", stages: 4, steps: { dqRules: "executed", ner: "skipped", businessLogic: "skipped", dataTransformations: "skipped" } },
-      ];
-      setAvailableJobs(sampleJobs);
-    }
-
-    if (isEditing) {
-      const savedPipelines = localStorage.getItem("pipelines");
-      if (savedPipelines) {
-        const pipelines = JSON.parse(savedPipelines);
-        const pipeline = pipelines.find((p: any) => p.id === id);
-        if (pipeline) {
-          setPipelineName(pipeline.name);
-          if (pipeline.connections) {
-            setConnections(pipeline.connections);
-          }
-        }
+        }));
+ 
+        setAvailableJobs(jobs);
+      } catch (err: any) {
+        console.error("Failed to fetch available jobs:", err);
+        toast.error("Could not load available jobs");
+      } finally {
+        setLoadingJobs(false);
       }
-    }
-  }, [id, isEditing]);
-
+    };
+ 
+    fetchAvailableJobs();
+  }, [userId]);
+ 
+  // When editing: fetch pipeline details + populate canvas
   useEffect(() => {
-    if (isEditing && availableJobs.length > 0) {
-      const savedPipelines = localStorage.getItem("pipelines");
-      if (savedPipelines) {
-        const pipelines = JSON.parse(savedPipelines);
-        const pipeline = pipelines.find((p: any) => p.id === id);
-        if (pipeline) {
-          const jobsOnCanvas: CanvasJob[] = pipeline.jobs.map((jobName: string, index: number) => {
-            const job = availableJobs.find((j) => j.name === jobName);
-            return {
-              id: job?.id || `job-${index}`,
-              name: jobName,
-              category: job?.category || "SCHEDULE",
-              stages: 4,
-              steps: job?.steps || { dqRules: "skipped", ner: "skipped", businessLogic: "skipped", dataTransformations: "skipped" },
-              x: 60 + (index % 2) * 400,
-              y: 60 + Math.floor(index / 2) * 300,
-            };
-          });
-          setCanvasJobs(jobsOnCanvas);
-        }
-      }
+    if (!isEditing) {
+      setLoadingPipeline(false);
+      return;
     }
-  }, [isEditing, availableJobs, id]);
-
+ 
+    const fetchPipelineDetails = async () => {
+      setLoadingPipeline(true);
+      try {
+        const response = await fetch(
+          `${API_BASE}/view-pipeline?user_id=${userId}&pipeline_id=${id}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+ 
+        if (!response.ok) throw new Error(`Failed to fetch pipeline: ${response.status}`);
+ 
+        const data = await response.json();
+ 
+        setPipelineName(data.pipeline_name || "Unnamed Pipeline");
+ 
+        const pipelineJobs: CanvasJob[] = (data.jobs || []).map((j: any, index: number) => ({
+          id: j.job_id,
+          name: j.job_name || "Unnamed Job",
+          category: "Unknown",
+          stages: 4,
+          steps: {
+            dqRules: "skipped",
+            ner: "skipped",
+            businessLogic: "skipped",
+            dataTransformations: "skipped",
+          },
+          x: 60 + (index % 2) * 400,
+          y: 60 + Math.floor(index / 2) * 300,
+        }));
+ 
+        setCanvasJobs(pipelineJobs);
+      } catch (err: any) {
+        console.error("Failed to load pipeline:", err);
+        toast.error("Could not load pipeline details for editing");
+      } finally {
+        setLoadingPipeline(false);
+      }
+    };
+ 
+    fetchPipelineDetails();
+  }, [isEditing, id, userId]);
+ 
   const filteredJobs = availableJobs.filter((job) =>
     job.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
+ 
   const snapPosition = (value: number) => {
     if (!snapToGrid) return value;
     const gridSize = 20;
     return Math.round(value / gridSize) * gridSize;
   };
-
+ 
   const addJobToCanvas = (job: Job) => {
     if (canvasJobs.find((j) => j.id === job.id)) {
       toast.error("Job already added to canvas");
@@ -142,48 +179,53 @@ const CreatePipeline = () => {
     };
     setCanvasJobs([...canvasJobs, newCanvasJob]);
   };
-
+ 
   const removeJobFromCanvas = (jobId: string) => {
     setCanvasJobs(canvasJobs.filter((j) => j.id !== jobId));
     setConnections(connections.filter((c) => c.from !== jobId && c.to !== jobId));
   };
-
+ 
   const clearCanvas = () => {
     setCanvasJobs([]);
     setConnections([]);
   };
-
+ 
   const handleMouseDown = (e: React.MouseEvent, jobId: string) => {
     const job = canvasJobs.find((j) => j.id === jobId);
     if (!job) return;
-    
+ 
     setDraggingJob(jobId);
     setDragOffset({
       x: e.clientX - job.x,
       y: e.clientY - job.y,
     });
   };
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!draggingJob || !canvasRef.current) return;
-    
-    const canvasRect = canvasRef.current.getBoundingClientRect();
-    const newX = snapPosition(e.clientX - canvasRect.left - dragOffset.x + canvasRef.current.scrollLeft);
-    const newY = snapPosition(e.clientY - canvasRect.top - dragOffset.y + canvasRef.current.scrollTop);
-    
-    setCanvasJobs((prev) =>
-      prev.map((j) =>
-        j.id === draggingJob
-          ? { ...j, x: Math.max(0, newX), y: Math.max(0, newY) }
-          : j
-      )
-    );
-  }, [draggingJob, dragOffset, snapToGrid]);
-
+ 
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!draggingJob || !canvasRef.current) return;
+ 
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const newX = snapPosition(
+        e.clientX - canvasRect.left - dragOffset.x + canvasRef.current.scrollLeft
+      );
+      const newY = snapPosition(
+        e.clientY - canvasRect.top - dragOffset.y + canvasRef.current.scrollTop
+      );
+ 
+      setCanvasJobs((prev) =>
+        prev.map((j) =>
+          j.id === draggingJob ? { ...j, x: Math.max(0, newX), y: Math.max(0, newY) } : j
+        )
+      );
+    },
+    [draggingJob, dragOffset, snapToGrid]
+  );
+ 
   const handleMouseUp = useCallback(() => {
     setDraggingJob(null);
   }, []);
-
+ 
   useEffect(() => {
     if (draggingJob) {
       window.addEventListener("mousemove", handleMouseMove);
@@ -194,15 +236,17 @@ const CreatePipeline = () => {
       };
     }
   }, [draggingJob, handleMouseMove, handleMouseUp]);
-
+ 
   const handleConnectionStart = (jobId: string, side: "left" | "right") => {
     if (connectingFrom === null) {
       setConnectingFrom(jobId);
     } else if (connectingFrom !== jobId) {
-      const existingConnection = connections.find(
-        (c) => (c.from === connectingFrom && c.to === jobId) || (c.from === jobId && c.to === connectingFrom)
+      const existing = connections.find(
+        (c) =>
+          (c.from === connectingFrom && c.to === jobId) ||
+          (c.from === jobId && c.to === connectingFrom)
       );
-      if (!existingConnection) {
+      if (!existing) {
         setConnections([...connections, { from: connectingFrom, to: jobId }]);
       }
       setConnectingFrom(null);
@@ -210,8 +254,8 @@ const CreatePipeline = () => {
       setConnectingFrom(null);
     }
   };
-
-  const savePipeline = () => {
+ 
+  const savePipeline = async () => {
     if (!pipelineName.trim()) {
       toast.error("Please enter a pipeline name");
       return;
@@ -220,42 +264,65 @@ const CreatePipeline = () => {
       toast.error("Please add at least one job to the pipeline");
       return;
     }
-
-    const savedPipelines = localStorage.getItem("pipelines");
-    const pipelines = savedPipelines ? JSON.parse(savedPipelines) : [];
-
-    if (isEditing) {
-      const updatedPipelines = pipelines.map((p: any) =>
-        p.id === id
-          ? { ...p, name: pipelineName, jobs: canvasJobs.map((j) => j.name), connections }
-          : p
-      );
-      localStorage.setItem("pipelines", JSON.stringify(updatedPipelines));
-      toast.success("Pipeline updated successfully");
-    } else {
-      const newPipeline = {
-        id: `pipeline-${Date.now()}`,
-        name: pipelineName,
-        jobs: canvasJobs.map((j) => j.name),
-        connections,
-        createdAt: new Date().toISOString(),
-        status: "Completed",
-      };
-      localStorage.setItem("pipelines", JSON.stringify([...pipelines, newPipeline]));
-      toast.success("Pipeline created successfully");
+ 
+    const payload = {
+      user_id: userId,
+      pipeline_name: pipelineName.trim(),
+      job_ids: canvasJobs.map((j) => j.id),
+      description: "", // can be made editable later if needed
+    };
+ 
+    const endpoint = isEditing
+      ? `${API_BASE}/edit-pipeline`
+      : `${API_BASE}/create-pipeline`;
+ 
+    const method = "POST"; // both create and edit use POST according to your Swagger
+ 
+    try {
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          isEditing
+            ? { ...payload, pipeline_id: id }
+            : payload
+        ),
+      });
+ 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Save failed: ${response.status} - ${errorText}`);
+      }
+ 
+      const result = await response.json();
+ 
+      if (result.status === "success") {
+        toast.success(
+          result.message ||
+            (isEditing ? "Pipeline updated successfully" : "Pipeline created successfully")
+        );
+        navigate("/pipelines");
+      } else {
+        throw new Error(result.message || "Operation failed");
+      }
+    } catch (err: any) {
+      console.error("Pipeline save error:", err);
+      toast.error(err.message || "Could not save pipeline. Please try again.");
     }
-
-    navigate("/pipelines");
   };
-
+ 
   const getStepStatus = (status: "skipped" | "executed") => {
     return status === "executed" ? (
-      <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/30">executed</Badge>
+      <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/30">
+        executed
+      </Badge>
     ) : (
       <Badge variant="outline" className="text-xs">skipped</Badge>
     );
   };
-
+ 
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
       {/* Header */}
@@ -267,6 +334,7 @@ const CreatePipeline = () => {
             onChange={(e) => setPipelineName(e.target.value)}
             placeholder="Enter pipeline name"
             className="w-56 bg-muted/30 border-border"
+            disabled={loadingPipeline}
           />
         </div>
         <div className="flex items-center gap-4">
@@ -275,7 +343,7 @@ const CreatePipeline = () => {
             <span className="text-sm text-muted-foreground">Snap to Grid</span>
             <Switch checked={snapToGrid} onCheckedChange={setSnapToGrid} />
           </div>
-          <Button variant="ghost" onClick={clearCanvas}>
+          <Button variant="ghost" onClick={clearCanvas} disabled={loadingPipeline}>
             Clear Canvas
           </Button>
           <Button variant="ghost" size="icon" onClick={() => navigate("/pipelines")}>
@@ -283,11 +351,13 @@ const CreatePipeline = () => {
           </Button>
         </div>
       </div>
-
+ 
       <div className="flex-1 flex overflow-hidden">
-        {/* Available Jobs Sidebar */}
+        {/* Sidebar - Available Jobs */}
         <div className="w-72 border-r border-border p-4 overflow-y-auto bg-background">
-          <h3 className="font-semibold mb-4">Available Jobs ({filteredJobs.length})</h3>
+          <h3 className="font-semibold mb-4">
+            Available Jobs {loadingJobs ? "(loading...)" : `(${filteredJobs.length})`}
+          </h3>
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -295,26 +365,35 @@ const CreatePipeline = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
+              disabled={loadingJobs || loadingPipeline}
             />
           </div>
           <div className="space-y-2">
-            {filteredJobs.map((job) => (
-              <Card
-                key={job.id}
-                className="p-3 cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-l-primary"
-                onClick={() => addJobToCanvas(job)}
-              >
-                <p className="font-medium text-sm">{job.name}</p>
-                <p className="text-xs text-muted-foreground">{job.category}</p>
-                <Badge variant="secondary" className="mt-1 text-xs">
-                  {job.stages} stages
-                </Badge>
-              </Card>
-            ))}
+            {loadingJobs || loadingPipeline ? (
+              <div className="text-center py-10 text-muted-foreground">
+                {loadingPipeline ? "Loading pipeline..." : "Loading jobs..."}
+              </div>
+            ) : filteredJobs.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">No jobs found</div>
+            ) : (
+              filteredJobs.map((job) => (
+                <Card
+                  key={job.id}
+                  className="p-3 cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-l-primary"
+                  onClick={() => addJobToCanvas(job)}
+                >
+                  <p className="font-medium text-sm">{job.name}</p>
+                  <p className="text-xs text-muted-foreground">{job.category}</p>
+                  <Badge variant="secondary" className="mt-1 text-xs">
+                    {job.stages} stages
+                  </Badge>
+                </Card>
+              ))
+            )}
           </div>
         </div>
-
-        {/* Canvas */}
+ 
+        {/* Canvas Area */}
         <div className="flex-1 relative overflow-hidden bg-[#f8f9fb] dark:bg-[#1a1d21]">
           <div className="absolute top-4 left-4 text-sm font-medium text-foreground z-10">
             Pipeline Canvas
@@ -322,8 +401,7 @@ const CreatePipeline = () => {
           <div className="absolute top-4 right-4 text-sm text-muted-foreground flex items-center gap-1 z-10">
             <Plus className="w-4 h-4" /> Click jobs from sidebar to add, click blue dots to connect
           </div>
-
-          {/* Light Grid Pattern */}
+ 
           <div
             ref={canvasRef}
             className="absolute inset-0 overflow-auto"
@@ -335,7 +413,6 @@ const CreatePipeline = () => {
               backgroundSize: "20px 20px",
             }}
           >
-            {/* SVG for connections */}
             <svg className="absolute inset-0 pointer-events-none" style={{ minWidth: "2000px", minHeight: "1200px" }}>
               <defs>
                 <marker
@@ -346,28 +423,24 @@ const CreatePipeline = () => {
                   refY="3.5"
                   orient="auto"
                 >
-                  <polygon
-                    points="0 0, 10 3.5, 0 7"
-                    fill="hsl(220, 13%, 69%)"
-                  />
+                  <polygon points="0 0, 10 3.5, 0 7" fill="hsl(220, 13%, 69%)" />
                 </marker>
               </defs>
               {connections.map((conn, index) => {
                 const fromJob = canvasJobs.find((j) => j.id === conn.from);
                 const toJob = canvasJobs.find((j) => j.id === conn.to);
                 if (!fromJob || !toJob) return null;
-
+ 
                 const cardWidth = 260;
                 const cardHeight = 200;
-                
+ 
                 const startX = fromJob.x + cardWidth;
                 const startY = fromJob.y + cardHeight / 2;
                 const endX = toJob.x;
                 const endY = toJob.y + cardHeight / 2;
-                
-                // Orthogonal (right-angle) path calculation
+ 
                 const midX = startX + (endX - startX) / 2;
-                
+ 
                 return (
                   <path
                     key={`connection-${index}`}
@@ -380,8 +453,7 @@ const CreatePipeline = () => {
                 );
               })}
             </svg>
-
-            {/* Canvas Jobs */}
+ 
             <div className="relative p-8" style={{ minHeight: "1200px", minWidth: "2000px" }}>
               {canvasJobs.map((job) => (
                 <Card
@@ -392,22 +464,17 @@ const CreatePipeline = () => {
                   style={{ left: job.x, top: job.y }}
                   onMouseDown={(e) => handleMouseDown(e, job.id)}
                 >
-                  {/* Left connection dot */}
                   <div
                     className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-blue-500 border-2 border-white cursor-pointer hover:scale-125 transition-transform z-50 shadow-md"
-                    style={{ pointerEvents: 'auto' }}
                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleConnectionStart(job.id, "left"); }}
                   />
-                  
-                  {/* Right connection dot */}
                   <div
                     className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-blue-500 border-2 border-white cursor-pointer hover:scale-125 transition-transform z-50 shadow-md"
-                    style={{ pointerEvents: 'auto' }}
                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleConnectionStart(job.id, "right"); }}
                   />
-
+ 
                   <div className="p-3 border-b border-border flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-sm">{job.name}</span>
@@ -432,7 +499,7 @@ const CreatePipeline = () => {
                   </div>
                   <div className="p-3">
                     <Badge variant="secondary" className="text-xs mb-3">
-                      3 stages
+                      {job.stages} stages
                     </Badge>
                     <div className="text-xs font-medium text-muted-foreground mb-2">STAGES</div>
                     <div className="space-y-1.5">
@@ -466,18 +533,19 @@ const CreatePipeline = () => {
           </div>
         </div>
       </div>
-
+ 
       {/* Footer */}
       <div className="border-t border-border p-4 flex justify-end gap-3 bg-background">
-        <Button variant="outline" onClick={() => navigate("/pipelines")}>
+        <Button variant="outline" onClick={() => navigate("/pipelines")} disabled={loadingPipeline}>
           Cancel
         </Button>
-        <Button onClick={savePipeline}>
+        <Button onClick={savePipeline} disabled={loadingPipeline || loadingJobs}>
           {isEditing ? "Update Pipeline" : "Save Pipeline"}
         </Button>
       </div>
     </div>
   );
 };
-
+ 
 export default CreatePipeline;
+ 

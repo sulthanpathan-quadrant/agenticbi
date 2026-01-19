@@ -430,10 +430,6 @@ const handleProceed = async () => {
               Connect to your sources and select the files or tables you want to process.
             </p>
           </div>
-          <Button variant="outline" onClick={() => navigate("/jobs")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Jobs
-          </Button>
         </div>
  
         {/* Select a Source */}

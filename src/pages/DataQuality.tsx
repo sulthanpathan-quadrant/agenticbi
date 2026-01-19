@@ -37,7 +37,7 @@
 //   const navigate = useNavigate();
  
 //   const [files, setFiles] = useState<DatasetFile[]>([]);
-//   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set()); // ← Changed to Set for multiple selection
+//   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 //   const [rulesGenerated, setRulesGenerated] = useState(false);
 //   const [dataQualityRules, setDataQualityRules] = useState<DQRule[]>([]);
 //   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
@@ -58,7 +58,8 @@
 //   const [fixing, setFixing] = useState(false);
 //   const [loadingFiles, setLoadingFiles] = useState(true);
  
-//   const userId = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") || "{}").id : null;
+//   const user = localStorage.getItem("user");
+//   const userId = user ? JSON.parse(user).id : null;
 //   const jobId = localStorage.getItem("current_job_id");
  
 //   // Fetch ingested datasets
@@ -83,7 +84,6 @@
  
 //         if (result.datasets && Array.isArray(result.datasets)) {
 //           setFiles(result.datasets);
-//           // Removed auto-selection of first file
 //         } else {
 //           setFiles([]);
 //           toast.info("No datasets found for this job");
@@ -100,12 +100,52 @@
 //     fetchDatasets();
 //   }, [userId, jobId]);
  
-//   // Helper to get selected files paths
 //   const getSelectedBlobPaths = () => {
 //     return Array.from(selectedFiles).map((filename) => {
 //       const name = filename.endsWith(".csv") ? filename : `${filename}.csv`;
 //       return `${userId}/${jobId}/${name}`;
 //     });
+//   };
+ 
+//   const updateJobOptions = async () => {
+//     if (!userId || !jobId) {
+//       console.warn("Cannot update job options — missing userId or jobId");
+//       return;
+//     }
+ 
+//     const payload = {
+//       user_id: userId,
+//       job_id: jobId,
+//       dq: true,
+//     };
+ 
+//     try {
+//       const response = await fetch("https://20.81.213.147/set-job-options", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(payload),
+//       });
+ 
+//       if (!response.ok) {
+//         const errorText = await response.text();
+//         throw new Error(`Failed to update job options: ${response.status} - ${errorText}`);
+//       }
+ 
+//       const result = await response.json();
+ 
+//       if (result.status === "success") {
+//         console.log("DQ flag successfully set to true in job options");
+//         // Optional: toast.success("Data Quality option enabled");
+//       } else {
+//         throw new Error(result.message || "Unknown response from set-job-options");
+//       }
+//     } catch (err) {
+//       console.error("Error updating job options (dq=true):", err);
+//       // We don't want to block the user experience if this call fails
+//       // toast.warning("Could not update job DQ option");
+//     }
 //   };
  
 //   const handleGenerateRules = async () => {
@@ -116,13 +156,16 @@
  
 //     setGenerating(true);
  
+//     // 1. First try to set dq: true in job options
+//     await updateJobOptions();
+ 
+//     // 2. Then proceed with rule generation
 //     const blobPaths = getSelectedBlobPaths();
 //     console.log("Generating rules for files:", blobPaths);
  
-//     // Currently using the first selected file - you can modify this later to support multiple
 //     const payload = {
 //       input_type: "azure",
-//       azure_blob_path: blobPaths[0], // ← using first selected file (can be extended later)
+//       azure_blob_path: blobPaths[0], // still using first file (can be extended later)
 //     };
  
 //     try {
@@ -157,7 +200,10 @@
 //     }
 //   };
  
-//   // Run DQ Validation
+//   // ──────────────────────────────────────────────────────────────────────────────
+//   // Rest of the functions remain unchanged
+//   // ──────────────────────────────────────────────────────────────────────────────
+ 
 //   const handleRunValidation = async () => {
 //     if (dataQualityRules.length === 0) return;
  
@@ -167,11 +213,10 @@
 //     setValidationResult(null);
  
 //     const blobPaths = getSelectedBlobPaths();
-//     console.log("Validating files:", blobPaths);
  
 //     const payload = {
 //       input_type: "azure",
-//       azure_blob_path: blobPaths[0], // ← same as above - using first file for now
+//       azure_blob_path: blobPaths[0],
 //       rules: dataQualityRules.map((r) => ({
 //         rule: r.name,
 //         description: r.condition,
@@ -208,7 +253,6 @@
 //     }
 //   };
  
-//   // Quick Fix (kept as is - uses same blob path logic)
 //   const handleQuickFix = async () => {
 //     if (!validationResult || validationResult.rules_failed === 0) {
 //       toast.info("No issues to fix");
@@ -230,7 +274,7 @@
  
 //     const payload = {
 //       input_type: "azure",
-//       azure_blob_path: blobPaths[0], // ← using first selected file
+//       azure_blob_path: blobPaths[0],
 //       rules: failedRules,
 //       proposed_solutions: validationResult.proposed_solutions || {},
 //     };
@@ -252,7 +296,7 @@
 //         toast.success(result.message || "Data fixed successfully");
 //       }
 //     } catch (error: any) {
-//       // silent fail or toast if you prefer
+//       // silent fail
 //     } finally {
 //       setFixing(false);
 //       setTimeout(() => setQuickFixComplete(true), 1000);
@@ -321,7 +365,7 @@
 //           <h1 className="text-3xl font-bold text-foreground mb-2">Data Quality Rules</h1>
 //         </div>
  
-//         {/* Select Files Section - MULTIPLE SELECTION */}
+//         {/* Select Files Section */}
 //         {!rulesGenerated && (
 //           <div className="border border-border rounded-lg p-6 bg-card mb-6">
 //             <div className="flex items-center justify-between mb-4">
@@ -372,7 +416,7 @@
 //                           <Checkbox
 //                             checked={selectedFiles.has(file.filename)}
 //                             onCheckedChange={() => toggleFileSelection(file.filename)}
-//                             onClick={(e) => e.stopPropagation()} // prevent row click when clicking checkbox
+//                             onClick={(e) => e.stopPropagation()}
 //                           />
 //                         </td>
 //                         <td className="p-4">
@@ -403,9 +447,7 @@
 //         {rulesGenerated && (
 //           <div className="border border-border rounded-lg p-6 bg-card mb-6">
 //             <div className="flex items-center justify-between mb-4">
-//               <h2 className="text-lg font-semibold text-foreground">
-//                 Smart Rule Proposal
-//               </h2>
+//               <h2 className="text-lg font-semibold text-foreground">Smart Rule Proposal</h2>
 //               <Button onClick={handleRunValidation} disabled={validating}>
 //                 {validating ? (
 //                   <>
@@ -422,18 +464,10 @@
 //               <table className="w-full">
 //                 <thead className="bg-muted/50 border-b border-border">
 //                   <tr>
-//                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-//                       RULE NAME
-//                     </th>
-//                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-//                       TYPE
-//                     </th>
-//                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">
-//                       CONDITION
-//                     </th>
-//                     <th className="text-right p-4 text-sm font-medium text-muted-foreground">
-//                       ACTIONS
-//                     </th>
+//                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">RULE NAME</th>
+//                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">TYPE</th>
+//                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">CONDITION</th>
+//                     <th className="text-right p-4 text-sm font-medium text-muted-foreground">ACTIONS</th>
 //                   </tr>
 //                 </thead>
 //                 <tbody>
@@ -486,20 +520,10 @@
 //                           <div className="flex justify-end gap-2">
 //                             {isEditing ? (
 //                               <>
-//                                 <Button
-//                                   variant="outline"
-//                                   size="sm"
-//                                   className="h-8"
-//                                   onClick={() => handleSaveRule(index)}
-//                                 >
+//                                 <Button variant="outline" size="sm" className="h-8" onClick={() => handleSaveRule(index)}>
 //                                   Save
 //                                 </Button>
-//                                 <Button
-//                                   variant="ghost"
-//                                   size="sm"
-//                                   className="h-8"
-//                                   onClick={handleCancelEdit}
-//                                 >
+//                                 <Button variant="ghost" size="sm" className="h-8" onClick={handleCancelEdit}>
 //                                   Cancel
 //                                 </Button>
 //                               </>
@@ -588,7 +612,8 @@
 //     </WorkflowLayout>
 //   );
 // }
-
+ 
+ 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
@@ -600,6 +625,7 @@ import { ValidationCompleteDialog } from "@/components/ValidationCompleteDialog"
 import { AnalysisCompleteDialog } from "@/components/AnalysisCompleteDialog";
 import { QuickFixDialog } from "@/components/QuickFixDialog";
 import { toast } from "sonner";
+import { ArrowLeft, ArrowRight, Plus, Save, Table as TableIcon, ChevronDown, ChevronUp, History, LayoutGrid,SkipForward  } from "lucide-react";
  
 interface DQRule {
   name: string;
@@ -1200,6 +1226,22 @@ export default function DataQuality() {
         onContinue={handleQuickFixContinue}
         fixMessage={fixResult?.message}
       />
+      <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
+          <Button variant="outline" onClick={() => navigate("/workflow/data-creation")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Create Dataset
+          </Button>
+ 
+          <Button onClick={()=>navigate("/workflow/ner")}  
+ 
+            className="bg-primary hover:bg-primary/90"
+         
+          >
+            <SkipForward className="h-4 w-4" />
+            Skip
+            {/* <ArrowRight className="ml-2 h-4 w-4" /> */}
+          </Button>
+        </div>
     </WorkflowLayout>
   );
 }

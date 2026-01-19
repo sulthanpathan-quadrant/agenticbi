@@ -1,5 +1,4 @@
-
-//  import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
 // import { Button } from "@/components/ui/button";
@@ -50,16 +49,14 @@
 //   const [stats, setStats] = useState({ accepted: 0, rejected: 0, pending: 0 });
 //   const [runningNER, setRunningNER] = useState(false);
  
-//   // Dynamic datasets from API
 //   const [datasets, setDatasets] = useState<Dataset[]>([]);
 //   const [loadingDatasets, setLoadingDatasets] = useState(true);
  
-//   const userId = localStorage.getItem("user")
-//     ? JSON.parse(localStorage.getItem("user") || "{}").id
-//     : null;
+//   const user = localStorage.getItem("user");
+//   const userId = user ? JSON.parse(user).id : null;
 //   const jobId = localStorage.getItem("current_job_id");
  
-//   // Fetch available datasets on mount
+//   // Fetch available datasets
 //   useEffect(() => {
 //     if (!userId || !jobId) {
 //       toast.error("Missing user or job information. Please log in again.");
@@ -87,7 +84,7 @@
 //         if (data.datasets && Array.isArray(data.datasets)) {
 //           setDatasets(data.datasets);
 //           if (data.datasets.length > 0) {
-//             setSelectedFiles([data.datasets[0].filename]); // Auto-select first file
+//             setSelectedFiles([data.datasets[0].filename]); // Auto-select first
 //           }
 //         } else {
 //           setDatasets([]);
@@ -116,6 +113,49 @@
 //     return `${userId}/${jobId}/${filename.endsWith(".csv") ? filename : `${filename}.csv`}`;
 //   };
  
+//   // New helper function: Update job options → set ner: true
+//   const updateNEROption = async () => {
+//     if (!userId || !jobId) {
+//       console.warn("Cannot update NER option — missing userId or jobId");
+//       return false;
+//     }
+ 
+//     const payload = {
+//       user_id: userId,
+//       job_id: jobId,
+//       ner: true,
+//     };
+ 
+//     try {
+//       const response = await fetch("https://20.81.213.147/set-job-options", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(payload),
+//       });
+ 
+//       if (!response.ok) {
+//         const errorText = await response.text();
+//         throw new Error(`Failed to set ner option: ${response.status} - ${errorText}`);
+//       }
+ 
+//       const result = await response.json();
+ 
+//       if (result.status === "success") {
+//         console.log("Successfully set ner: true in job options");
+//         return true;
+//       } else {
+//         throw new Error(result.message || "Failed to update NER flag");
+//       }
+//     } catch (err) {
+//       console.error("Error setting ner=true:", err);
+//       // We don't block the flow if this fails
+//       // toast.warning("Could not update NER job option");
+//       return false;
+//     }
+//   };
+ 
 //   const handleRunNER = async () => {
 //     if (selectedFiles.length === 0) {
 //       toast.error("Please select at least one dataset to process");
@@ -126,11 +166,15 @@
 //       toast.warning("Processing only the first selected file for now");
 //     }
  
+//     setRunningNER(true);
+ 
+//     // 1. First update the job option (set ner: true)
+//     await updateNEROption();
+ 
+//     // 2. Then proceed with actual NER processing
 //     const selectedFilename = selectedFiles[0];
 //     const blobPath = getBlobPath(selectedFilename);
 //     console.log("Running NER with blob path:", blobPath);
- 
-//     setRunningNER(true);
  
 //     try {
 //       const res = await fetch(
@@ -185,7 +229,6 @@
  
 //     const selectedFilename = selectedFiles[0];
 //     const blobPath = getBlobPath(selectedFilename);
-//     console.log("Applying resolutions with blob path:", blobPath);
  
 //     try {
 //       const res = await fetch(
@@ -339,10 +382,7 @@
 //             ) : (
 //               <div className="space-y-4">
 //                 {entityMatches.map((entity, index) => (
-//                   <div
-//                     key={index}
-//                     className="border rounded-lg p-4 bg-card/50"
-//                   >
+//                   <div key={index} className="border rounded-lg p-4 bg-card/50">
 //                     <div className="flex items-center gap-4 flex-wrap">
 //                       <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
 //                       <Badge variant="secondary">{entity.type}</Badge>
@@ -362,10 +402,7 @@
  
 //         {/* Bottom Navigation */}
 //         <div className="flex justify-between">
-//           <Button
-//             variant="outline"
-//             onClick={() => navigate("/workflow/data-quality")}
-//           >
+//           <Button variant="outline" onClick={() => navigate("/workflow/data-quality")}>
 //             Back
 //           </Button>
 //           <Button
@@ -379,6 +416,10 @@
 //     </WorkflowLayout>
 //   );
 // }
+ 
+
+
+ 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
@@ -388,6 +429,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft, ArrowRight, Plus, Save, Table as TableIcon, ChevronDown, ChevronUp, History, LayoutGrid,SkipForward  } from "lucide-react";
  
 interface EntityMatch {
   type: string;
@@ -784,13 +826,14 @@ export default function NER() {
         {/* Bottom Navigation */}
         <div className="flex justify-between">
           <Button variant="outline" onClick={() => navigate("/workflow/data-quality")}>
-            Back
+            Back to Data Quality
           </Button>
           <Button
             onClick={() => navigate("/workflow/business-logic")}
             disabled={stats.pending > 0}
           >
-            Proceed to Business Logic
+            <SkipForward className="h-4 w-4" />
+            Skip
           </Button>
         </div>
       </div>

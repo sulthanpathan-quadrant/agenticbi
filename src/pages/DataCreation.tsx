@@ -7,32 +7,32 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-
+ 
 interface Column {
   name: string;
   type: string;
 }
-
+ 
 interface TableData {
   table_name: string;
   table_type: "FACT" | "DIM";
   columns: Column[];
 }
-
+ 
 interface CustomTable {
   name: string;
   columns: { name: string; table: string; type: string }[];
   createdAt: string;
 }
+ 
 interface BackendDataset {
   filename: string;
   date_modified: string;
 }
-
+ 
 export default function DataCreation() {
   const navigate = useNavigate();
-
+ 
   const [availableTables, setAvailableTables] = useState<TableData[]>([]);
   const [customTableName, setCustomTableName] = useState("custom_dataset");
   const [customColumns, setCustomColumns] = useState<{ name: string; table: string; type: string }[]>([]);
@@ -44,13 +44,15 @@ export default function DataCreation() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
-
+  const [isTransferring, setIsTransferring] = useState(false);
+  const totalKnownDatasets = backendDatasets.length || localSavedTables.length;
+  
+  
   const userId = localStorage.getItem("user")
     ? JSON.parse(localStorage.getItem("user") || "{}").id
     : null;
   const jobId = localStorage.getItem("current_job_id");
-
+ 
   // Load local saved tables from localStorage
   useEffect(() => {
     const stored = localStorage.getItem("customCreatedTables");
@@ -58,7 +60,7 @@ export default function DataCreation() {
       setLocalSavedTables(JSON.parse(stored));
     }
   }, []);
-
+ 
   // Fetch available tables
   useEffect(() => {
     if (!userId || !jobId) {
@@ -70,7 +72,7 @@ export default function DataCreation() {
       setLoadingTables(false);
       return;
     }
-
+ 
     const fetchTables = async () => {
       setLoadingTables(true);
       try {
@@ -91,24 +93,24 @@ export default function DataCreation() {
         setLoadingTables(false);
       }
     };
-
+ 
     fetchTables();
   }, [userId, jobId]);
-
+ 
   // Fetch backend saved datasets when history is opened
   const fetchBackendDatasets = async () => {
     if (!userId || !jobId) return;
-
+ 
     setLoadingHistory(true);
     try {
       const res = await fetch(
         `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`
       );
-
+ 
       if (!res.ok) {
         throw new Error(`Failed to fetch datasets: ${res.status}`);
       }
-
+ 
       const data = await res.json();
       setBackendDatasets(data.datasets || []);
     } catch (err: any) {
@@ -122,7 +124,7 @@ export default function DataCreation() {
       setLoadingHistory(false);
     }
   };
-
+ 
   const toggleHistory = () => {
     const willShow = !showHistory;
     setShowHistory(willShow);
@@ -130,16 +132,16 @@ export default function DataCreation() {
       fetchBackendDatasets();
     }
   };
-
+ 
   // Drag & Drop handlers
   const handleDragStart = (column: Column, tableName: string) => {
     setDraggedColumn({ name: column.name, type: column.type, table: tableName });
   };
-
+ 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
-
+ 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedColumn) {
@@ -156,11 +158,11 @@ export default function DataCreation() {
     }
     setDraggedColumn(null);
   };
-
+ 
   const handleRemoveColumn = (index: number) => {
     setCustomColumns(customColumns.filter((_, i) => i !== index));
   };
-
+ 
   const handleAddColumn = (column: Column, tableName: string) => {
     const newCol = { name: column.name, type: column.type, table: tableName };
     const exists = customColumns.some((col) => col.name === newCol.name && col.table === newCol.table);
@@ -172,14 +174,14 @@ export default function DataCreation() {
       });
     }
   };
-
+ 
   const toggleTableCollapse = (tableName: string) => {
     setCollapsedTables((prev) => ({
       ...prev,
       [tableName]: !prev[tableName],
     }));
   };
-
+ 
   const handleSaveCustomTable = async () => {
     if (customColumns.length === 0) {
       toast({
@@ -189,7 +191,7 @@ export default function DataCreation() {
       });
       return;
     }
-
+ 
     if (!userId || !jobId) {
       toast({
         title: "Missing user or job information",
@@ -198,7 +200,9 @@ export default function DataCreation() {
       });
       return;
     }
+ 
     setIsSaving(true);
+ 
     // Group columns by their original table
     const columnMappingsByTable = customColumns.reduce((acc: Record<string, string[]>, col) => {
       if (!acc[col.table]) {
@@ -207,23 +211,23 @@ export default function DataCreation() {
       acc[col.table].push(col.name);
       return acc;
     }, {});
-
-    // Build column_mappings with prefixed table_name: userId_jobId_originalTableName
+ 
     const column_mappings = Object.entries(columnMappingsByTable).map(([originalTableName, columns]) => ({
       table_name: `${userId}_${jobId}_${originalTableName}`,
       columns,
       fmt: "parquet"
     }));
-
+ 
     const payload = {
       user_id: userId,
       job_id: jobId,
       custom_table_name: customTableName.trim(),
       column_mappings
     };
-
+ 
     try {
-      const response = await fetch("https://20.81.213.147/create-dataset", {
+      // Step 1: Create dataset
+      const createResponse = await fetch("https://20.81.213.147/create-dataset", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -231,56 +235,88 @@ export default function DataCreation() {
         },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || `Failed (${response.status})`);
+ 
+      if (!createResponse.ok) {
+        const errorData = await createResponse.json().catch(() => ({}));
+        throw new Error(errorData.detail || errorData.message || `Failed (${createResponse.status})`);
       }
-
-      const result = await response.json();
-
-      // toast({
-      //   title: "Dataset Created Successfully",
-      //   description: `Custom table "${customTableName}" has been created with ${customColumns.length} columns`,
-      // });
-
+ 
+      const createResult = await createResponse.json();
+ 
       toast({
         title: "Dataset Created",
         description: `Custom table "${customTableName}" created successfully`,
-        duration: 1000, // 1.5 seconds — you can use 1000 for exactly 1 second
+        duration: 1500,
       });
+ 
+      // Step 2: If create succeeded → immediately trigger transfer
+      try {
+        const transferResponse = await fetch(
+          `https://20.81.213.147/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+ 
+        if (!transferResponse.ok) {
+          console.warn("Transfer API failed, but dataset was created");
+          toast({
+            title: "Transfer Started (Background)",
+            description: "Dataset created, but transfer to blob storage may be processing in background.",
+          });
+        } else {
+          toast({
+            title: "Transfer Started",
+            description: "Data is being transferred to blob storage...",
+            duration: 3000,
+          });
+        }
+      } catch (transferErr) {
+        console.error("Transfer API error (non-blocking):", transferErr);
+        // Still show success for create — transfer is secondary
+      }
 
+      //////////////////////
+
+      setShowHistory(true);                   // auto open
+      fetchBackendDatasets();
+
+      /////////////////////////
+ 
+      // Save locally
       const newTable: CustomTable = {
         name: customTableName,
         columns: customColumns,
         createdAt: new Date().toLocaleString(),
       };
-
+ 
       const updatedTables = [...localSavedTables, newTable];
       setLocalSavedTables(updatedTables);
       localStorage.setItem("customCreatedTables", JSON.stringify(updatedTables));
-
+ 
       setCustomTableName("custom_dataset");
       setCustomColumns([]);
-
+ 
       if (showHistory) {
         fetchBackendDatasets();
       }
-
+ 
     } catch (error: any) {
       console.error("Create dataset error:", error);
       toast({
         title: "Failed to create dataset",
         description: error.message || "Server error occurred. Please try again.",
         variant: "destructive",
-        duration: 1000,
+        duration: 3000,
       });
-    }
-    finally {
+    } finally {
       setIsSaving(false);
     }
   };
-
+ 
   const handleDeleteLocalTable = (index: number) => {
     const updated = localSavedTables.filter((_, i) => i !== index);
     setLocalSavedTables(updated);
@@ -290,7 +326,7 @@ export default function DataCreation() {
       description: "Removed from local history",
     });
   };
-
+ 
   return (
     <WorkflowLayout>
       <div className="p-8">
@@ -309,14 +345,22 @@ export default function DataCreation() {
           >
             <History className="h-4 w-4" />
             History
-            {(localSavedTables.length > 0 || backendDatasets.length > 0) && (
+            {/* {(localSavedTables.length > 0 || backendDatasets.length > 0) && (
               <Badge variant="secondary" className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 p-0 flex items-center justify-center text-xs">
                 {backendDatasets.length}
+              </Badge>
+            )} */}
+                        {(totalKnownDatasets > 0) && (
+              <Badge 
+                variant="secondary" 
+                className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 p-0 flex items-center justify-center text-xs"
+              >
+                {totalKnownDatasets}
               </Badge>
             )}
           </Button>
         </div>
-
+ 
         <div className="grid grid-cols-[350px,1fr] gap-6">
           {/* Left - Available Tables */}
           <div className="space-y-4">
@@ -324,7 +368,7 @@ export default function DataCreation() {
               <TableIcon className="h-5 w-5" />
               Available Tables
             </h2>
-
+ 
             <ScrollArea className="h-[calc(100vh-150px)] pr-2">
               {loadingTables ? (
                 <div className="flex justify-center py-10">
@@ -360,7 +404,7 @@ export default function DataCreation() {
                         {table.table_type}
                       </Badge>
                     </div>
-
+ 
                     {!collapsedTables[table.table_name] && (
                       <div>
                         {table.columns.map((col) => (
@@ -396,14 +440,14 @@ export default function DataCreation() {
               )}
             </ScrollArea>
           </div>
-
+ 
           {/* Right - Custom Dataset Builder */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <Plus className="h-5 w-5" />
               Your Custom Dataset
             </h2>
-
+ 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Dataset Name</label>
               <Input
@@ -413,7 +457,7 @@ export default function DataCreation() {
                 className="bg-card border-border"
               />
             </div>
-
+ 
             <div
               onDragOver={handleDragOver}
               onDrop={handleDrop}
@@ -460,44 +504,35 @@ export default function DataCreation() {
                 </ScrollArea>
               )}
             </div>
-
-            {/* <Button
+ 
+            <Button
               className="w-full bg-primary hover:bg-primary/90"
               onClick={handleSaveCustomTable}
-              disabled={customColumns.length === 0 || !userId || !jobId}
+              disabled={customColumns.length === 0 || !userId || !jobId || isSaving}
             >
-              <Save className="h-4 w-4 mr-2" />
-              Save Custom Dataset
-            </Button> */}
-
-            <Button
-          className="w-full bg-primary hover:bg-primary/90"
-          onClick={handleSaveCustomTable}
-          disabled={customColumns.length === 0 || !userId || !jobId || isSaving}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Creating...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Save Custom Dataset
-            </>
-          )}
-        </Button>
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Custom Dataset
+                </>
+              )}
+            </Button>
           </div>
         </div>
-
+ 
         {/* History Section */}
-        {showHistory && (
+        {/* {showHistory && (
           <div className="mt-8 pt-6 border-t border-border">
             <div className="flex items-center gap-3 mb-4">
               <History className="h-5 w-5 text-primary" />
               <h3 className="text-xl font-semibold text-foreground">Saved Datasets History</h3>
             </div>
-
+ 
             {loadingHistory ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -535,15 +570,99 @@ export default function DataCreation() {
               </div>
             )}
           </div>
-        )}
+        )} */}
 
+
+       {showHistory && (
+            <div className="mt-8 pt-6 border-t border-border">
+                <div className="flex items-center gap-3 mb-4">
+                  <History className="h-5 w-5 text-primary" />
+                  <h3 className="text-xl font-semibold text-foreground">Saved Datasets History</h3>
+                </div>
+
+                {loadingHistory ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : localSavedTables.length === 0 && backendDatasets.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    No saved datasets found
+                  </p>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Local (most recent first) */}
+                    {/* {localSavedTables.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Recent (local)</h4>
+                        <div className="space-y-3">
+                          {localSavedTables.slice().reverse().map((ds, idx) => (
+                            <div
+                              key={`local-${idx}`}
+                              className="flex items-center justify-between p-4 bg-card/80 rounded-lg border border-border hover:border-primary/30 transition-colors"
+                            >
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                                  <TableIcon className="h-5 w-5 text-amber-600" />
+                                </div>
+                                <div>
+                                  <p className="font-medium">{ds.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Created: {ds.createdAt} • {ds.columns.length} columns
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteLocalTable(localSavedTables.length - 1 - idx)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )} */}
+
+                    {/* Backend datasets */}
+                    {backendDatasets.length > 0 && (
+                      <div>
+                        {/* <h4 className="text-sm font-medium text-muted-foreground mb-2">Saved on server</h4> */}
+                        <div className="space-y-3">
+                          {backendDatasets.map((ds, idx) => (
+                            <div
+                              key={`backend-${idx}`}
+                              className="flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:border-primary/30 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                  <TableIcon className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-primary">{ds.filename}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Last modified: {ds.date_modified}
+                                  </p>
+                                </div>
+                              </div>
+                              {/* You could add a "Load" or "Preview" button here later */}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+        )}
+ 
         {/* Bottom Navigation */}
         <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
           <Button variant="outline" onClick={() => navigate("/workflow/data-preview")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Data Preview
           </Button>
-
+ 
           <Button
             onClick={async () => {
               if (!userId || !jobId) {
@@ -554,24 +673,30 @@ export default function DataCreation() {
                 });
                 return;
               }
-
+ 
+              setIsTransferring(true);
+ 
               try {
                 const response = await fetch(
                   `https://20.81.213.147/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
-                   {
-          method: "POST",           // ← Changed from GET to POST
-          headers: {
-            "Content-Type": "application/json", // optional but good practice
-          },
-        }  
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                  }
                 );
-
+ 
                 if (!response.ok) {
                   throw new Error(`Transfer request failed (${response.status})`);
                 }
-             
+ 
+                toast({
+                  title: "Transfer Started",
+                  description: "Data is being moved to blob storage...",
+                });
+ 
                 navigate("/workflow/data-quality");
-
               } catch (err: any) {
                 console.error("Transfer API error:", err);
                 toast({
@@ -579,15 +704,28 @@ export default function DataCreation() {
                   description: err.message || "Could not start data transfer to blob storage",
                   variant: "destructive",
                 });
+              } finally {
+                setIsTransferring(false);
               }
             }}
+            disabled={isTransferring}
             className="bg-primary hover:bg-primary/90"
           >
-            Next: Data Quality
-            <ArrowRight className="ml-2 h-4 w-4" />
+            {isTransferring ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Transferring...
+              </>
+            ) : (
+              <>
+                Next: Data Quality
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </>
+            )}
           </Button>
         </div>
       </div>
     </WorkflowLayout>
   );
 }
+ 

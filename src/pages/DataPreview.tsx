@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Database, Table as TableIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, Database, Table as TableIcon, Loader2, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
@@ -71,7 +71,7 @@ export default function DataPreview() {
   // Fetch available tables
   useEffect(() => {
     if (!userId || !jobId) {
-      toast.error("Missing user or job information");
+      toast.error("Missing user or job information", { duration: 1000 });
       setLoadingTables(false);
       return;
     }
@@ -112,7 +112,7 @@ export default function DataPreview() {
         setTables(formatted);
         if (formatted.length > 0) setSelectedTable(formatted[0].name);
       } catch (err: any) {
-        toast.error(err.message || "Failed to load tables");
+        toast.error(err.message || "Failed to load tables", { duration: 1000 });
       } finally {
         setLoadingTables(false);
       }
@@ -146,7 +146,7 @@ export default function DataPreview() {
         const data = await res.json();
         setPreview(data);
       } catch (err: any) {
-        toast.error(err.message || "Failed to load table preview");
+        toast.error(err.message || "Failed to load table preview", { duration: 1000 });
       } finally {
         setLoadingPreview(false);
       }
@@ -219,7 +219,7 @@ export default function DataPreview() {
               {/* Fact Table - Center */}
               {factTable && (
                 <div className="flex flex-col items-center relative z-10">
-                  <div
+                  {/* <div
                     className={`border-2 border-cyan-500 rounded-lg p-4 bg-cyan-950/30 w-64 cursor-pointer transition-all ${
                       selectedTable === factTable.name ? "ring-2 ring-cyan-400 bg-cyan-950/50" : "hover:bg-cyan-950/40"
                     }`}
@@ -231,7 +231,24 @@ export default function DataPreview() {
                         <span className="text-sm font-semibold text-foreground">{factTable.name}</span>
                       </div>
                       <Badge className="text-xs bg-cyan-600">FACT</Badge>
+                    </div> */}
+                    {/* Fact table card */}
+                <div
+                  className={`border-2 border-cyan-500 rounded-lg p-4 bg-cyan-950/30 
+                    w-64 cursor-pointer transition-all overflow-hidden
+                    ${selectedTable === factTable.name ? "ring-2 ring-cyan-400 bg-cyan-950/50" : "hover:bg-cyan-950/40"}`}
+                  onClick={() => setSelectedTable(factTable.name)}
+                >
+                  <div className="flex items-center justify-between mb-3 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <TableIcon className="h-4 w-4 flex-shrink-0" />
+                      <span className="text-sm font-semibold text-foreground truncate">
+                        {factTable.name}
+                      </span>
                     </div>
+                    <Badge className="text-xs bg-cyan-600 flex-shrink-0">FACT</Badge>
+                  </div>
+
                     <div className="text-xs text-muted-foreground space-y-1">
                       <div className="flex justify-between">
                         <span>Columns:</span>
@@ -257,7 +274,7 @@ export default function DataPreview() {
                       key={table.name}
                       className={`absolute z-10 ${pos.containerClass}`}
                     >
-                      <div
+                      {/* <div
                         className={`border border-blue-500 rounded-lg p-4 bg-card/50 w-56 cursor-pointer transition-all ${
                           selectedTable === table.name ? "ring-2 ring-blue-400 bg-card" : "hover:bg-card"
                         }`}
@@ -269,7 +286,24 @@ export default function DataPreview() {
                             <span className="text-sm font-semibold text-foreground">{table.name}</span>
                           </div>
                           <Badge variant="outline" className="text-xs">DIM</Badge>
+                        </div> */}
+                       
+                       <div
+                      className={`border border-blue-500 rounded-lg p-4 bg-card/50 
+                        w-56 cursor-pointer transition-all overflow-hidden
+                        ${selectedTable === table.name ? "ring-2 ring-blue-400 bg-card" : "hover:bg-card"}`}
+                      onClick={() => setSelectedTable(table.name)}
+                    >
+                      <div className="flex items-center justify-between mb-3 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <TableIcon className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-sm font-semibold text-foreground truncate">
+                            {table.name}
+                          </span>
                         </div>
+                        <Badge variant="outline" className="text-xs flex-shrink-0">DIM</Badge>
+                      </div>
+
                         <div className="text-xs text-muted-foreground space-y-1">
                           <div className="flex justify-between">
                             <span>Columns:</span>
@@ -292,7 +326,7 @@ export default function DataPreview() {
         <div ref={previewRef} className="border border-border rounded-lg p-6 bg-card mb-6">
           {selectedTable ? (
             <>
-              <div className="flex items-center justify-between mb-4">
+              {/* <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <TableIcon className="h-5 w-5" />
                   {selectedTable} - Data Preview
@@ -300,7 +334,19 @@ export default function DataPreview() {
                 <Badge variant="outline" className="text-xs">
                   {preview?.table_type || "DIM"}
                 </Badge>
-              </div>
+              </div> */}
+
+              <div className="flex items-center justify-between mb-4 min-w-0">
+              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 min-w-0">
+                <TableIcon className="h-5 w-5 flex-shrink-0" />
+                <span className="truncate">
+                  {selectedTable} - Data Preview
+                </span>
+              </h3>
+              <Badge variant="outline" className="text-xs flex-shrink-0">
+                {preview?.table_type || "DIM"}
+              </Badge>
+            </div>
 
               <div className="flex gap-6 mb-4 text-sm">
                 <div>
@@ -380,7 +426,8 @@ export default function DataPreview() {
             Back
           </Button>
           <Button onClick={() => navigate("/workflow/data-creation")}>
-            Data Creation
+            Next: Data Creation
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </div>

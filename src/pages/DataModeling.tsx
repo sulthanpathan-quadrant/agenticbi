@@ -41,10 +41,10 @@ export default function DataModeling() {
         }
       } catch (error) {
         console.error("Error parsing modeling data:", error);
-        toast.error("Failed to load modeling data");
+        toast.error("Failed to load modeling data", { duration: 1000 });
       }
     } else {
-      toast.warning("No modeling data found. Redirecting to landing zone...");
+      toast.warning("No modeling data found. Redirecting to landing zone...", { duration: 1000 });
       setTimeout(() => navigate("/workflow/landing-zone"), 2000);
     }
 
@@ -55,7 +55,7 @@ export default function DataModeling() {
 
   const handleSchemaClick = async (tableName: string) => {
     if (!userId || !jobId) {
-      toast.error("Missing user or job information");
+      toast.error("Missing user or job information", { duration: 1000 });
       return;
     }
 
@@ -84,7 +84,7 @@ export default function DataModeling() {
         return; // Exit early, don't call API
       } catch (error) {
         console.error("Error loading fact table:", error);
-        toast.error("Failed to load fact table details");
+        toast.error("Failed to load fact table details", { duration: 1000 });
         setLoadingSchema(false);
         return;
       }
@@ -125,7 +125,7 @@ export default function DataModeling() {
 
     } catch (error: any) {
       console.error("Error fetching schema:", error);
-      toast.error(error.message || "Failed to load schema details");
+      toast.error(error.message || "Failed to load schema details" , { duration: 1000 });
 
       // Fallback: try to use data from modelingData
       const fallbackTable = modelingData?.tables?.find(
@@ -140,7 +140,7 @@ export default function DataModeling() {
           key: col.is_primary_key ? "PK" : col.is_foreign_key ? "FK" : "",
         }));
         setSchemaData(formattedData);
-        toast.info("Showing cached schema data");
+        toast.info("Showing cached schema data", { duration: 1000 });
       } else {
         setSchemaData([]);
       }
@@ -155,7 +155,7 @@ export default function DataModeling() {
 
   const handleSave = async () => {
     if (!userId || !jobId || !selectedSchema) {
-      toast.error("Missing required information");
+      toast.error("Missing required information", { duration: 1000 });
       return;
     }
 
@@ -198,7 +198,7 @@ export default function DataModeling() {
       }
 
       toast.dismiss("update-schema");
-      toast.success(`Schema updated! ${result.columns_updated || 0} column(s) modified`);
+      toast.success(`Schema updated! ${result.columns_updated || 0} column(s) modified`, { duration: 1000 });
       setIsEditing(false);
 
       await handleSchemaClick(selectedSchema);
@@ -206,7 +206,7 @@ export default function DataModeling() {
     } catch (error: any) {
       toast.dismiss("update-schema");
       console.error("Error updating schema:", error);
-      toast.error(error.message || "Failed to update schema");
+      toast.error(error.message || "Failed to update schema", { duration: 1000 });
     }
   };
 
@@ -218,7 +218,7 @@ export default function DataModeling() {
 
   const handleNextToDataPreview = async () => {
     if (!userId || !jobId) {
-      toast.error("Missing user or job information.");
+      toast.error("Missing user or job information." , { duration: 1000 });
       return;
     }
 
@@ -242,7 +242,7 @@ export default function DataModeling() {
       navigate("/workflow/data-preview");
     } catch (error: any) {
       console.error("Spark job error:", error);
-      toast.error(error.message || "Failed to run Spark job for data preview");
+      toast.error(error.message || "Failed to run Spark job for data preview", { duration: 1000 });
     } finally {
       setIsProcessing(false);
     }

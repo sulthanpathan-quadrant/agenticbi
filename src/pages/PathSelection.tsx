@@ -88,9 +88,6 @@ export default function PathSelection() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <Button size="lg">
-            Continue
-          </Button>
         </div>
       </div>
     </WorkflowLayout>

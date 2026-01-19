@@ -533,6 +533,147 @@
 //   if (!res.ok) throw new Error(result.detail || "Failed to update schema");
 //   return result;
 // };
+//  // ---------------- AGENT/THREAD APIs (MODELING_API) ----------------
+// export interface CreateThreadResponse {
+//   thread_id: string;
+// }
+
+// export interface AttachFileRequest {
+//   blob_path: string;
+// }
+
+// export const createThread = async (): Promise<CreateThreadResponse> => {
+//   const res = await fetch(`${MODELING_API}/create_thread`, {
+//     method: "POST",
+//     headers: {
+//       "Accept": "application/json",
+//       ...getAuthHeaders()
+//     },
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to create thread");
+//   return result;
+// };
+
+// export const attachFileToAgent = async (
+//   blobPath: string
+// ): Promise<string> => {
+//   const res = await fetch(`${MODELING_API}/attach_file_to_agent`, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       "Accept": "application/json",
+//       ...getAuthHeaders()
+//     },
+//     body: JSON.stringify({ blob_path: blobPath }),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to attach file to agent");
+//   return result;
+// };
+
+// // ---------------- SEND MESSAGE (MODELING_API) ----------------
+// export interface SendMessageRequest {
+//   thread_id: string;
+//   question: string;
+// }
+
+// export interface SendMessageResponse {
+//   responses: Array<{
+//     type: string;
+//     content: string;
+//   }>;
+// }
+
+// export const sendMessage = async (
+//   payload: SendMessageRequest
+// ): Promise<SendMessageResponse> => {
+//   const res = await fetch(`${MODELING_API}/send_message`, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       "Accept": "application/json",
+//       ...getAuthHeaders()
+//     },
+//     body: JSON.stringify(payload),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to send message");
+//   return result;
+// };
+// // ---------------- DOWNLOAD CHAT (MODELING_API) ----------------
+// export interface DownloadChatRequest {
+//   thread_id: string;
+// }
+
+// export const downloadChat = async (threadId: string): Promise<Blob> => {
+//   const res = await fetch(`${MODELING_API}/download_chat`, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       "Accept": "application/json",
+//       ...getAuthHeaders()
+//     },
+//     body: JSON.stringify({ thread_id: threadId }),
+//   });
+  
+//   if (!res.ok) {
+//     const error = await safeJsonParse(res);
+//     throw new Error(error.detail || "Failed to download chat");
+//   }
+  
+//   // Return the blob directly for file download
+//   return await res.blob();
+// };
+
+// // ---------------- DELETE THREAD (MODELING_API) ----------------
+// export interface DeleteThreadRequest {
+//   thread_id: string;
+// }
+
+// export interface DeleteThreadResponse {
+//   status: string;
+//   message: string;
+//   thread_id: string;
+// }
+
+// export const deleteThread = async (threadId: string): Promise<DeleteThreadResponse> => {
+//   const res = await fetch(`${MODELING_API}/delete_thread`, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       "Accept": "application/json",
+//       ...getAuthHeaders()
+//     },
+//     body: JSON.stringify({ thread_id: threadId }),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to delete thread");
+//   return result;
+// };
+
+// // ---------------- DELETE ALL FILES FROM AGENT (MODELING_API) ----------------
+// export interface DeleteAllFilesResponse {
+//   status: string;
+//   message: string;
+//   agent_id: string;
+//   files_deleted: number;
+//   remaining_files: number;
+// }
+
+// export const deleteAllFilesFromAgent = async (): Promise<DeleteAllFilesResponse> => {
+//   const res = await fetch(`${MODELING_API}/delete_all_files_from_agent`, {
+//     method: "POST",
+//     headers: {
+//       "Accept": "application/json",
+//       ...getAuthHeaders()
+//     },
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to delete files from agent");
+//   return result;
+// };
+
 
 const API_BASE_URL = "https://4.227.238.34";
 const MODELING_API_BASE = "https://20.81.213.147";
@@ -1209,3 +1350,30 @@ export const deleteAllFilesFromAgent = async (): Promise<DeleteAllFilesResponse>
   if (!res.ok) throw new Error(result.detail || "Failed to delete files from agent");
   return result;
 };
+// ---------------- FINALIZE DASHBOARD JSON (MODELING_API) ----------------
+export interface FinalizeDashboardRequest {
+  thread_id: string;
+}
+
+export interface FinalizeDashboardResponse {
+  // The response structure depends on what JSON the API returns
+  // Adjust this based on the actual successful response
+  [key: string]: any;
+}
+
+export async function finalizeDashboardJson(threadId: string): Promise<any> {
+  const response = await fetch(`https://20.81.213.147/finalize-dashboard-json`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ thread_id: threadId })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to finalize dashboard: ${response.statusText}`);
+  }
+
+  return response.json();
+}

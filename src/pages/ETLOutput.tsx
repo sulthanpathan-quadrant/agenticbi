@@ -20,56 +20,77 @@
 //   Calendar,
 //   Settings2,
 //   Loader2,
+//   X,
+//   Clock,
+//   Upload,
 // } from "lucide-react";
 // import { useNavigate } from "react-router-dom";
 // import { toast } from "@/hooks/use-toast";
 // import { AddBusinessRuleDialog } from "@/components/AddBusinessRuleDialog";
 // import { BusinessRuleValidationDialog } from "@/components/BusinessRuleValidationDialog";
 // import { BusinessRuleCompleteDialog } from "@/components/BusinessRuleCompleteDialog";
-// import { Dialog, DialogContent } from "@/components/ui/dialog";
+// import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 // import { Input } from "@/components/ui/input";
 // import { ScrollArea } from "@/components/ui/scroll-area";
- 
+// import { Label } from "@/components/ui/label";
+// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+
 // interface Column {
 //   name: string;
 //   table: string;
 //   type: string;
 // }
- 
+
 // interface CustomTable {
 //   name: string;
 //   columns: Column[];
 //   createdAt: string;
 // }
- 
+
 // interface BuiltDataset {
 //   name: string;
 //   columns: Column[];
 //   sampleRows: Record<string, any>[];
 // }
- 
+
 // type WorkflowStep =
 //   | "selection"
 //   | "build-dataset"
 //   | "dataset-preview"
 //   | "action-choice"
 //   | "business-rules";
- 
+
+// interface WorkflowSteps {
+//   dqRules: "skipped" | "executed";
+//   ner: "skipped" | "executed";
+//   businessLogic: "skipped" | "executed";
+//   dataTransformations: "skipped" | "executed";
+// }
+
+// const API_BASE = "https://4.227.238.34";
+
 // export default function ETLOutput() {
 //   const navigate = useNavigate();
 //   const [customTables, setCustomTables] = useState<CustomTable[]>([]);
 //   const [selectedTables, setSelectedTables] = useState<string[]>([]);
 //   const [workflowStep, setWorkflowStep] = useState<WorkflowStep>("selection");
- 
+
 //   // Build Dataset state
 //   const [collapsedTables, setCollapsedTables] = useState<Record<string, boolean>>({});
-//   const [customDatasetName, setCustomDatasetName] = useState("etl_dataset");
+//   const [customDatasetName, setCustomDatasetName] = useState("");
 //   const [selectedColumns, setSelectedColumns] = useState<Column[]>([]);
 //   const [draggedColumn, setDraggedColumn] = useState<Column | null>(null);
 //   const [builtDataset, setBuiltDataset] = useState<BuiltDataset | null>(null);
 //   const [showFullPreview, setShowFullPreview] = useState(false);
 //   const [fullPreviewData, setFullPreviewData] = useState<Record<string, any>[]>([]);
- 
+
 //   // Business rules state
 //   const [rules, setRules] = useState<any[]>([]);
 //   const [showAddRuleDialog, setShowAddRuleDialog] = useState(false);
@@ -78,26 +99,38 @@
 //   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
 //   const [editingRule, setEditingRule] = useState<number | null>(null);
 //   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
- 
+
+//   // Schedule Job dialog state
+//   const [triggerType, setTriggerType] = useState<"schedule" | "file">("schedule");
+//   const [frequency, setFrequency] = useState("");
+//   const [time, setTime] = useState("");
+//   const [jobName, setJobName] = useState("");
+//   const [workflowSteps, setWorkflowSteps] = useState<WorkflowSteps>({
+//     dqRules: "skipped",
+//     ner: "skipped",
+//     businessLogic: "skipped",
+//     dataTransformations: "skipped",
+//   });
+//   const [loading, setLoading] = useState(false);
+
 //   // Loading states
 //   const [isBuilding, setIsBuilding] = useState(false);
-//   const [isTransferring, setIsTransferring] = useState(false);
- 
+//   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
 //   const user_id = localStorage.getItem("user")
 //     ? JSON.parse(localStorage.getItem("user") || "{}").id
 //     : null;
 //   const job_id = localStorage.getItem("current_job_id");
- 
+
 //   useEffect(() => {
 //     const stored = localStorage.getItem("customCreatedTables");
 //     if (stored) {
 //       setCustomTables(JSON.parse(stored));
 //     } else {
-//       const sampleTables: CustomTable[] = [];
-//       setCustomTables(sampleTables);
+//       setCustomTables([]);
 //     }
 //   }, []);
- 
+
 //   // Fetch columns for all custom tables
 //   useEffect(() => {
 //     const fetchAllColumns = async () => {
@@ -125,68 +158,223 @@
 //       );
 //       setCustomTables(updatedTables);
 //     };
- 
+
 //     if (customTables.length > 0) fetchAllColumns();
-//   }, [customTables.length]);
- 
-//   // Fetch full preview data when dialog opens
+//   }, [customTables.length, user_id, job_id]);
+
+//   // Fetch preview data
+//   const fetchPreviewData = async (datasetName: string) => {
+//     if (!datasetName) return;
+
+//     setIsPreviewLoading(true);
+//     try {
+//       const response = await fetch(
+//         `https://20.81.213.147/preview-dataset?user_id=${user_id}&job_id=${job_id}&datasetname=${datasetName}`,
+//         { headers: { accept: "application/json" } }
+//       );
+
+//       if (!response.ok) throw new Error("Preview failed");
+
+//       const json = await response.json();
+//       const rows = json.preview_rows ?? json.rows ?? json ?? [];
+//       setFullPreviewData(Array.isArray(rows) ? rows : []);
+//     } catch (err) {
+//       console.error("Preview fetch error:", err);
+//       toast({
+//         title: "Preview Error",
+//         description: "Could not load dataset preview",
+//         variant: "destructive",
+//       });
+//       setFullPreviewData([]);
+//     } finally {
+//       setIsPreviewLoading(false);
+//     }
+//   };
+
 //   useEffect(() => {
-//     const fetchFullPreview = async () => {
-//       if (!showFullPreview || !builtDataset) return;
- 
-//       try {
-//         const response = await fetch(
-//           `https://20.81.213.147/preview-dataset?user_id=${user_id}&job_id=${job_id}&datasetname=${builtDataset.name}`,
-//           { headers: { accept: "application/json" } }
-//         );
-//         if (!response.ok) throw new Error("Failed to fetch full preview");
-//         const data = await response.json();
-//         const rows = data.preview_rows ?? data.rows ?? data ?? [];
-//         setFullPreviewData(Array.isArray(rows) ? rows : []);
-//       } catch (error) {
-//         console.error("Error fetching full preview:", error);
-//         toast({
-//           title: "Error",
-//           description: "Failed to load full preview data",
-//           variant: "destructive",
-//         });
-//         setFullPreviewData([]);
-//       }
-//     };
- 
-//     fetchFullPreview();
+//     if (showFullPreview && builtDataset) {
+//       fetchPreviewData(builtDataset.name);
+//     }
 //   }, [showFullPreview, builtDataset]);
- 
+
+//   // Load schedule job data from localStorage
+//   useEffect(() => {
+//     const etlJobName = localStorage.getItem("currentJobName");
+//     const etlTableName = localStorage.getItem("etlTableName");
+
+//     if (etlJobName) setJobName(etlJobName);
+//     else if (etlTableName) setJobName(`Job_${etlTableName}`);
+
+//     setWorkflowSteps({
+//       dqRules: localStorage.getItem("dqRulesStatus") === "executed" ? "executed" : "skipped",
+//       ner: localStorage.getItem("nerStatus") === "executed" ? "executed" : "skipped",
+//       businessLogic: localStorage.getItem("businessLogicStatus") === "executed" ? "executed" : "skipped",
+//       dataTransformations: "executed",
+//     });
+//   }, []);
+
+//   const getUserId = () => {
+//     const userStr = localStorage.getItem("user");
+//     if (!userStr) return null;
+//     try {
+//       const user = JSON.parse(userStr);
+//       return user?.id || user?.user_id;
+//     } catch {
+//       return null;
+//     }
+//   };
+
+//   const scheduleJob = async () => {
+//     if (triggerType === "schedule" && !frequency) {
+//       toast({
+//         variant: "destructive",
+//         title: "Validation Error",
+//         description: "Please select a frequency",
+//       });
+//       return;
+//     }
+
+//     const userId = getUserId();
+//     if (!userId) {
+//       toast({
+//         variant: "destructive",
+//         title: "Authentication Error",
+//         description: "User ID not found. Please log in.",
+//       });
+//       return;
+//     }
+
+//     setLoading(true);
+
+//     const payload = {
+//       job_id: job_id,
+//       job_name: jobName || `Job_${new Date().toISOString().split("T")[0]}`,
+//       schedule_details:
+//         triggerType === "schedule"
+//           ? {
+//               frequency: frequency,
+//               time: time || "00:00",
+//             }
+//           : null,
+//     };
+
+//     try {
+//       const url = `${API_BASE}/schedule-job?user_id=${userId}`;
+
+//       const response = await fetch(url, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(payload),
+//       });
+
+//       if (!response.ok) {
+//         const errorText = await response.text();
+//         throw new Error(errorText || `Server responded with status ${response.status}`);
+//       }
+
+//       const data = await response.json();
+
+//       if (data.message?.toLowerCase().includes("success")) {
+//         toast({
+//           title: "Success",
+//           description: data.message || "Job scheduled successfully!",
+//         });
+
+//         // Save to localStorage
+//         const savedJobs = localStorage.getItem("jobs");
+//         const jobs = savedJobs ? JSON.parse(savedJobs) : [];
+
+//         const newJob = {
+//           id: job_id,
+//           name: payload.job_name,
+//           category: "Unknown",
+//           createdAt: new Date().toLocaleString("en-US", {
+//             month: "short",
+//             day: "numeric",
+//             year: "numeric",
+//             hour: "numeric",
+//             minute: "2-digit",
+//             hour12: true,
+//           }),
+//           lastRun: "-",
+//           status: "Created" as const,
+//           steps: workflowSteps,
+//           sourceFilePath: "s3://ingestion-01/data.csv",
+//           destinationFilePath: "s3://output-bucket/data.csv",
+//           triggerType: triggerType === "schedule" ? "SCHEDULE" : "FILE_TRIGGER",
+//           scheduleDetails:
+//             triggerType === "schedule"
+//               ? `${frequency} at ${time || "00:00"}`
+//               : "On file upload",
+//         };
+
+//         localStorage.setItem("jobs", JSON.stringify([...jobs, newJob]));
+
+//         // Cleanup localStorage
+//         localStorage.removeItem("currentJobName");
+//         localStorage.removeItem("etlTableName");
+//         localStorage.removeItem("businessLogicStatus");
+//         localStorage.removeItem("dqRulesStatus");
+//         localStorage.removeItem("nerStatus");
+
+//         // Reset form fields
+//         setJobName("");
+//         setTriggerType("schedule");
+//         setFrequency("");
+//         setTime("");
+
+//         // Close dialog
+//         setShowScheduleDialog(false);
+
+//         // Navigate to jobs page
+//         navigate("/jobs");
+//       } else {
+//         throw new Error(data.message || "Scheduling failed");
+//       }
+//     } catch (err: any) {
+//       console.error("Schedule error:", err);
+//       toast({
+//         variant: "destructive",
+//         title: "Error",
+//         description: err.message || "Failed to schedule job",
+//       });
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
 //   const toggleTableSelection = (tableName: string) => {
 //     setSelectedTables((prev) =>
 //       prev.includes(tableName) ? prev.filter((t) => t !== tableName) : [...prev, tableName]
 //     );
 //   };
- 
+
 //   const handleCreateJob = () => {
 //     if (selectedTables.length === 0) return;
 //     setWorkflowStep("build-dataset");
 //   };
- 
+
 //   const getSelectedTablesData = () => {
 //     return customTables.filter((t) => selectedTables.includes(t.name));
 //   };
- 
+
 //   const toggleTableCollapse = (tableName: string) => {
 //     setCollapsedTables((prev) => ({
 //       ...prev,
 //       [tableName]: !prev[tableName],
 //     }));
 //   };
- 
+
 //   const handleDragStart = (column: Column) => {
 //     setDraggedColumn(column);
 //   };
- 
+
 //   const handleDragOver = (e: React.DragEvent) => {
 //     e.preventDefault();
 //   };
- 
+
 //   const handleDrop = (e: React.DragEvent) => {
 //     e.preventDefault();
 //     if (draggedColumn) {
@@ -204,7 +392,7 @@
 //     }
 //     setDraggedColumn(null);
 //   };
- 
+
 //   const handleAddColumn = (column: Column) => {
 //     const exists = selectedColumns.some(
 //       (col) => col.name === column.name && col.table === column.table
@@ -218,11 +406,11 @@
 //       });
 //     }
 //   };
- 
+
 //   const handleRemoveColumn = (index: number) => {
 //     setSelectedColumns(selectedColumns.filter((_, i) => i !== index));
 //   };
- 
+
 //   const handleSaveDataset = async () => {
 //     if (selectedColumns.length === 0) {
 //       toast({
@@ -232,103 +420,89 @@
 //       });
 //       return;
 //     }
- 
+
 //     setIsBuilding(true);
- 
-//     // Group columns by table/dataset
+
 //     const groups: Record<string, string[]> = {};
 //     selectedColumns.forEach((col) => {
 //       if (!groups[col.table]) groups[col.table] = [];
 //       groups[col.table].push(col.name);
 //     });
- 
+
 //     const selections = Object.entries(groups).map(([dataset_name, columns]) => ({
 //       dataset_name,
 //       columns,
 //     }));
- 
+
 //     const payload = {
 //       user_id,
 //       job_id,
 //       microdataset_name: customDatasetName,
 //       selections,
 //     };
- 
+
 //     try {
-//       // Step 1: Create microdataset
 //       const createResponse = await fetch("https://20.81.213.147/createmicrodataset", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(payload),
 //       });
- 
+
 //       if (!createResponse.ok) {
 //         const errorText = await createResponse.text();
 //         throw new Error(`Create failed: ${createResponse.status} - ${errorText}`);
 //       }
- 
-//       // Step 2: Immediately trigger transfer if create succeeded
+
 //       try {
 //         const transferResponse = await fetch(
 //           `https://20.81.213.147/transferfromonelaketoblob?user_id=${user_id}&job_id=${job_id}`,
 //           {
 //             method: "POST",
-//             headers: {
-//               "Content-Type": "application/json",
-//             },
+//             headers: { "Content-Type": "application/json" },
 //           }
 //         );
- 
+
 //         if (!transferResponse.ok) {
-//           console.warn("Transfer API failed, but dataset was created");
+//           console.warn("Transfer failed, but dataset created");
 //           toast({
 //             title: "Transfer Started (Background)",
-//             description: "Dataset created, but transfer to blob storage may be processing in background.",
+//             description: "Dataset created, transfer may be processing...",
 //           });
 //         } else {
 //           toast({
 //             title: "Transfer Started",
-//             description: "Data is being transferred to blob storage...",
+//             description: "Moving data to blob storage...",
 //             duration: 3000,
 //           });
 //         }
 //       } catch (transferErr) {
-//         console.error("Transfer API error (non-blocking):", transferErr);
-//         // Still consider dataset creation successful
+//         console.error("Transfer error (non-blocking):", transferErr);
 //       }
- 
-//       // Get preview
+
 //       const previewResponse = await fetch(
 //         `https://20.81.213.147/preview-dataset?user_id=${user_id}&job_id=${job_id}&datasetname=${customDatasetName}`,
 //         { headers: { accept: "application/json" } }
 //       );
- 
-//       if (!previewResponse.ok) {
-//         throw new Error(`Preview failed: ${previewResponse.status}`);
-//       }
- 
+
+//       if (!previewResponse.ok) throw new Error("Preview failed");
+
 //       const previewJson = await previewResponse.json();
- 
 //       let sampleRows: Record<string, any>[] = [];
-//       if (Array.isArray(previewJson)) {
-//         sampleRows = previewJson;
-//       } else if (previewJson?.preview_rows && Array.isArray(previewJson.preview_rows)) {
-//         sampleRows = previewJson.preview_rows;
-//       } else if (previewJson?.rows && Array.isArray(previewJson.rows)) {
-//         sampleRows = previewJson.rows;
-//       }
- 
+//       if (Array.isArray(previewJson)) sampleRows = previewJson;
+//       else if (previewJson?.preview_rows) sampleRows = previewJson.preview_rows;
+//       else if (previewJson?.rows) sampleRows = previewJson.rows;
+
 //       setBuiltDataset({
 //         name: customDatasetName,
 //         columns: selectedColumns,
 //         sampleRows,
 //       });
- 
+
 //       toast({
 //         title: "Dataset Built Successfully",
 //         description: `${customDatasetName} created • ${sampleRows.length} preview rows`,
 //       });
- 
+
 //       setWorkflowStep("dataset-preview");
 //     } catch (error) {
 //       console.error("Build dataset error:", error);
@@ -341,8 +515,55 @@
 //       setIsBuilding(false);
 //     }
 //   };
- 
-//   // Business Rules functions (unchanged)
+
+//   const handlePreviewSelectedTable = async () => {
+//     if (selectedTables.length === 0) {
+//       toast({
+//         title: "No Table Selected",
+//         description: "Please select at least one table first",
+//         variant: "destructive",
+//       });
+//       return;
+//     }
+
+//     const tableName = selectedTables[0];
+//     setIsPreviewLoading(true);
+
+//     try {
+//       const response = await fetch(
+//         `https://20.81.213.147/preview-dataset?user_id=${user_id}&job_id=${job_id}&datasetname=${tableName}`,
+//         { headers: { accept: "application/json" } }
+//       );
+
+//       if (!response.ok) throw new Error("Preview failed");
+
+//       const json = await response.json();
+//       let sampleRows: Record<string, any>[] = [];
+//       if (Array.isArray(json)) sampleRows = json;
+//       else if (json?.preview_rows) sampleRows = json.preview_rows;
+//       else if (json?.rows) sampleRows = json.rows;
+
+//       const table = customTables.find(t => t.name === tableName);
+//       const columns = table?.columns || [];
+
+//       setBuiltDataset({
+//         name: tableName,
+//         columns,
+//         sampleRows,
+//       });
+
+//       setWorkflowStep("dataset-preview");
+//     } catch (err) {
+//       toast({
+//         title: "Preview Failed",
+//         description: "Could not load preview for selected table",
+//         variant: "destructive",
+//       });
+//     } finally {
+//       setIsPreviewLoading(false);
+//     }
+//   };
+
 //   const handleAddRule = (rule: any) => {
 //     if (editingRule !== null) {
 //       const updatedRules = [...rules];
@@ -359,17 +580,17 @@
 //       duration: 1000,
 //     });
 //   };
- 
+
 //   const handleEditRule = (index: number) => {
 //     setEditingRule(index);
 //     setShowAddRuleDialog(true);
 //   };
- 
+
 //   const handleDeleteRule = (index: number) => {
 //     setRules(rules.filter((_, i) => i !== index));
 //     toast({ title: "Rule Deleted", description: "Business rule has been deleted", duration: 1000 });
 //   };
- 
+
 //   const handleRunAllRules = () => {
 //     if (rules.length === 0) return;
 //     setShowValidationDialog(true);
@@ -388,7 +609,7 @@
 //       });
 //     }, 200);
 //   };
- 
+
 //   const handleBack = () => {
 //     if (workflowStep === "business-rules") {
 //       setWorkflowStep("action-choice");
@@ -404,7 +625,7 @@
 //       setCustomDatasetName("etl_dataset");
 //     }
 //   };
- 
+
 //   return (
 //     <WorkflowLayout>
 //       <div className="p-8">
@@ -415,17 +636,19 @@
 //             <p className="text-muted-foreground">
 //               {workflowStep === "selection" && "Select datasets to create an ETL job"}
 //               {workflowStep === "build-dataset" && "Build your custom dataset by selecting columns"}
-//               {workflowStep === "dataset-preview" && "Preview your built dataset"}
+//               {workflowStep === "dataset-preview" && "Preview your dataset"}
 //               {workflowStep === "action-choice" && "Choose your next action"}
 //               {workflowStep === "business-rules" && "Apply business logic rules to your data"}
 //             </p>
 //           </div>
-//           <Button onClick={() => navigate("/workflow/data-creation")}>
-//             <Plus className="h-4 w-4 mr-2" />
-//             Create Dataset
-//           </Button>
+//           {workflowStep === "selection" && (
+//             <Button onClick={() => navigate("/workflow/data-creation")}>
+//               <Plus className="h-4 w-4 mr-2" />
+//               Create Dataset
+//             </Button>
+//           )}
 //         </div>
- 
+
 //         {customTables.length === 0 ? (
 //           <div className="flex flex-col items-center justify-center py-12">
 //             <div className="max-w-2xl text-center space-y-4">
@@ -506,7 +729,7 @@
 //                     <ArrowLeft className="h-4 w-4 mr-2" />
 //                     Back to Path Selection
 //                   </Button>
- 
+
 //                   {selectedTables.length > 0 && (
 //                     <Button onClick={handleCreateJob} size="lg">
 //                       <Play className="h-4 w-4 mr-2" />
@@ -516,7 +739,7 @@
 //                 </div>
 //               </div>
 //             )}
- 
+
 //             {/* Build Dataset Step */}
 //             {workflowStep === "build-dataset" && (
 //               <div className="space-y-6">
@@ -531,7 +754,7 @@
 //                     ))}
 //                   </p>
 //                 </div>
- 
+
 //                 <div className="grid grid-cols-[350px,1fr] gap-6">
 //                   {/* Left: Available Columns */}
 //                   <div className="space-y-4">
@@ -600,14 +823,14 @@
 //                       </div>
 //                     </ScrollArea>
 //                   </div>
- 
+
 //                   {/* Right: Your Custom Dataset */}
 //                   <div className="space-y-4">
 //                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
 //                       <Plus className="h-5 w-5" />
 //                       Your Custom Dataset
 //                     </h2>
- 
+
 //                     <div className="space-y-2">
 //                       <label className="text-sm font-medium text-foreground">Dataset Name</label>
 //                       <Input
@@ -617,7 +840,7 @@
 //                         className="bg-card border-border"
 //                       />
 //                     </div>
- 
+
 //                     <div
 //                       onDragOver={handleDragOver}
 //                       onDrop={handleDrop}
@@ -666,50 +889,76 @@
 //                         )}
 //                       </ScrollArea>
 //                     </div>
+
+//                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
+//                       <Button
+//                         variant="outline"
+//                         size="lg"
+//                         onClick={() => {
+//                           if (selectedTables.length > 0) {
+//                             handlePreviewSelectedTable();
+//                           } else {
+//                             toast({
+//                               title: "No Table Selected",
+//                               description: "Select a table first to preview",
+//                               variant: "destructive",
+//                             });
+//                           }
+//                         }}
+//                         disabled={isPreviewLoading}
+//                       >
+//                         {isPreviewLoading ? (
+//                           <>
+//                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                             Loading Preview...
+//                           </>
+//                         ) : (
+//                           <>
+//                             Next: Preview Selected Dataset
+//                           </>
+//                         )}
+//                       </Button>
+
+//                       <Button
+//                         variant="default"
+//                         size="lg"
+//                         className="bg-purple-600 hover:bg-purple-700 text-white flex-1"
+//                         disabled={selectedColumns.length === 0 || isBuilding}
+//                         onClick={handleSaveDataset}
+//                       >
+//                         {isBuilding ? (
+//                           <>
+//                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                             Saving...
+//                           </>
+//                         ) : (
+//                           <>
+//                             <Save className="mr-2 h-4 w-4" />
+//                             Save Custom Dataset
+//                           </>
+//                         )}
+//                       </Button>
+//                     </div>
 //                   </div>
-//                 </div>
- 
-//                 <div className="flex justify-between items-center pt-6 w-full">
-//                   <Button variant="outline" onClick={handleBack}>
-//                     <ArrowLeft className="h-4 w-4 mr-2" />
-//                     Back to Selection
-//                   </Button>
- 
-//                   <Button
-//                     variant="default"
-//                     size="lg"
-//                     className="bg-purple-600 hover:bg-purple-700 text-white min-w-[240px]"
-//                     disabled={selectedColumns.length === 0 || isBuilding}
-//                     onClick={handleSaveDataset}
-//                   >
-//                     {isBuilding ? (
-//                       <>
-//                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-//                         Saving...
-//                       </>
-//                     ) : (
-//                       <>
-//                         <Save className="mr-2 h-4 w-4" />
-//                         Save Custom Dataset
-//                       </>
-//                     )}
-//                   </Button>
 //                 </div>
 //               </div>
 //             )}
- 
+
 //             {/* Dataset Preview Step */}
-//             {workflowStep === "dataset-preview" && builtDataset && (
+//             {workflowStep === "dataset-preview" && (
 //               <div className="space-y-6">
 //                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-6">
 //                   <div className="flex items-center justify-between">
 //                     <div>
 //                       <p className="text-foreground">
 //                         <span className="font-semibold">Dataset: </span>
-//                         <span className="text-primary text-lg">{builtDataset.name}</span>
+//                         <span className="text-primary text-lg">
+//                           {builtDataset ? builtDataset.name : (selectedTables[0] || "No dataset selected")}
+//                         </span>
 //                       </p>
 //                       <p className="text-sm text-muted-foreground mt-1">
-//                         {builtDataset.columns.length} columns • {builtDataset.sampleRows.length} sample rows
+//                         {builtDataset?.columns.length || 0} columns •{" "}
+//                         {fullPreviewData.length} preview rows
 //                       </p>
 //                     </div>
 //                     <Button variant="outline" onClick={() => setShowFullPreview(true)}>
@@ -718,6 +967,59 @@
 //                     </Button>
 //                   </div>
 //                 </div>
+
+//                 {isPreviewLoading ? (
+//                   <div className="flex justify-center py-12">
+//                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
+//                   </div>
+//                 ) : fullPreviewData.length === 0 ? (
+//                   <div className="text-center py-12 text-muted-foreground">
+                 
+//                   </div>
+//                 ) : (
+//                   <div className="rounded-lg overflow-hidden ">
+//                     {/* <table className="w-full">
+//                       <thead className="bg-muted sticky top-0">
+//                         <tr>
+//                           {builtDataset?.columns.map((col) => (
+//                             <th
+//                               key={`preview-${col.name}`}
+//                               className="text-left p-4 text-sm font-medium text-foreground whitespace-nowrap border-b border-border"
+//                             >
+//                               <div>{col.name}</div>
+//                               <div className="text-xs text-muted-foreground">({col.table})</div>
+//                             </th>
+//                           ))}
+//                         </tr>
+//                       </thead>
+//                       <tbody>
+//                         {fullPreviewData.map((row, idx) => (
+//                           <tr
+//                             key={`preview-row-${idx}`}
+//                             className="border-b border-border last:border-0 hover:bg-muted/50"
+//                           >
+//                             {builtDataset?.columns.map((col) => (
+//                               <td
+//                                 key={`preview-${col.name}-${idx}`}
+//                                 className="p-4 text-sm text-foreground whitespace-nowrap"
+//                               >
+//                                 {String(row[col.name] ?? "-")}
+//                               </td>
+//                             ))}
+//                           </tr>
+//                         ))}
+//                         {fullPreviewData.length === 0 && (
+//                           <tr>
+//                             <td colSpan={builtDataset?.columns.length ?? 1} className="p-8 text-center text-muted-foreground">
+//                               No data available for preview
+//                             </td>
+//                           </tr>
+//                         )}
+//                       </tbody>
+//                     </table> */}
+//                   </div>
+//                 )}
+
 //                 <div className="flex justify-between">
 //                   <Button variant="outline" onClick={handleBack}>
 //                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -730,7 +1032,7 @@
 //                 </div>
 //               </div>
 //             )}
- 
+
 //             {/* Action Choice Step */}
 //             {workflowStep === "action-choice" && builtDataset && (
 //               <div className="space-y-6">
@@ -743,11 +1045,11 @@
 //                     </span>
 //                   </p>
 //                 </div>
- 
+
 //                 <div className="grid grid-cols-2 gap-6">
 //                   <div
 //                     className="border border-border rounded-lg p-6 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
-//                     onClick={() => navigate("/schedule-job")}
+//                     onClick={() => setShowScheduleDialog(true)}
 //                   >
 //                     <div className="flex items-center gap-3 mb-3">
 //                       <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -762,7 +1064,7 @@
 //                       Set up automated runs for your dataset. Choose frequency and timing.
 //                     </p>
 //                   </div>
- 
+
 //                   <div
 //                     className="border border-border rounded-lg p-6 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
 //                     onClick={() => setWorkflowStep("business-rules")}
@@ -781,7 +1083,7 @@
 //                     </p>
 //                   </div>
 //                 </div>
- 
+
 //                 <div className="flex justify-start">
 //                   <Button variant="outline" onClick={handleBack}>
 //                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -790,7 +1092,7 @@
 //                 </div>
 //               </div>
 //             )}
- 
+
 //             {/* Business Rules Step */}
 //             {workflowStep === "business-rules" && (
 //               <div className="space-y-6">
@@ -800,7 +1102,7 @@
 //                     <span className="text-primary">{builtDataset?.name}</span>
 //                   </p>
 //                 </div>
- 
+
 //                 <div className="flex justify-end gap-3">
 //                   <Button variant="outline" onClick={handleRunAllRules} disabled={rules.length === 0}>
 //                     <Play className="h-4 w-4 mr-2" />
@@ -816,7 +1118,7 @@
 //                     Add New Rule
 //                   </Button>
 //                 </div>
- 
+
 //                 <div className="border border-border rounded-lg p-6 bg-card">
 //                   {rules.length === 0 ? (
 //                     <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-lg">
@@ -858,7 +1160,7 @@
 //                     </div>
 //                   )}
 //                 </div>
- 
+
 //                 <div className="flex justify-start">
 //                   <Button variant="outline" onClick={handleBack}>
 //                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -869,7 +1171,7 @@
 //             )}
 //           </>
 //         )}
- 
+
 //         {/* Dialogs */}
 //         <AddBusinessRuleDialog
 //           open={showAddRuleDialog}
@@ -897,28 +1199,33 @@
 //           }}
 //           isETLFlow={true}
 //         />
- 
+
 //         {/* Full Preview Dialog */}
 //         <Dialog open={showFullPreview} onOpenChange={setShowFullPreview}>
 //           <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
-//             <div className="mb-4">
-//               <h2 className="text-2xl font-bold text-foreground">Full Data Preview</h2>
-//               <p className="text-muted-foreground mt-1">
-//                 Table: <span className="text-primary">{builtDataset?.name}</span> •{" "}
-//                 {builtDataset?.columns.length} columns × {fullPreviewData.length} rows
-//               </p>
+//             <div className="mb-4 flex justify-between items-center">
+//               <div>
+//                 <h2 className="text-2xl font-bold text-foreground">Full Data Preview</h2>
+//                 <p className="text-muted-foreground mt-1">
+//                   Table: <span className="text-primary">{builtDataset?.name}</span> •{" "}
+//                   {builtDataset?.columns.length} columns × {fullPreviewData.length} rows
+//                 </p>
+//               </div>
+//               <Button variant="ghost" size="icon" onClick={() => setShowFullPreview(false)}>
+//                 <X className="h-5 w-5" />
+//               </Button>
 //             </div>
 //             <div className="flex-1 overflow-auto border border-border rounded-lg">
 //               <table className="w-full">
-//                 <thead className="bg-muted/30 sticky top-0">
+//                 <thead className="sticky top-0 bg-primary/90 text-white">
 //                   <tr>
 //                     {builtDataset?.columns.map((col) => (
 //                       <th
 //                         key={`preview-${col.name}`}
-//                         className="text-left p-4 text-sm font-medium text-muted-foreground whitespace-nowrap border-b border-border"
+//                         className="text-left p-4 text-sm font-medium whitespace-nowrap border-b border-border"
 //                       >
 //                         <div>{col.name}</div>
-//                         <div className="text-xs text-muted-foreground/60">({col.table})</div>
+//                         <div className="text-xs opacity-80">({col.table})</div>
 //                       </th>
 //                     ))}
 //                   </tr>
@@ -927,7 +1234,7 @@
 //                   {fullPreviewData.map((row, idx) => (
 //                     <tr
 //                       key={`preview-row-${idx}`}
-//                       className="border-b border-border last:border-0 hover:bg-muted/30"
+//                       className="border-b border-border last:border-0 hover:bg-muted/50"
 //                     >
 //                       {builtDataset?.columns.map((col) => (
 //                         <td
@@ -949,8 +1256,120 @@
 //                 </tbody>
 //               </table>
 //             </div>
-//             <div className="flex justify-end mt-4">
-//               <Button onClick={() => setShowFullPreview(false)}>Close Preview</Button>
+//           </DialogContent>
+//         </Dialog>
+
+//         {/* Schedule Job Dialog */}
+//         <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+//           <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+//             <DialogHeader className="mb-6">
+//               <DialogTitle className="text-2xl font-bold">Schedule Job</DialogTitle>
+//               <p className="text-muted-foreground mt-1">
+//                 Configure how and when your job should run.
+//               </p>
+//             </DialogHeader>
+
+//             <div className="space-y-6">
+//               {/* Job Name */}
+//               <div className="space-y-2">
+//                 <Label>Job Name</Label>
+//                 <Input
+//                   value={jobName}
+//                   onChange={(e) => setJobName(e.target.value)}
+//                   placeholder="Enter job name"
+//                   className="bg-muted/40 rounded-lg"
+//                 />
+//               </div>
+
+//               {/* Trigger Type */}
+//               <div className="mb-6 space-y-3">
+//                 <Label>Trigger Type</Label>
+//                 <RadioGroup
+//                   value={triggerType}
+//                   onValueChange={(value) => setTriggerType(value as "schedule" | "file")}
+//                   className="grid grid-cols-1 gap-3"
+//                 >
+//                   <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/30 transition">
+//                     <RadioGroupItem value="schedule" id="schedule" />
+//                     <Label htmlFor="schedule" className="flex items-center gap-2 cursor-pointer">
+//                       <Clock className="w-4 h-4" /> Time-based Schedule
+//                     </Label>
+//                   </div>
+//                   {/* <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/30 transition">
+//                     <RadioGroupItem value="file" id="file" />
+//                     <Label htmlFor="file" className="flex items-center gap-2 cursor-pointer">
+//                       <Upload className="w-4 h-4" /> File Upload Trigger
+//                     </Label>
+//                   </div> */}
+//                 </RadioGroup>
+//               </div>
+
+//               {/* Schedule Fields */}
+//               {triggerType === "schedule" && (
+//                 <div className="grid grid-cols-2 gap-6 mb-6">
+//                   <div className="space-y-2">
+//                     <Label>Frequency</Label>
+//                     <Select value={frequency} onValueChange={setFrequency}>
+//                       <SelectTrigger className="rounded-lg bg-muted/40">
+//                         <SelectValue placeholder="Select" />
+//                       </SelectTrigger>
+//                       <SelectContent>
+//                         <SelectItem value="daily">Daily</SelectItem>
+//                         <SelectItem value="weekly">Weekly</SelectItem>
+//                         <SelectItem value="monthly">Monthly</SelectItem>
+//                         <SelectItem value="hourly">Hourly</SelectItem>
+//                       </SelectContent>
+//                     </Select>
+//                   </div>
+
+//                   <div className="space-y-2">
+//                     <Label>Time</Label>
+//                     <div className="relative">
+//                       <Input
+//                         type="time"
+//                         value={time}
+//                         onChange={(e) => setTime(e.target.value)}
+//                         className="rounded-lg bg-muted/40 pr-10"
+//                       />
+//                       {/* <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /> */}
+//                     </div>
+//                   </div>
+//                 </div>
+//               )}
+
+//               {/* File Trigger Info */}
+//               {triggerType === "file" && (
+//                 <div className="mb-6 p-4 rounded-lg bg-muted/40 border text-sm">
+//                   This job will automatically trigger when a new file is uploaded.
+//                 </div>
+//               )}
+
+//               {/* Buttons */}
+//               <div className="flex gap-4 pt-4">
+//                 <Button
+//                   variant="outline"
+//                   className="flex-1 rounded-lg"
+//                   onClick={() => setShowScheduleDialog(false)}
+//                   disabled={loading}
+//                 >
+//                   Cancel
+//                 </Button>
+
+//                 <Button
+//                   className="flex-1 rounded-lg"
+//                   onClick={scheduleJob}
+//                   disabled={loading}
+//                 >
+//                   {loading ? (
+//                     <>
+//                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                       Scheduling...
+//                     </>
+//                   ) : (
+//                     "Schedule Job"
+//                   )}
+//                 </Button>
+//               </div>
 //             </div>
 //           </DialogContent>
 //         </Dialog>
@@ -958,7 +1377,6 @@
 //     </WorkflowLayout>
 //   );
 // }
- 
 
 import { useState, useEffect } from "react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
@@ -982,15 +1400,27 @@ import {
   Calendar,
   Settings2,
   Loader2,
+  X,
+  Clock,
+  Upload,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { AddBusinessRuleDialog } from "@/components/AddBusinessRuleDialog";
 import { BusinessRuleValidationDialog } from "@/components/BusinessRuleValidationDialog";
 import { BusinessRuleCompleteDialog } from "@/components/BusinessRuleCompleteDialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Column {
   name: string;
@@ -1017,6 +1447,15 @@ type WorkflowStep =
   | "action-choice"
   | "business-rules";
 
+interface WorkflowSteps {
+  dqRules: "skipped" | "executed";
+  ner: "skipped" | "executed";
+  businessLogic: "skipped" | "executed";
+  dataTransformations: "skipped" | "executed";
+}
+
+const API_BASE = "https://4.227.238.34";
+
 export default function ETLOutput() {
   const navigate = useNavigate();
   const [customTables, setCustomTables] = useState<CustomTable[]>([]);
@@ -1040,6 +1479,19 @@ export default function ETLOutput() {
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [editingRule, setEditingRule] = useState<number | null>(null);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+
+  // Schedule Job dialog state
+  const [triggerType, setTriggerType] = useState<"schedule" | "file">("schedule");
+  const [frequency, setFrequency] = useState("");
+  const [time, setTime] = useState("");
+  const [jobName, setJobName] = useState("");
+  const [workflowSteps, setWorkflowSteps] = useState<WorkflowSteps>({
+    dqRules: "skipped",
+    ner: "skipped",
+    businessLogic: "skipped",
+    dataTransformations: "skipped",
+  });
+  const [loading, setLoading] = useState(false);
 
   // Loading states
   const [isBuilding, setIsBuilding] = useState(false);
@@ -1088,9 +1540,9 @@ export default function ETLOutput() {
     };
 
     if (customTables.length > 0) fetchAllColumns();
-  }, [customTables.length]);
+  }, [customTables.length, user_id, job_id]);
 
-  // Fetch preview data (for either built or selected dataset)
+  // Fetch preview data
   const fetchPreviewData = async (datasetName: string) => {
     if (!datasetName) return;
 
@@ -1124,6 +1576,154 @@ export default function ETLOutput() {
       fetchPreviewData(builtDataset.name);
     }
   }, [showFullPreview, builtDataset]);
+
+  // Load schedule job data from localStorage
+  useEffect(() => {
+    const etlJobName = localStorage.getItem("currentJobName");
+    const etlTableName = localStorage.getItem("etlTableName");
+
+    if (etlJobName) setJobName(etlJobName);
+    else if (etlTableName) setJobName(`Job_${etlTableName}`);
+
+    setWorkflowSteps({
+      dqRules: localStorage.getItem("dqRulesStatus") === "executed" ? "executed" : "skipped",
+      ner: localStorage.getItem("nerStatus") === "executed" ? "executed" : "skipped",
+      businessLogic: localStorage.getItem("businessLogicStatus") === "executed" ? "executed" : "skipped",
+      dataTransformations: "executed",
+    });
+  }, []);
+
+  const getUserId = () => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return null;
+    try {
+      const user = JSON.parse(userStr);
+      return user?.id || user?.user_id;
+    } catch {
+      return null;
+    }
+  };
+
+  const scheduleJob = async () => {
+    if (triggerType === "schedule" && !frequency) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please select a frequency",
+      });
+      return;
+    }
+
+    const userId = getUserId();
+    if (!userId) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "User ID not found. Please log in.",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    const payload = {
+      job_id: job_id,
+      job_name: jobName || `Job_${new Date().toISOString().split("T")[0]}`,
+      schedule_details:
+        triggerType === "schedule"
+          ? {
+              frequency: frequency,
+              time: time || "00:00",
+            }
+          : null,
+    };
+
+    try {
+      const url = `${API_BASE}/schedule-job?user_id=${userId}`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Server responded with status ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.message?.toLowerCase().includes("success")) {
+        toast({
+          title: "Success",
+          description: data.message || "Job scheduled successfully!",
+        });
+
+        // Save to localStorage
+        const savedJobs = localStorage.getItem("jobs");
+        const jobs = savedJobs ? JSON.parse(savedJobs) : [];
+
+        const newJob = {
+          id: job_id,
+          name: payload.job_name,
+          category: "Unknown",
+          createdAt: new Date().toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          }),
+          lastRun: "-",
+          status: "Created" as const,
+          steps: workflowSteps,
+          sourceFilePath: "s3://ingestion-01/data.csv",
+          destinationFilePath: "s3://output-bucket/data.csv",
+          triggerType: triggerType === "schedule" ? "SCHEDULE" : "FILE_TRIGGER",
+          scheduleDetails:
+            triggerType === "schedule"
+              ? `${frequency} at ${time || "00:00"}`
+              : "On file upload",
+        };
+
+        localStorage.setItem("jobs", JSON.stringify([...jobs, newJob]));
+
+        // Cleanup localStorage
+        localStorage.removeItem("currentJobName");
+        localStorage.removeItem("etlTableName");
+        localStorage.removeItem("businessLogicStatus");
+        localStorage.removeItem("dqRulesStatus");
+        localStorage.removeItem("nerStatus");
+
+        // Reset form fields
+        setJobName("");
+        setTriggerType("schedule");
+        setFrequency("");
+        setTime("");
+
+        // Close dialog
+        setShowScheduleDialog(false);
+
+        // Navigate to jobs page
+        navigate("/jobs");
+      } else {
+        throw new Error(data.message || "Scheduling failed");
+      }
+    } catch (err: any) {
+      console.error("Schedule error:", err);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to schedule job",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleTableSelection = (tableName: string) => {
     setSelectedTables((prev) =>
@@ -1233,7 +1833,6 @@ export default function ETLOutput() {
         throw new Error(`Create failed: ${createResponse.status} - ${errorText}`);
       }
 
-      // Trigger transfer (non-blocking)
       try {
         const transferResponse = await fetch(
           `https://20.81.213.147/transferfromonelaketoblob?user_id=${user_id}&job_id=${job_id}`,
@@ -1260,7 +1859,6 @@ export default function ETLOutput() {
         console.error("Transfer error (non-blocking):", transferErr);
       }
 
-      // Fetch preview of the newly created dataset
       const previewResponse = await fetch(
         `https://20.81.213.147/preview-dataset?user_id=${user_id}&job_id=${job_id}&datasetname=${customDatasetName}`,
         { headers: { accept: "application/json" } }
@@ -1298,7 +1896,6 @@ export default function ETLOutput() {
     }
   };
 
-  // New: Preview selected table (when no custom built yet)
   const handlePreviewSelectedTable = async () => {
     if (selectedTables.length === 0) {
       toast({
@@ -1309,7 +1906,6 @@ export default function ETLOutput() {
       return;
     }
 
-    // Use the first selected table for preview
     const tableName = selectedTables[0];
     setIsPreviewLoading(true);
 
@@ -1327,7 +1923,6 @@ export default function ETLOutput() {
       else if (json?.preview_rows) sampleRows = json.preview_rows;
       else if (json?.rows) sampleRows = json.rows;
 
-      // Fake columns from selected table (or fetch real ones if needed)
       const table = customTables.find(t => t.name === tableName);
       const columns = table?.columns || [];
 
@@ -1349,7 +1944,6 @@ export default function ETLOutput() {
     }
   };
 
-  // Business Rules functions (unchanged)
   const handleAddRule = (rule: any) => {
     if (editingRule !== null) {
       const updatedRules = [...rules];
@@ -1432,6 +2026,39 @@ export default function ETLOutput() {
               <Plus className="h-4 w-4 mr-2" />
               Create Dataset
             </Button>
+          )}
+          {workflowStep === "build-dataset" && (
+             <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                           <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => {
+                          if (selectedTables.length > 0) {
+                            handlePreviewSelectedTable();
+                          } else {
+                            toast({
+                              title: "No Table Selected",
+                              description: "Select a table first to preview",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={isPreviewLoading}
+                      >
+                        {isPreviewLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Loading Preview...
+                          </>
+                        ) : (
+                          <>
+                            Next: Preview Selected Dataset
+                          </>
+                        )}
+                      </Button>
+
+                      
+                     </div>
           )}
         </div>
 
@@ -1529,6 +2156,7 @@ export default function ETLOutput() {
             {/* Build Dataset Step */}
             {workflowStep === "build-dataset" && (
               <div className="space-y-6">
+                 
                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                   <p className="text-sm text-foreground">
                     <span className="font-semibold">Building from: </span>
@@ -1608,6 +2236,15 @@ export default function ETLOutput() {
                         ))}
                       </div>
                     </ScrollArea>
+                    <div >
+                      <div className=" top-20 flex mt-20 ">
+                        <Button variant="outline" onClick={handleBack}>
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                          Back
+                      </Button>
+                      </div>
+                          
+                       </div>
                   </div>
 
                   {/* Right: Your Custom Dataset */}
@@ -1676,14 +2313,16 @@ export default function ETLOutput() {
                       </ScrollArea>
                     </div>
 
-                    {/* Buttons: Next + Save */}
-                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                      <Button
+                    <div className="flex justify-between " >
+                       
+                        
+                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                           {/* <Button
                         variant="outline"
                         size="lg"
                         onClick={() => {
                           if (selectedTables.length > 0) {
-                            handlePreviewSelectedTable(); // preview selected table
+                            handlePreviewSelectedTable();
                           } else {
                             toast({
                               title: "No Table Selected",
@@ -1702,10 +2341,9 @@ export default function ETLOutput() {
                         ) : (
                           <>
                             Next: Preview Selected Dataset
-                            {/* <Eye className="ml-2 h-4 w-4" /> */}
                           </>
                         )}
-                      </Button>
+                      </Button> */}
 
                       <Button
                         variant="default"
@@ -1726,6 +2364,8 @@ export default function ETLOutput() {
                           </>
                         )}
                       </Button>
+                     </div>
+                      
                     </div>
                   </div>
                 </div>
@@ -1762,14 +2402,49 @@ export default function ETLOutput() {
                   </div>
                 ) : fullPreviewData.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    
+                    {/* No preview data available */}
                   </div>
                 ) : (
-                  <div className=" rounded-lg overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-muted">
+                  <div className="rounded-lg overflow-hidden">
+                    {/* <table className="w-full">
+                      <thead className="bg-muted sticky top-0">
+                        <tr>
+                          {builtDataset?.columns.map((col) => (
+                            <th
+                              key={`preview-${col.name}`}
+                              className="text-left p-4 text-sm font-medium text-foreground whitespace-nowrap border-b border-border"
+                            >
+                              <div>{col.name}</div>
+                              <div className="text-xs text-muted-foreground">({col.table})</div>
+                            </th>
+                          ))}
+                        </tr>
                       </thead>
-                    </table>
+                      <tbody>
+                        {fullPreviewData.map((row, idx) => (
+                          <tr
+                            key={`preview-row-${idx}`}
+                            className="border-b border-border last:border-0 hover:bg-muted/50"
+                          >
+                            {builtDataset?.columns.map((col) => (
+                              <td
+                                key={`preview-${col.name}-${idx}`}
+                                className="p-4 text-sm text-foreground whitespace-nowrap"
+                              >
+                                {String(row[col.name] ?? "-")}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                        {fullPreviewData.length === 0 && (
+                          <tr>
+                            <td colSpan={builtDataset?.columns.length ?? 1} className="p-8 text-center text-muted-foreground">
+                              No data available for preview
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table> */}
                   </div>
                 )}
 
@@ -1802,7 +2477,7 @@ export default function ETLOutput() {
                 <div className="grid grid-cols-2 gap-6">
                   <div
                     className="border border-border rounded-lg p-6 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
-                    onClick={() => navigate("/schedule-job")}
+                    onClick={() => setShowScheduleDialog(true)}
                   >
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -1956,30 +2631,29 @@ export default function ETLOutput() {
         {/* Full Preview Dialog */}
         <Dialog open={showFullPreview} onOpenChange={setShowFullPreview}>
           <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="mb-4 flex justify-between">
+            <div className="mb-4 flex justify-between items-center">
               <div>
-              <h2 className="text-2xl font-bold text-foreground">Full Data Preview</h2>
-              <p className="text-muted-foreground mt-1">
-                Table: <span className="text-primary">{builtDataset?.name}</span> •{" "}
-                {builtDataset?.columns.length} columns × {fullPreviewData.length} rows
-              </p>
+                <h2 className="text-2xl font-bold text-foreground">Full Data Preview</h2>
+                <p className="text-muted-foreground mt-1">
+                  Table: <span className="text-primary">{builtDataset?.name}</span> •{" "}
+                  {builtDataset?.columns.length} columns × {fullPreviewData.length} rows
+                </p>
               </div>
-               <div className="">
-              <Button onClick={() => setShowFullPreview(false)}>X</Button>
-            </div>
-               
+              <Button variant="ghost" size="icon" onClick={() => setShowFullPreview(false)}>
+                <X className="h-5 w-5" />
+              </Button>
             </div>
             <div className="flex-1 overflow-auto border border-border rounded-lg">
               <table className="w-full">
-                <thead className=" sticky bg-primary/100 top-0">
+                <thead className="sticky top-0 bg-primary/100 text-white">
                   <tr>
                     {builtDataset?.columns.map((col) => (
                       <th
                         key={`preview-${col.name}`}
-                        className="text-left p-4 text-sm font-medium text-white whitespace-nowrap border-b border-border"
+                        className="text-left p-4 text-sm font-medium whitespace-nowrap border-b border-border"
                       >
                         <div>{col.name}</div>
-                        <div className="text-xs text-white">({col.table})</div>
+                        <div className="text-xs opacity-80">({col.table})</div>
                       </th>
                     ))}
                   </tr>
@@ -1993,7 +2667,7 @@ export default function ETLOutput() {
                       {builtDataset?.columns.map((col) => (
                         <td
                           key={`preview-${col.name}-${idx}`}
-                          className="p-4 text-re text-sm text-foreground whitespace-nowrap"
+                          className="p-4 text-sm text-foreground whitespace-nowrap"
                         >
                           {String(row[col.name] ?? "-")}
                         </td>
@@ -2010,7 +2684,121 @@ export default function ETLOutput() {
                 </tbody>
               </table>
             </div>
-             
+          </DialogContent>
+        </Dialog>
+
+        {/* Schedule Job Dialog */}
+        <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+            <DialogHeader className="mb-6">
+              <DialogTitle className="text-2xl font-bold">Schedule Job</DialogTitle>
+              <p className="text-muted-foreground mt-1">
+                Configure how and when your job should run.
+              </p>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Job Name */}
+              <div className="space-y-2">
+                <Label>Job Name</Label>
+                <Input
+                  value={jobName}
+                  onChange={(e) => setJobName(e.target.value)}
+                  placeholder="Enter job name"
+                  className="bg-muted/40 rounded-lg"
+                />
+              </div>
+
+              {/* Trigger Type */}
+              <div className="mb-6 space-y-3">
+                <Label>Trigger Type</Label>
+                <RadioGroup
+                  value={triggerType}
+                  onValueChange={(value) => setTriggerType(value as "schedule" | "file")}
+                  className="grid grid-cols-1 gap-3"
+                >
+                  <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/30 transition">
+                    <RadioGroupItem value="schedule" id="schedule" />
+                    <Label htmlFor="schedule" className="flex items-center gap-2 cursor-pointer">
+                      <Clock className="w-4 h-4" /> Time-based Schedule
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/30 transition">
+                    <RadioGroupItem value="file" id="file" />
+                    <Label htmlFor="file" className="flex items-center gap-2 cursor-pointer">
+                      <Upload className="w-4 h-4" /> File Upload Trigger
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Schedule Fields */}
+              {triggerType === "schedule" && (
+                <div className="grid grid-cols-2 gap-6 mb-6">
+                  <div className="space-y-2">
+                    <Label>Frequency</Label>
+                    <Select value={frequency} onValueChange={setFrequency}>
+                      <SelectTrigger className="rounded-lg bg-muted/40">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="hourly">Hourly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Time</Label>
+                    <div className="relative">
+                      <Input
+                        type="time"
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        className="rounded-lg bg-muted/40 pr-10"
+                      />
+                      <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* File Trigger Info */}
+              {triggerType === "file" && (
+                <div className="mb-6 p-4 rounded-lg bg-muted/40 border text-sm">
+                  This job will automatically trigger when a new file is uploaded.
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="flex gap-4 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-lg"
+                  onClick={() => setShowScheduleDialog(false)}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  className="flex-1 rounded-lg"
+                  onClick={scheduleJob}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Scheduling...
+                    </>
+                  ) : (
+                    "Schedule Job"
+                  )}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

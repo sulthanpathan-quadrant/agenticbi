@@ -1,5 +1,3 @@
-// 
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -62,7 +60,7 @@ const CreatePipeline = () => {
  
   // Get user_id
   const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") || "{}") : {};
-  const userId = user?.id || user?.user_id || "661ff9b1-6f16-4276-a393-bb13aec8f9a4";
+  const userId = user?.id || user?.user_id ;
  
   // Fetch ALL available jobs (sidebar)
   useEffect(() => {
@@ -376,20 +374,57 @@ const CreatePipeline = () => {
             ) : filteredJobs.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground">No jobs found</div>
             ) : (
-              filteredJobs.map((job) => (
-                <Card
-                  key={job.id}
-                  className="p-3 cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-l-primary"
-                  onClick={() => addJobToCanvas(job)}
-                >
-                  <p className="font-medium text-sm">{job.name}</p>
-                  <p className="text-xs text-muted-foreground">{job.category}</p>
-                  <Badge variant="secondary" className="mt-1 text-xs">
-                    {job.stages} stages
-                  </Badge>
-                </Card>
-              ))
-            )}
+              // filteredJobs.map((job) => (
+              //   <Card
+              //     key={job.id}
+              //     className="p-3 cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-l-primary"
+              //     onClick={() => addJobToCanvas(job)}
+              //   >
+              //     <p className="font-medium text-sm">{job.name}</p>
+              //     <p className="text-xs text-muted-foreground">{job.category}</p>
+              //     <Badge variant="secondary" className="mt-1 text-xs">
+              //       {job.stages} stages
+              //     </Badge>
+              //   </Card>
+
+                filteredJobs.map((job) => {
+                const isAlreadyAdded = canvasJobs.some((j) => j.id === job.id);
+
+                return (
+                  <Card
+                    key={job.id}
+                    className={`
+                      p-3 hover:bg-muted/50 transition-colors 
+                      border-l-4 border-l-primary flex items-center justify-between gap-3 group
+                      ${isAlreadyAdded ? "opacity-60" : ""}
+                    `}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{job.name}</p>
+                      <p className="text-xs text-muted-foreground">{job.category}</p>
+                      <Badge variant="secondary" className="mt-1 text-xs inline-block">
+                        {job.stages} stages
+                      </Badge>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => !isAlreadyAdded && addJobToCanvas(job)}
+                      disabled={isAlreadyAdded}
+                      className={`
+                        flex items-center justify-center h-8 w-8 rounded-md
+                        ${isAlreadyAdded 
+                          ? "opacity-40 cursor-not-allowed text-muted-foreground" 
+                          : "text-primary hover:bg-primary/10 group-hover:text-primary/90 transition-colors"}
+                      `}
+                      title={isAlreadyAdded ? "Already added to canvas" : "Add to pipeline"}
+                    >
+                      <Plus className="h-5 w-5" />
+                    </button>
+                  </Card>
+              )}
+            ))}
+            
           </div>
         </div>
  
@@ -402,7 +437,7 @@ const CreatePipeline = () => {
             <Plus className="w-4 h-4" /> Click jobs from sidebar to add, click blue dots to connect
           </div>
  
-          <div
+          {/* <div
             ref={canvasRef}
             className="absolute inset-0 overflow-auto"
             style={{
@@ -412,7 +447,20 @@ const CreatePipeline = () => {
               `,
               backgroundSize: "20px 20px",
             }}
-          >
+          > */}
+
+         <div
+  ref={canvasRef}
+  className={`
+    absolute inset-0 overflow-auto
+    bg-[#f8f9fb] dark:bg-[#0f1117]
+    [background-image:linear-gradient(to_right,hsl(220_13%_91%_/_0.8)_1px,transparent_1px),linear-gradient(to_bottom,hsl(220_13%_91%_/_0.8)_1px,transparent_1px)]
+    dark:[background-image:linear-gradient(to_right,hsl(220_20%_30%_/_0.5)_1px,transparent_1px),linear-gradient(to_bottom,hsl(220_20%_30%_/_0.5)_1px,transparent_1px)]
+  `}
+  style={{ backgroundSize: "20px 20px" }}
+>
+
+
             <svg className="absolute inset-0 pointer-events-none" style={{ minWidth: "2000px", minHeight: "1200px" }}>
               <defs>
                 <marker

@@ -1,4 +1,4 @@
-// import { useState, useEffect } from "react";
+//  import { useState, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
 // import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@
 // import { AnalysisCompleteDialog } from "@/components/AnalysisCompleteDialog";
 // import { QuickFixDialog } from "@/components/QuickFixDialog";
 // import { toast } from "sonner";
+// import { ArrowLeft, ArrowRight, Plus, Save, Table as TableIcon, ChevronDown, ChevronUp, History, LayoutGrid,SkipForward  } from "lucide-react";
  
 // interface DQRule {
 //   name: string;
@@ -161,16 +162,16 @@
  
 //     // 2. Then proceed with rule generation
 //     const blobPaths = getSelectedBlobPaths();
-//     console.log("Generating rules for files:", blobPaths);
+//     console.log("Generating rules for files:",blobPaths[0]);
  
 //     const payload = {
 //       input_type: "azure",
-//       azure_blob_path: blobPaths[0], // still using first file (can be extended later)
+//       azure_blob_path:blobPaths[0], // still using first file (can be extended later)
 //     };
- 
+  
 //     try {
 //       const response = await fetch(
-//         "https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/run-dq-rules-generation",
+//         "https://20.81.213.147/run-dq-rules-generation",
 //         {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
@@ -226,7 +227,9 @@
  
 //     try {
 //       const response = await fetch(
-//         "https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/run_dq_validation",
+//         // "https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/run_dq_validation",
+//           "https://20.81.213.147/run-dq-validation",
+
 //         {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
@@ -281,7 +284,11 @@
  
 //     try {
 //       const response = await fetch(
-//         "https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/run_dq_fixing",
+//         // "https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/run_dq_fixing",
+
+
+//         "https://20.81.213.147/run-dq-fixing",
+
 //         {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
@@ -609,57 +616,71 @@
 //         onContinue={handleQuickFixContinue}
 //         fixMessage={fixResult?.message}
 //       />
+//       <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
+//           <Button variant="outline" onClick={() => navigate("/workflow/data-creation")}>
+//             <ArrowLeft className="mr-2 h-4 w-4" />
+//             Back to Create Dataset
+//           </Button>
+ 
+//           <Button onClick={()=>navigate("/workflow/ner")}  
+ 
+//             className="bg-primary hover:bg-primary/90"
+         
+//           >
+//             <SkipForward className="h-4 w-4" />
+//             Skip
+//             {/* <ArrowRight className="ml-2 h-4 w-4" /> */}
+//           </Button>
+//         </div>
 //     </WorkflowLayout>
 //   );
 // }
- 
- 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
-import { Database, Edit, Trash2, Loader2 } from "lucide-react";
+import { Database, Edit, Trash2, Loader2, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ValidationProgressDialog } from "@/components/ValidationProgressDialog";
 import { ValidationCompleteDialog } from "@/components/ValidationCompleteDialog";
 import { AnalysisCompleteDialog } from "@/components/AnalysisCompleteDialog";
 import { QuickFixDialog } from "@/components/QuickFixDialog";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Plus, Save, Table as TableIcon, ChevronDown, ChevronUp, History, LayoutGrid,SkipForward  } from "lucide-react";
- 
+import { ArrowLeft, ArrowRight, Plus, Save, Table as TableIcon, ChevronDown, ChevronUp, History, LayoutGrid, SkipForward } from "lucide-react";
+
 interface DQRule {
   name: string;
   type: string;
   condition: string;
 }
- 
+
 interface ValidationResult {
   rules_passed: number;
   rules_failed: number;
   issues: Record<string, any>;
   proposed_solutions: Record<string, string>;
 }
- 
+
 interface FixResult {
   success: boolean;
   message: string;
 }
- 
+
 interface DatasetFile {
   filename: string;
   last_modified: string;
 }
- 
+
 export default function DataQuality() {
   const navigate = useNavigate();
- 
+
   const [files, setFiles] = useState<DatasetFile[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [rulesGenerated, setRulesGenerated] = useState(false);
   const [dataQualityRules, setDataQualityRules] = useState<DQRule[]>([]);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [fixResult, setFixResult] = useState<FixResult | null>(null);
- 
+
   const [validationProgress, setValidationProgress] = useState(0);
   const [showValidationProgress, setShowValidationProgress] = useState(false);
   const [showValidationComplete, setShowValidationComplete] = useState(false);
@@ -667,26 +688,40 @@ export default function DataQuality() {
   const [showQuickFix, setShowQuickFix] = useState(false);
   const [quickFixProgress, setQuickFixProgress] = useState(0);
   const [quickFixComplete, setQuickFixComplete] = useState(false);
- 
+
   const [editingRuleIndex, setEditingRuleIndex] = useState<number | null>(null);
   const [editedRule, setEditedRule] = useState<DQRule | null>(null);
   const [generating, setGenerating] = useState(false);
   const [validating, setValidating] = useState(false);
   const [fixing, setFixing] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(true);
- 
+
   const user = localStorage.getItem("user");
   const userId = user ? JSON.parse(user).id : null;
   const jobId = localStorage.getItem("current_job_id");
- 
+
+  // Reusable close button for all toasts (Sonner style)
+  const closeToastButton = (
+    <button
+      onClick={() => toast.dismiss()}
+      className="absolute top-2 right-2 rounded-full p-1 hover:bg-muted/50 transition-colors"
+      aria-label="Close toast"
+    >
+      <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+    </button>
+  );
+
   // Fetch ingested datasets
   useEffect(() => {
     if (!userId || !jobId) {
-      toast.error("Missing user or job information");
+      toast.error("Missing user or job information", {
+        duration: 3000,
+        action: closeToastButton,
+      });
       setLoadingFiles(false);
       return;
     }
- 
+
     const fetchDatasets = async () => {
       setLoadingFiles(true);
       try {
@@ -694,48 +729,54 @@ export default function DataQuality() {
           `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`,
           { headers: { accept: "application/json" } }
         );
- 
+
         if (!response.ok) throw new Error("Failed to fetch datasets");
- 
+
         const result = await response.json();
- 
+
         if (result.datasets && Array.isArray(result.datasets)) {
           setFiles(result.datasets);
         } else {
           setFiles([]);
-          toast.info("No datasets found for this job");
+          toast.info("No datasets found for this job", {
+            duration: 3000,
+            action: closeToastButton,
+          });
         }
       } catch (error) {
         console.error("Error fetching datasets:", error);
-        toast.error("Failed to load ingested files");
+        toast.error("Failed to load ingested files", {
+          duration: 4000,
+          action: closeToastButton,
+        });
         setFiles([]);
       } finally {
         setLoadingFiles(false);
       }
     };
- 
+
     fetchDatasets();
   }, [userId, jobId]);
- 
+
   const getSelectedBlobPaths = () => {
     return Array.from(selectedFiles).map((filename) => {
       const name = filename.endsWith(".csv") ? filename : `${filename}.csv`;
       return `${userId}/${jobId}/${name}`;
     });
   };
- 
+
   const updateJobOptions = async () => {
     if (!userId || !jobId) {
       console.warn("Cannot update job options — missing userId or jobId");
       return;
     }
- 
+
     const payload = {
       user_id: userId,
       job_id: jobId,
       dq: true,
     };
- 
+
     try {
       const response = await fetch("https://20.81.213.147/set-job-options", {
         method: "POST",
@@ -744,93 +785,103 @@ export default function DataQuality() {
         },
         body: JSON.stringify(payload),
       });
- 
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to update job options: ${response.status} - ${errorText}`);
       }
- 
+
       const result = await response.json();
- 
+
       if (result.status === "success") {
         console.log("DQ flag successfully set to true in job options");
-        // Optional: toast.success("Data Quality option enabled");
       } else {
         throw new Error(result.message || "Unknown response from set-job-options");
       }
     } catch (err) {
       console.error("Error updating job options (dq=true):", err);
-      // We don't want to block the user experience if this call fails
-      // toast.warning("Could not update job DQ option");
     }
   };
- 
+
   const handleGenerateRules = async () => {
     if (selectedFiles.size === 0) {
-      toast.error("Please select at least one file");
+      toast.error("Please select at least one file", {
+        duration: 3000,
+        action: closeToastButton,
+      });
       return;
     }
- 
+
     setGenerating(true);
- 
-    // 1. First try to set dq: true in job options
+
+    // 1. Set DQ flag in job options
     await updateJobOptions();
- 
-    // 2. Then proceed with rule generation
+
+    // 2. Prepare payload for DQ rules generation API
     const blobPaths = getSelectedBlobPaths();
-    console.log("Generating rules for files:", blobPaths);
- 
+    const firstBlobPath = blobPaths[0]; // Using first selected file
+
     const payload = {
       input_type: "azure",
-      azure_blob_path: blobPaths[0], // still using first file (can be extended later)
+      azure_blob_path: firstBlobPath,
     };
- 
+
+    console.log("Calling DQ Rules Generation API with:", payload);
+
     try {
-      const response = await fetch(
-        "https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/run-dq-rules-generation",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
- 
+      const response = await fetch("https://20.81.213.147/run-dq-rules-generation", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API error ${response.status}: ${errorText}`);
+      }
+
       const result = await response.json();
- 
-      if (response.ok && result.success && result.lambda_response?.body?.file) {
-        const rules = result.lambda_response.body.file.map((r: any) => ({
+
+      if (result.success && result.data?.file) {
+        const generatedRules = result.data.file.map((r: any) => ({
           name: r.rule,
           type: r.severity,
           condition: r.description,
         }));
-        setDataQualityRules(rules);
+
+        setDataQualityRules(generatedRules);
         setRulesGenerated(true);
-        toast.success(`Successfully generated ${rules.length} DQ rules`);
+        toast.success(`Generated ${generatedRules.length} data quality rules`, {
+          duration: 3000,
+          action: closeToastButton,
+        });
       } else {
-        throw new Error(result.message || "Failed to generate rules");
+        throw new Error(result.message || "Invalid response format");
       }
     } catch (error: any) {
-      toast.error("Failed to generate DQ rules");
-      console.error(error);
+      console.error("DQ Rules Generation failed:", error);
+      toast.error(error.message || "Failed to generate DQ rules", {
+        duration: 4000,
+        action: closeToastButton,
+      });
     } finally {
       setGenerating(false);
     }
   };
- 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Rest of the functions remain unchanged
-  // ──────────────────────────────────────────────────────────────────────────────
- 
+
   const handleRunValidation = async () => {
     if (dataQualityRules.length === 0) return;
- 
+
     setValidating(true);
     setValidationProgress(0);
     setShowValidationProgress(true);
     setValidationResult(null);
- 
+
     const blobPaths = getSelectedBlobPaths();
- 
+
     const payload = {
       input_type: "azure",
       azure_blob_path: blobPaths[0],
@@ -840,27 +891,30 @@ export default function DataQuality() {
         severity: r.type,
       })),
     };
- 
+
     try {
-      const response = await fetch(
-        "https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/run_dq_validation",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
- 
+      const response = await fetch("https://20.81.213.147/run-dq-validation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
       const result = await response.json();
- 
+
       if (response.ok) {
         setValidationResult(result);
-        toast.success("Validation completed");
+        toast.success("Validation completed", {
+          duration: 3000,
+          action: closeToastButton,
+        });
       } else {
         throw new Error("Validation failed");
       }
     } catch (error: any) {
-      toast.error("Validation failed");
+      toast.error("Validation failed", {
+        duration: 4000,
+        action: closeToastButton,
+      });
     } finally {
       setValidating(false);
       setTimeout(() => {
@@ -869,48 +923,51 @@ export default function DataQuality() {
       }, 1000);
     }
   };
- 
+
   const handleQuickFix = async () => {
     if (!validationResult || validationResult.rules_failed === 0) {
-      toast.info("No issues to fix");
+      toast.info("No issues to fix", {
+        duration: 3000,
+        action: closeToastButton,
+      });
       return;
     }
- 
+
     setFixing(true);
     setQuickFixProgress(0);
     setShowQuickFix(true);
     setFixResult(null);
- 
+
     const failedRules = Object.entries(validationResult.issues || {}).map(([column, data]: [string, any]) => ({
       column,
       rule: data.rule,
       reason_for_failure: data.reason_for_failure,
     }));
- 
+
     const blobPaths = getSelectedBlobPaths();
- 
+
     const payload = {
       input_type: "azure",
       azure_blob_path: blobPaths[0],
       rules: failedRules,
       proposed_solutions: validationResult.proposed_solutions || {},
     };
- 
+
     try {
-      const response = await fetch(
-        "https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/run_dq_fixing",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
- 
+      const response = await fetch("https://20.81.213.147/run-dq-fixing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
       const result = await response.json();
- 
+
       if (response.ok && result.success) {
         setFixResult(result);
-        toast.success(result.message || "Data fixed successfully");
+        toast.success(result.message || "Data fixed successfully", {
+          duration: 3000,
+          action: closeToastButton,
+        });
       }
     } catch (error: any) {
       // silent fail
@@ -919,7 +976,7 @@ export default function DataQuality() {
       setTimeout(() => setQuickFixComplete(true), 1000);
     }
   };
- 
+
   const toggleFileSelection = (filename: string) => {
     setSelectedFiles((prev) => {
       const newSet = new Set(prev);
@@ -931,13 +988,13 @@ export default function DataQuality() {
       return newSet;
     });
   };
- 
+
   const handleEditRule = (index: number) => {
     const rule = dataQualityRules[index];
     setEditingRuleIndex(index);
     setEditedRule({ ...rule });
   };
- 
+
   const handleSaveRule = (index: number) => {
     if (editedRule) {
       const updatedRules = [...dataQualityRules];
@@ -945,35 +1002,41 @@ export default function DataQuality() {
       setDataQualityRules(updatedRules);
       setEditingRuleIndex(null);
       setEditedRule(null);
-      toast.success("Rule updated");
+      toast.success("Rule updated", {
+        duration: 2500,
+        action: closeToastButton,
+      });
     }
   };
- 
+
   const handleCancelEdit = () => {
     setEditingRuleIndex(null);
     setEditedRule(null);
   };
- 
+
   const handleDeleteRule = (index: number) => {
     setDataQualityRules((prev) => prev.filter((_, i) => i !== index));
-    toast.success("Rule deleted");
+    toast.success("Rule deleted", {
+      duration: 2500,
+      action: closeToastButton,
+    });
   };
- 
+
   const handleAnalyzeFailures = () => {
     setShowValidationComplete(false);
     setShowAnalysisComplete(true);
   };
- 
+
   const handleQuickFixContinue = () => {
     setShowQuickFix(false);
     navigate("/workflow/ner");
   };
- 
+
   const handleProceedToNER = () => {
     setShowValidationComplete(false);
     navigate("/workflow/ner");
   };
- 
+
   return (
     <WorkflowLayout>
       <div className="p-8">
@@ -981,7 +1044,7 @@ export default function DataQuality() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Data Quality Rules</h1>
         </div>
- 
+
         {/* Select Files Section */}
         {!rulesGenerated && (
           <div className="border border-border rounded-lg p-6 bg-card mb-6">
@@ -1001,7 +1064,7 @@ export default function DataQuality() {
                 )}
               </Button>
             </div>
- 
+
             {loadingFiles ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -1051,7 +1114,7 @@ export default function DataQuality() {
                 </table>
               </div>
             )}
- 
+
             {selectedFiles.size > 0 && (
               <div className="mt-3 text-sm text-muted-foreground">
                 {selectedFiles.size} file{selectedFiles.size !== 1 ? "s" : ""} selected
@@ -1059,7 +1122,7 @@ export default function DataQuality() {
             )}
           </div>
         )}
- 
+
         {/* Smart Rule Proposal Section */}
         {rulesGenerated && (
           <div className="border border-border rounded-lg p-6 bg-card mb-6">
@@ -1076,7 +1139,7 @@ export default function DataQuality() {
                 )}
               </Button>
             </div>
- 
+
             <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full">
                 <thead className="bg-muted/50 border-b border-border">
@@ -1091,7 +1154,7 @@ export default function DataQuality() {
                   {dataQualityRules.map((rule, index) => {
                     const isEditing = editingRuleIndex === index;
                     const displayRule = isEditing && editedRule ? editedRule : rule;
- 
+
                     return (
                       <tr
                         key={index}
@@ -1174,12 +1237,12 @@ export default function DataQuality() {
             </div>
           </div>
         )}
- 
+
         {/* Bottom Action Buttons */}
         {rulesGenerated && (
           <div className="flex justify-between gap-3">
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => navigate("/workflow/data-modeling")}>
+              <Button variant="outline" onClick={() => setRulesGenerated(false)}>
                 Back
               </Button>
               <Button variant="outline" onClick={() => navigate("/workflow/ner")}>
@@ -1192,16 +1255,30 @@ export default function DataQuality() {
             </div>
           </div>
         )}
+
+        <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
+          <Button variant="outline" onClick={() => navigate("/workflow/data-creation")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Create Dataset
+          </Button>
+
+          <Button
+            onClick={() => navigate("/workflow/ner")}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <SkipForward className="h-4 w-4" />
+            Skip
+          </Button>
+        </div>
       </div>
- 
+
       {/* Dialogs */}
       <ValidationProgressDialog
         open={showValidationProgress}
         onOpenChange={setShowValidationProgress}
-        progress={validationProgress}
         rulesCount={dataQualityRules.length}
       />
- 
+
       <ValidationCompleteDialog
         open={showValidationComplete}
         onOpenChange={setShowValidationComplete}
@@ -1210,39 +1287,21 @@ export default function DataQuality() {
         passed={validationResult?.rules_passed ?? 0}
         failed={validationResult?.rules_failed ?? 0}
       />
- 
+
       <AnalysisCompleteDialog
         open={showAnalysisComplete}
         onOpenChange={setShowAnalysisComplete}
         onQuickFix={handleQuickFix}
         validationResult={validationResult}
       />
- 
+
       <QuickFixDialog
         open={showQuickFix}
         onOpenChange={setShowQuickFix}
-        progress={quickFixProgress}
         isComplete={quickFixComplete}
         onContinue={handleQuickFixContinue}
         fixMessage={fixResult?.message}
       />
-      <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
-          <Button variant="outline" onClick={() => navigate("/workflow/data-creation")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Create Dataset
-          </Button>
- 
-          <Button onClick={()=>navigate("/workflow/ner")}  
- 
-            className="bg-primary hover:bg-primary/90"
-         
-          >
-            <SkipForward className="h-4 w-4" />
-            Skip
-            {/* <ArrowRight className="ml-2 h-4 w-4" /> */}
-          </Button>
-        </div>
     </WorkflowLayout>
   );
 }
- 

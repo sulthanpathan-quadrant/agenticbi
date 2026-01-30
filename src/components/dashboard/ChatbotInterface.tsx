@@ -472,6 +472,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { DataFile } from '@/components/types/dashboard';
+import { DashBoardPreview1 } from './DashBoardPreview1';
 import { sendMessage, downloadChat, deleteThread, deleteAllFilesFromAgent, finalizeDashboardJson } from '../api/api';
 
 import {

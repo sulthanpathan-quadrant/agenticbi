@@ -1,3 +1,4 @@
+
 // import { useState, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
@@ -24,28 +25,27 @@
 // import { BusinessRuleCompleteDialog } from "@/components/BusinessRuleCompleteDialog";
 // import { toast } from "sonner";
 // import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
- 
+
 // interface Rule {
 //   name: string;
 //   description: string;
 //   logic: string;
 //   status: string;
 // }
- 
+
 // interface ValidationResult {
 //   passed_rules: number;
 //   failed_rules: number;
 //   details: Record<string, { passed_count: number; failed_count: number }>;
 // }
- 
+
 // interface Dataset {
 //   filename: string;
 //   last_modified: string;
 // }
- 
+
 // export default function BusinessLogic() {
 //   const navigate = useNavigate();
- 
 //   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 //   const [showAddRuleDialog, setShowAddRuleDialog] = useState(false);
 //   const [showValidationDialog, setShowValidationDialog] = useState(false);
@@ -53,18 +53,18 @@
 //   const [rules, setRules] = useState<Rule[]>([]);
 //   const [editingRule, setEditingRule] = useState<number | null>(null);
 //   const [validating, setValidating] = useState(false);
-//   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
- 
+//   const [jobInfo, setJobInfo] = useState<{ correlation_id?: string; databricks_run_id?: string; message?: string } | null>(null);
+
 //   // Dynamic datasets from API
 //   const [datasets, setDatasets] = useState<Dataset[]>([]);
 //   const [loadingDatasets, setLoadingDatasets] = useState(true);
- 
+
 //   // Get dynamic userId and jobId from localStorage
 //   const userId = localStorage.getItem("user")
 //     ? JSON.parse(localStorage.getItem("user") || "{}").id
 //     : null;
 //   const jobId = localStorage.getItem("current_job_id");
- 
+
 //   // Fetch available datasets on mount
 //   useEffect(() => {
 //     if (!userId || !jobId) {
@@ -72,24 +72,20 @@
 //       setLoadingDatasets(false);
 //       return;
 //     }
- 
 //     const fetchDatasets = async () => {
 //       setLoadingDatasets(true);
 //       try {
 //         const url = `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`;
- 
 //         const res = await fetch(url, {
 //           headers: {
 //             accept: "application/json",
 //           },
 //         });
- 
 //         if (!res.ok) {
 //           throw new Error(`Failed to load datasets: ${res.status}`);
 //         }
- 
 //         const data = await res.json();
- 
+//         console.log(data.datasets)
 //         if (data.datasets && Array.isArray(data.datasets)) {
 //           setDatasets(data.datasets);
 //         } else {
@@ -103,10 +99,9 @@
 //         setLoadingDatasets(false);
 //       }
 //     };
- 
 //     fetchDatasets();
 //   }, [userId, jobId]);
- 
+
 //   const toggleFileSelection = (fileName: string) => {
 //     setSelectedFiles((prev) =>
 //       prev.includes(fileName)
@@ -114,7 +109,7 @@
 //         : [...prev, fileName]
 //     );
 //   };
- 
+
 //   const handleAddRule = (rule: any) => {
 //     if (editingRule !== null) {
 //       const updatedRules = [...rules];
@@ -128,17 +123,17 @@
 //     }
 //     setShowAddRuleDialog(false);
 //   };
- 
+
 //   const handleEditRule = (index: number) => {
 //     setEditingRule(index);
 //     setShowAddRuleDialog(true);
 //   };
- 
+
 //   const handleDeleteRule = (index: number) => {
 //     setRules(rules.filter((_, i) => i !== index));
 //     toast.success("Rule Deleted Successfully");
 //   };
- 
+
 //   const handleDownloadCSV = () => {
 //     const csvContent = [
 //       ["Rule Name", "Description", "Logic", "Status"],
@@ -146,7 +141,6 @@
 //     ]
 //       .map((row) => row.join(","))
 //       .join("\n");
- 
 //     const blob = new Blob([csvContent], { type: "text/csv" });
 //     const url = window.URL.createObjectURL(blob);
 //     const a = document.createElement("a");
@@ -154,40 +148,50 @@
 //     a.download = "business_rules.csv";
 //     a.click();
 //     window.URL.revokeObjectURL(url);
- 
 //     toast.success("Business rules exported to CSV");
 //   };
- 
+
 //   const handleRunAllRules = async () => {
 //     if (rules.length === 0) {
 //       toast.error("No rules to run");
 //       return;
 //     }
- 
 //     if (selectedFiles.length === 0) {
 //       toast.error("Please select at least one file");
 //       return;
 //     }
- 
-//     const selectedFile = selectedFiles[0]; // backend expects filename (no .csv needed?)
- 
+
+//     const selectedFilename = selectedFiles[0];
+//     let filename = selectedFilename;
+//     if (!filename.toLowerCase().endsWith(".csv")) {
+//       filename += ".csv";
+//     }
+
+//     const blobPath = `${userId}/${jobId}/${filename}`;
+
+//     // Build rules object: key = name, value = logic (as business logic)
+//     const rulesPayload: Record<string, string> = {};
+//     rules.forEach((rule) => {
+//       rulesPayload[rule.name] = rule.logic; // or rule.description if that's the intent
+//     });
+
+//     const payload = {
+//       blob_path: blobPath,
+//       rules: rulesPayload,
+//       mode: "auto",
+//       overwrite_source: false,
+//       output_blob_path: "processed/Book1_1_filtered.csv",
+//     };
+    
+//     console.log(payload)
+
+
 //     setValidating(true);
 //     setShowValidationDialog(true);
-//     setValidationResult(null);
- 
-//     const rulesPayload: Record<string, string> = {};
-//     rules.forEach((rule, index) => {
-//       rulesPayload[`rule${index + 1}`] = rule.description;
-//     });
- 
-//     const payload = {
-//       input_type: "azure",
-//       azure_blob_path: selectedFile,
-//       rules: rulesPayload,
-//     };
- 
+//     setJobInfo(null);
+
 //     try {
-//       const response = await fetch("https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/invoke-bl", {
+//       const response = await fetch("https://20.81.213.147/api/v1/business-rules/process", {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -195,47 +199,46 @@
 //         },
 //         body: JSON.stringify(payload),
 //       });
- 
+
+//       if (!response.ok) {
+//         const errorData = await response.json().catch(() => ({}));
+//         throw new Error("Success");
+//       }
+
 //       const result = await response.json();
- 
-//       if (response.ok && result.body) {
-//         const body = result.body;
-//         setValidationResult({
-//           passed_rules: body.passed_rules || 0,
-//           failed_rules: body.failed_rules || 0,
-//           details: body.details || {},
+
+//       if (result.status === "job_submitted") {
+//         setJobInfo({
+//           correlation_id: result.correlation_id,
+//           databricks_run_id: result.databricks_run_id,
+//           message: result.message,
 //         });
-//         toast.success("Business rules validation completed!");
+//         toast.success("Business rules processing job submitted successfully!");
 //       } else {
-//         throw new Error(result.detail || "Validation failed");
+//         throw new Error(result.message || "Unexpected response");
 //       }
 //     } catch (error: any) {
-//       toast.error(error.message || "Failed to run business rules");
-//       setValidationResult(null);
+//       toast.error(error.message || "Failed to submit business rules job");
+//       setJobInfo(null);
 //     } finally {
 //       setValidating(false);
 //       setTimeout(() => {
 //         setShowValidationDialog(false);
 //         setShowCompleteDialog(true);
-//       }, 1000);
+//       }, 1200);
 //     }
 //   };
- 
+
 //   const stats = {
 //     activeRules: rules.filter((r) => r.status === "active").length,
 //     testing: rules.filter((r) => r.status === "testing").length,
 //     totalRules: rules.length,
-//     successRate: validationResult
-//       ? `${Math.round(
-//           (validationResult.passed_rules /
-//             (validationResult.passed_rules + validationResult.failed_rules || 1)) *
-//             100
-//         )}%`
-//       : "N/A",
+//     // No real validation stats anymore → hide or show N/A
+//     successRate: "N/A",
 //   };
- 
+
 //   const canRunRules = rules.length > 0 && selectedFiles.length > 0;
- 
+
 //   return (
 //     <WorkflowLayout>
 //       <div className="p-8">
@@ -262,7 +265,7 @@
 //               {validating ? (
 //                 <>
 //                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-//                   Running...
+//                   Submitting...
 //                 </>
 //               ) : (
 //                 <>
@@ -277,8 +280,8 @@
 //             </Button>
 //           </div>
 //         </div>
- 
-//         {/* Stats Cards */}
+
+//         {/* Stats Cards – success rate now N/A */}
 //         <div className="grid grid-cols-4 gap-4 mb-6">
 //           <div className="border border-border rounded-lg p-6 bg-card">
 //             <div className="flex items-center justify-between mb-2">
@@ -287,7 +290,6 @@
 //             </div>
 //             <div className="text-3xl font-bold text-foreground">{stats.activeRules}</div>
 //           </div>
- 
 //           <div className="border border-border rounded-lg p-6 bg-card">
 //             <div className="flex items-center justify-between mb-2">
 //               <span className="text-sm text-muted-foreground">Testing</span>
@@ -295,7 +297,6 @@
 //             </div>
 //             <div className="text-3xl font-bold text-foreground">{stats.testing}</div>
 //           </div>
- 
 //           <div className="border border-border rounded-lg p-6 bg-card">
 //             <div className="flex items-center justify-between mb-2">
 //               <span className="text-sm text-muted-foreground">Total Rules</span>
@@ -303,7 +304,6 @@
 //             </div>
 //             <div className="text-3xl font-bold text-foreground">{stats.totalRules}</div>
 //           </div>
- 
 //           <div className="border border-border rounded-lg p-6 bg-card">
 //             <div className="flex items-center justify-between mb-2">
 //               <span className="text-sm text-muted-foreground">Success Rate</span>
@@ -312,8 +312,8 @@
 //             <div className="text-3xl font-bold text-foreground">{stats.successRate}</div>
 //           </div>
 //         </div>
- 
-//         {/* File Selection – now dynamic */}
+
+//         {/* File Selection – unchanged */}
 //         <div className="mb-6">
 //           <div className="flex items-center justify-between mb-3">
 //             <h2 className="text-lg font-semibold text-foreground">
@@ -323,7 +323,6 @@
 //           <p className="text-sm text-muted-foreground mb-4">
 //             Datasets available from your current job/ingestion.
 //           </p>
- 
 //           <div className="border border-border rounded-lg overflow-hidden min-h-[200px]">
 //             {loadingDatasets ? (
 //               <div className="flex flex-col items-center justify-center h-64">
@@ -373,8 +372,8 @@
 //             )}
 //           </div>
 //         </div>
- 
-//         {/* Rules List */}
+
+//         {/* Rules List – unchanged */}
 //         <div className="border border-border rounded-lg p-6 bg-card mb-6">
 //           {rules.length === 0 ? (
 //             <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-lg">
@@ -419,8 +418,8 @@
 //             </div>
 //           )}
 //         </div>
- 
-//         {/* Bottom Navigation */}
+
+//         {/* Bottom Navigation – unchanged */}
 //         <div className="flex items-center justify-between">
 //           <Button variant="outline" onClick={() => navigate("/workflow/ner")}>
 //             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -438,7 +437,7 @@
 //           </div>
 //         </div>
 //       </div>
- 
+
 //       <AddBusinessRuleDialog
 //         open={showAddRuleDialog}
 //         onOpenChange={(open) => {
@@ -448,22 +447,26 @@
 //         onAddRule={handleAddRule}
 //         initialRule={editingRule !== null ? rules[editingRule] : undefined}
 //       />
- 
+
 //       <BusinessRuleValidationDialog
 //         open={showValidationDialog}
 //         onOpenChange={setShowValidationDialog}
 //         progress={validating ? 75 : 100}
 //         rulesCount={rules.length}
 //       />
- 
+
 //       <BusinessRuleCompleteDialog
 //         open={showCompleteDialog}
 //         onOpenChange={setShowCompleteDialog}
 //         onContinue={() => navigate("/workflow/path-selection")}
+//         jobInfo={jobInfo}  // <-- pass job info to dialog
 //       />
 //     </WorkflowLayout>
 //   );
 // }
+
+
+
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -483,6 +486,7 @@ import {
   Edit,
   Trash,
   Loader2,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -491,28 +495,21 @@ import { BusinessRuleValidationDialog } from "@/components/BusinessRuleValidatio
 import { BusinessRuleCompleteDialog } from "@/components/BusinessRuleCompleteDialog";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
- 
+
 interface Rule {
   name: string;
   description: string;
   logic: string;
   status: string;
 }
- 
-interface ValidationResult {
-  passed_rules: number;
-  failed_rules: number;
-  details: Record<string, { passed_count: number; failed_count: number }>;
-}
- 
+
 interface Dataset {
   filename: string;
   last_modified: string;
 }
- 
+
 export default function BusinessLogic() {
   const navigate = useNavigate();
- 
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [showAddRuleDialog, setShowAddRuleDialog] = useState(false);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
@@ -520,56 +517,76 @@ export default function BusinessLogic() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [editingRule, setEditingRule] = useState<number | null>(null);
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
- 
+  const [jobInfo, setJobInfo] = useState<{ correlation_id?: string; databricks_run_id?: string; message?: string } | null>(null);
+
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loadingDatasets, setLoadingDatasets] = useState(true);
- 
-  const userId = localStorage.getItem("user")
-    ? JSON.parse(localStorage.getItem("user") || "{}").id
-    : null;
+
+  const user = localStorage.getItem("user");
+  const userId = user ? JSON.parse(user).id : null;
   const jobId = localStorage.getItem("current_job_id");
- 
+
+  // Reusable close button for all toasts (Sonner style)
+  const closeToastButton = (
+    <button
+      onClick={() => toast.dismiss()}
+      className="absolute top-2 right-2 rounded-full p-1 hover:bg-muted/50 transition-colors"
+      aria-label="Close toast"
+    >
+      <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+    </button>
+  );
+
   // Fetch available datasets
   useEffect(() => {
     if (!userId || !jobId) {
-      toast.error("Missing user or job information. Please log in again.");
+      toast.error("Missing user or job information. Please log in again.", {
+        duration: 3000,
+        action: closeToastButton,
+      });
       setLoadingDatasets(false);
       return;
     }
- 
+
     const fetchDatasets = async () => {
       setLoadingDatasets(true);
       try {
         const url = `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`;
- 
         const res = await fetch(url, {
-          headers: { accept: "application/json" },
+          headers: {
+            accept: "application/json",
+          },
         });
- 
+
         if (!res.ok) {
           throw new Error(`Failed to load datasets: ${res.status}`);
         }
- 
+
         const data = await res.json();
- 
+
         if (data.datasets && Array.isArray(data.datasets)) {
           setDatasets(data.datasets);
         } else {
           setDatasets([]);
-          toast.info(data.message || "No datasets available");
+          toast.info(data.message || "No datasets available", {
+            duration: 3000,
+            action: closeToastButton,
+          });
         }
       } catch (err) {
         console.error("Error fetching datasets:", err);
-        toast.error("Could not load available datasets");
+        toast.error("Could not load available datasets", {
+          duration: 4000,
+          action: closeToastButton,
+        });
       } finally {
         setLoadingDatasets(false);
       }
     };
- 
+
     fetchDatasets();
   }, [userId, jobId]);
- 
+
   const toggleFileSelection = (fileName: string) => {
     setSelectedFiles((prev) =>
       prev.includes(fileName)
@@ -577,20 +594,19 @@ export default function BusinessLogic() {
         : [...prev, fileName]
     );
   };
- 
-  // Helper: Update job options with business_logic: true + rules
+
   const updateBusinessLogicOptions = async () => {
     if (!userId || !jobId) {
       console.warn("Cannot update business logic options — missing userId or jobId");
       return false;
     }
- 
-    // Prepare rules in the expected format: { "rule1": "...", "rule2": "..." }
+
+  
     const rulesPayload: Record<string, string> = {};
     rules.forEach((rule, index) => {
-      rulesPayload[`rule${index + 1}`] = rule.description;
+      rulesPayload[rule.name] = rule.logic;
     });
- 
+
     const payload = {
       user_id: userId,
       job_id: jobId,
@@ -599,7 +615,9 @@ export default function BusinessLogic() {
         rules: rulesPayload,
       },
     };
- 
+
+    console.log(payload)
+
     try {
       const response = await fetch("https://20.81.213.147/set-job-options", {
         method: "POST",
@@ -608,14 +626,14 @@ export default function BusinessLogic() {
         },
         body: JSON.stringify(payload),
       });
- 
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to update business logic options: ${response.status} - ${errorText}`);
       }
- 
+
       const result = await response.json();
- 
+
       if (result.status === "success") {
         console.log("Successfully updated business_logic + rules in job options");
         return true;
@@ -624,104 +642,133 @@ export default function BusinessLogic() {
       }
     } catch (err) {
       console.error("Error updating business logic options:", err);
-      // Non-blocking failure — we still try to run validation
-      // toast.warning("Could not save business logic settings");
       return false;
     }
   };
- 
+
   const handleRunAllRules = async () => {
     if (rules.length === 0) {
-      toast.error("No rules to run");
+      toast.error("No rules to run", {
+        duration: 3000,
+        action: closeToastButton,
+      });
       return;
     }
- 
     if (selectedFiles.length === 0) {
-      toast.error("Please select at least one file");
+      toast.error("Please select at least one file", {
+        duration: 3000,
+        action: closeToastButton,
+      });
       return;
     }
- 
-    // We take the first selected file (you can extend this later)
-    const selectedFile = selectedFiles[0];
- 
+
+    const selectedFilename = selectedFiles[0];
+    let filename = selectedFilename;
+    if (!filename.toLowerCase().endsWith(".csv")) {
+      filename += ".csv";
+    }
+
+    const blobPath = `${userId}/${jobId}/${filename}`;
+
+    const rulesPayloadForProcess: Record<string, string> = {};
+    rules.forEach((rule) => {
+      rulesPayloadForProcess[rule.name] = rule.logic;
+    });
+
+    const processPayload = {
+      blob_path: blobPath,
+      rules: rulesPayloadForProcess,
+      mode: "auto",
+      overwrite_source: false,
+      output_blob_path: "processed/Book1_1_filtered.csv",
+    };
+
+    console.log("Process payload:", processPayload);
+
     setValidating(true);
     setShowValidationDialog(true);
-    setValidationResult(null);
- 
-    // Step 1: Update job options (set business_logic + rules)
-    await updateBusinessLogicOptions();
- 
-    // Step 2: Run the actual validation
-    const rulesPayload: Record<string, string> = {};
-    rules.forEach((rule, index) => {
-      rulesPayload[`rule${index + 1}`] = rule.description;
-    });
- 
-    const payload = {
-      input_type: "azure",
-      azure_blob_path: selectedFile,
-      rules: rulesPayload,
-    };
- 
+    setJobInfo(null);
+
     try {
-      const response = await fetch("https://ingestq-backend-954554516.ap-south-1.elb.amazonaws.com/invoke-bl", {
+      await updateBusinessLogicOptions();
+
+      const response = await fetch("https://20.81.213.147/api/v1/business-rules/process", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(processPayload),
       });
- 
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `API error: ${response.status}`);
+      }
+
       const result = await response.json();
- 
-      if (response.ok && result.body) {
-        const body = result.body;
-        setValidationResult({
-          passed_rules: body.passed_rules || 0,
-          failed_rules: body.failed_rules || 0,
-          details: body.details || {},
+
+      if (result.status === "job_submitted") {
+        setJobInfo({
+          correlation_id: result.correlation_id,
+          databricks_run_id: result.databricks_run_id,
+          message: result.message,
         });
-        toast.success("Business rules validation completed!");
+        toast.success("Business rules processing job submitted successfully!", {
+          duration: 3000,
+          action: closeToastButton,
+        });
       } else {
-        throw new Error(result.detail || "Validation failed");
+        throw new Error(result.message || "Unexpected response");
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to run business rules");
-      setValidationResult(null);
+      toast.error(error.message || "Failed to submit business rules job", {
+        duration: 4000,
+        action: closeToastButton,
+      });
+      setJobInfo(null);
     } finally {
       setValidating(false);
       setTimeout(() => {
         setShowValidationDialog(false);
         setShowCompleteDialog(true);
-      }, 1000);
+      }, 1200);
     }
   };
- 
+
   const handleAddRule = (rule: any) => {
     if (editingRule !== null) {
       const updatedRules = [...rules];
       updatedRules[editingRule] = { ...rule, status: "testing" };
       setRules(updatedRules);
       setEditingRule(null);
-      toast.success("Rule Updated Successfully");
+      toast.success("Rule Updated Successfully", {
+        duration: 2500,
+        action: closeToastButton,
+      });
     } else {
       setRules([...rules, { ...rule, status: "testing" }]);
-      toast.success("Rule Added Successfully");
+      toast.success("Rule Added Successfully", {
+        duration: 2500,
+        action: closeToastButton,
+      });
     }
     setShowAddRuleDialog(false);
   };
- 
+
   const handleEditRule = (index: number) => {
     setEditingRule(index);
     setShowAddRuleDialog(true);
   };
- 
+
   const handleDeleteRule = (index: number) => {
     setRules(rules.filter((_, i) => i !== index));
-    toast.success("Rule Deleted Successfully");
+    toast.success("Rule Deleted Successfully", {
+      duration: 2500,
+      action: closeToastButton,
+    });
   };
- 
+
   const handleDownloadCSV = () => {
     const csvContent = [
       ["Rule Name", "Description", "Logic", "Status"],
@@ -729,7 +776,6 @@ export default function BusinessLogic() {
     ]
       .map((row) => row.join(","))
       .join("\n");
- 
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -737,25 +783,21 @@ export default function BusinessLogic() {
     a.download = "business_rules.csv";
     a.click();
     window.URL.revokeObjectURL(url);
- 
-    toast.success("Business rules exported to CSV");
+    toast.success("Business rules exported to CSV", {
+      duration: 3000,
+      action: closeToastButton,
+    });
   };
- 
+
   const stats = {
     activeRules: rules.filter((r) => r.status === "active").length,
     testing: rules.filter((r) => r.status === "testing").length,
     totalRules: rules.length,
-    successRate: validationResult
-      ? `${Math.round(
-          (validationResult.passed_rules /
-            (validationResult.passed_rules + validationResult.failed_rules || 1)) *
-            100
-        )}%`
-      : "N/A",
+    successRate: "N/A",
   };
- 
+
   const canRunRules = rules.length > 0 && selectedFiles.length > 0;
- 
+
   return (
     <WorkflowLayout>
       <div className="p-8">
@@ -782,7 +824,7 @@ export default function BusinessLogic() {
               {validating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Running...
+                  Submitting...
                 </>
               ) : (
                 <>
@@ -797,7 +839,7 @@ export default function BusinessLogic() {
             </Button>
           </div>
         </div>
- 
+
         {/* Stats Cards */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="border border-border rounded-lg p-6 bg-card">
@@ -807,7 +849,6 @@ export default function BusinessLogic() {
             </div>
             <div className="text-3xl font-bold text-foreground">{stats.activeRules}</div>
           </div>
- 
           <div className="border border-border rounded-lg p-6 bg-card">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">Testing</span>
@@ -815,7 +856,6 @@ export default function BusinessLogic() {
             </div>
             <div className="text-3xl font-bold text-foreground">{stats.testing}</div>
           </div>
- 
           <div className="border border-border rounded-lg p-6 bg-card">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">Total Rules</span>
@@ -823,7 +863,6 @@ export default function BusinessLogic() {
             </div>
             <div className="text-3xl font-bold text-foreground">{stats.totalRules}</div>
           </div>
- 
           <div className="border border-border rounded-lg p-6 bg-card">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">Success Rate</span>
@@ -832,7 +871,7 @@ export default function BusinessLogic() {
             <div className="text-3xl font-bold text-foreground">{stats.successRate}</div>
           </div>
         </div>
- 
+
         {/* File Selection */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
@@ -843,7 +882,6 @@ export default function BusinessLogic() {
           <p className="text-sm text-muted-foreground mb-4">
             Datasets available from your current job/ingestion.
           </p>
- 
           <div className="border border-border rounded-lg overflow-hidden min-h-[200px]">
             {loadingDatasets ? (
               <div className="flex flex-col items-center justify-center h-64">
@@ -893,7 +931,7 @@ export default function BusinessLogic() {
             )}
           </div>
         </div>
- 
+
         {/* Rules List */}
         <div className="border border-border rounded-lg p-6 bg-card mb-6">
           {rules.length === 0 ? (
@@ -921,11 +959,11 @@ export default function BusinessLogic() {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditRule(index)}>
+                      <Button variant="outline" size="sm" className="h-8" onClick={() => handleEditRule(index)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDeleteRule(index)}>
+                      <Button variant="outline" size="sm" className="h-8" onClick={() => handleDeleteRule(index)}>
                         <Trash className="h-4 w-4" />
                       </Button>
                     </div>
@@ -939,7 +977,7 @@ export default function BusinessLogic() {
             </div>
           )}
         </div>
- 
+
         {/* Bottom Navigation */}
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => navigate("/workflow/ner")}>
@@ -958,7 +996,7 @@ export default function BusinessLogic() {
           </div>
         </div>
       </div>
- 
+
       <AddBusinessRuleDialog
         open={showAddRuleDialog}
         onOpenChange={(open) => {
@@ -968,20 +1006,19 @@ export default function BusinessLogic() {
         onAddRule={handleAddRule}
         initialRule={editingRule !== null ? rules[editingRule] : undefined}
       />
- 
+
       <BusinessRuleValidationDialog
         open={showValidationDialog}
         onOpenChange={setShowValidationDialog}
-        progress={validating ? 75 : 100}
         rulesCount={rules.length}
       />
- 
+
       <BusinessRuleCompleteDialog
         open={showCompleteDialog}
         onOpenChange={setShowCompleteDialog}
         onContinue={() => navigate("/workflow/path-selection")}
+        jobInfo={jobInfo}
       />
     </WorkflowLayout>
   );
 }
- 

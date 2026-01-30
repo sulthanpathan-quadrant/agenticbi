@@ -1,3 +1,6 @@
+
+
+
 // import { useState, useEffect } from "react";
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
 // import { Button } from "@/components/ui/button";
@@ -95,10 +98,11 @@
 //   const [rules, setRules] = useState<any[]>([]);
 //   const [showAddRuleDialog, setShowAddRuleDialog] = useState(false);
 //   const [showValidationDialog, setShowValidationDialog] = useState(false);
-//   const [validationProgress, setValidationProgress] = useState(0);
+//   const [validating, setValidating] = useState(false);
 //   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
 //   const [editingRule, setEditingRule] = useState<number | null>(null);
 //   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+//   const [jobInfo, setJobInfo] = useState<{ correlation_id?: string; databricks_run_id?: string; message?: string } | null>(null);
 
 //   // Schedule Job dialog state
 //   const [triggerType, setTriggerType] = useState<"schedule" | "file">("schedule");
@@ -591,23 +595,78 @@
 //     toast({ title: "Rule Deleted", description: "Business rule has been deleted", duration: 1000 });
 //   };
 
-//   const handleRunAllRules = () => {
-//     if (rules.length === 0) return;
+//   const handleRunAllRules = async () => {
+//     if (rules.length === 0) {
+//       toast.error("No rules to run");
+//       return;
+//     }
+
+//     if (!builtDataset?.name) {
+//       toast.error("No dataset selected for processing");
+//       return;
+//     }
+
+//     let filename = builtDataset.name;
+//     if (!filename.toLowerCase().endsWith(".csv")) {
+//       filename += ".csv";
+//     }
+
+//     const blobPath = `${user_id}/${job_id}/${filename}`;
+
+//     const rulesPayload: Record<string, string> = {};
+//     rules.forEach((rule) => {
+//       rulesPayload[rule.name] = rule.logic;
+//     });
+
+//     const payload = {
+//       blob_path: blobPath,
+//       rules: rulesPayload,
+//       mode: "auto",
+//       overwrite_source: false,
+//       output_blob_path: `processed/${builtDataset.name.replace(/\.csv$/i, "")}_filtered.csv`,
+//     };
+
+//     setValidating(true);
 //     setShowValidationDialog(true);
-//     setValidationProgress(0);
-//     const interval = setInterval(() => {
-//       setValidationProgress((prev) => {
-//         if (prev >= 100) {
-//           clearInterval(interval);
-//           setTimeout(() => {
-//             setShowValidationDialog(false);
-//             setShowCompleteDialog(true);
-//           }, 500);
-//           return 100;
-//         }
-//         return prev + 10;
+//     setJobInfo(null);
+
+//     try {
+//       const response = await fetch("https://20.81.213.147/api/v1/business-rules/process", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Accept: "application/json",
+//         },
+//         body: JSON.stringify(payload),
 //       });
-//     }, 200);
+
+//       if (!response.ok) {
+//         const errorData = await response.json().catch(() => ({}));
+//         throw new Error(errorData.message || `API error: ${response.status}`);
+//       }
+
+//       const result = await response.json();
+
+//       if (result.status === "job_submitted") {
+//         setJobInfo({
+//           correlation_id: result.correlation_id,
+//           databricks_run_id: result.databricks_run_id,
+//           message: result.message,
+//         });
+//         toast.success("Business rules processing job submitted successfully!");
+//       } else {
+//         throw new Error(result.message || "Unexpected response");
+//       }
+//     } catch (error: any) {
+//       toast.error(error.message || "Failed to submit business rules job");
+//       setJobInfo(null);
+//     } finally {
+//       setValidating(false);
+//       setTimeout(() => {
+//         setShowValidationDialog(false);
+//         setShowCompleteDialog(true);
+//       }, 1200);
+//     }
 //   };
 
 //   const handleBack = () => {
@@ -647,6 +706,37 @@
 //               Create Dataset
 //             </Button>
 //           )}
+//           {workflowStep === "build-dataset" && (
+//             <div className="flex flex-col sm:flex-row gap-4 pt-4">
+//               <Button
+//                 variant="outline"
+//                 size="lg"
+//                 onClick={() => {
+//                   if (selectedTables.length > 0) {
+//                     handlePreviewSelectedTable();
+//                   } else {
+//                     toast({
+//                       title: "No Table Selected",
+//                       description: "Select a table first to preview",
+//                       variant: "destructive",
+//                     });
+//                   }
+//                 }}
+//                 disabled={isPreviewLoading}
+//               >
+//                 {isPreviewLoading ? (
+//                   <>
+//                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                     Loading Preview...
+//                   </>
+//                 ) : (
+//                   <>
+//                     Next: Preview Selected Dataset
+//                   </>
+//                 )}
+//               </Button>
+//             </div>
+//           )}
 //         </div>
 
 //         {customTables.length === 0 ? (
@@ -662,6 +752,12 @@
 //               <Button size="lg" onClick={() => navigate("/workflow/data-creation")} className="mt-4">
 //                 <Plus className="h-4 w-4 mr-2" />
 //                 Go to Create Dataset
+//               </Button>
+//             </div>
+//             <div className="absolute bottom-6 left-16 xs:bottom-3 sm:bottom-6 sm:left-16">
+//               <Button variant="outline" onClick={() => navigate("/workflow/path-selection")}>
+//                 <ArrowLeft className="h-4 w-4 mr-2" />
+//                 Back to Path Selection
 //               </Button>
 //             </div>
 //           </div>
@@ -822,6 +918,14 @@
 //                         ))}
 //                       </div>
 //                     </ScrollArea>
+//                     <div>
+//                       <div className="top-20 flex mt-20">
+//                         <Button variant="outline" onClick={handleBack}>
+//                           <ArrowLeft className="h-4 w-4 mr-2" />
+//                           Back
+//                         </Button>
+//                       </div>
+//                     </div>
 //                   </div>
 
 //                   {/* Right: Your Custom Dataset */}
@@ -890,54 +994,28 @@
 //                       </ScrollArea>
 //                     </div>
 
-//                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
-//                       <Button
-//                         variant="outline"
-//                         size="lg"
-//                         onClick={() => {
-//                           if (selectedTables.length > 0) {
-//                             handlePreviewSelectedTable();
-//                           } else {
-//                             toast({
-//                               title: "No Table Selected",
-//                               description: "Select a table first to preview",
-//                               variant: "destructive",
-//                             });
-//                           }
-//                         }}
-//                         disabled={isPreviewLoading}
-//                       >
-//                         {isPreviewLoading ? (
-//                           <>
-//                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-//                             Loading Preview...
-//                           </>
-//                         ) : (
-//                           <>
-//                             Next: Preview Selected Dataset
-//                           </>
-//                         )}
-//                       </Button>
-
-//                       <Button
-//                         variant="default"
-//                         size="lg"
-//                         className="bg-purple-600 hover:bg-purple-700 text-white flex-1"
-//                         disabled={selectedColumns.length === 0 || isBuilding}
-//                         onClick={handleSaveDataset}
-//                       >
-//                         {isBuilding ? (
-//                           <>
-//                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-//                             Saving...
-//                           </>
-//                         ) : (
-//                           <>
-//                             <Save className="mr-2 h-4 w-4" />
-//                             Save Custom Dataset
-//                           </>
-//                         )}
-//                       </Button>
+//                     <div className="flex justify-between">
+//                       <div className="flex flex-col sm:flex-row gap-4 pt-4">
+//                         <Button
+//                           variant="default"
+//                           size="lg"
+//                           className="bg-purple-600 hover:bg-purple-700 text-white flex-1"
+//                           disabled={selectedColumns.length === 0 || isBuilding}
+//                           onClick={handleSaveDataset}
+//                         >
+//                           {isBuilding ? (
+//                             <>
+//                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                               Saving...
+//                             </>
+//                           ) : (
+//                             <>
+//                               <Save className="mr-2 h-4 w-4" />
+//                               Save Custom Dataset
+//                             </>
+//                           )}
+//                         </Button>
+//                       </div>
 //                     </div>
 //                   </div>
 //                 </div>
@@ -974,49 +1052,11 @@
 //                   </div>
 //                 ) : fullPreviewData.length === 0 ? (
 //                   <div className="text-center py-12 text-muted-foreground">
-                 
+//                     {/* No preview data available */}
 //                   </div>
 //                 ) : (
-//                   <div className="rounded-lg overflow-hidden ">
-//                     {/* <table className="w-full">
-//                       <thead className="bg-muted sticky top-0">
-//                         <tr>
-//                           {builtDataset?.columns.map((col) => (
-//                             <th
-//                               key={`preview-${col.name}`}
-//                               className="text-left p-4 text-sm font-medium text-foreground whitespace-nowrap border-b border-border"
-//                             >
-//                               <div>{col.name}</div>
-//                               <div className="text-xs text-muted-foreground">({col.table})</div>
-//                             </th>
-//                           ))}
-//                         </tr>
-//                       </thead>
-//                       <tbody>
-//                         {fullPreviewData.map((row, idx) => (
-//                           <tr
-//                             key={`preview-row-${idx}`}
-//                             className="border-b border-border last:border-0 hover:bg-muted/50"
-//                           >
-//                             {builtDataset?.columns.map((col) => (
-//                               <td
-//                                 key={`preview-${col.name}-${idx}`}
-//                                 className="p-4 text-sm text-foreground whitespace-nowrap"
-//                               >
-//                                 {String(row[col.name] ?? "-")}
-//                               </td>
-//                             ))}
-//                           </tr>
-//                         ))}
-//                         {fullPreviewData.length === 0 && (
-//                           <tr>
-//                             <td colSpan={builtDataset?.columns.length ?? 1} className="p-8 text-center text-muted-foreground">
-//                               No data available for preview
-//                             </td>
-//                           </tr>
-//                         )}
-//                       </tbody>
-//                     </table> */}
+//                   <div className="rounded-lg overflow-hidden">
+//                     {/* Preview table content remains unchanged */}
 //                   </div>
 //                 )}
 
@@ -1104,9 +1144,22 @@
 //                 </div>
 
 //                 <div className="flex justify-end gap-3">
-//                   <Button variant="outline" onClick={handleRunAllRules} disabled={rules.length === 0}>
-//                     <Play className="h-4 w-4 mr-2" />
-//                     Run All Rules
+//                   <Button
+//                     variant="outline"
+//                     onClick={handleRunAllRules}
+//                     disabled={rules.length === 0 || validating}
+//                   >
+//                     {validating ? (
+//                       <>
+//                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+//                         Submitting...
+//                       </>
+//                     ) : (
+//                       <>
+//                         <Play className="h-4 w-4 mr-2" />
+//                         Run All Rules
+//                       </>
+//                     )}
 //                   </Button>
 //                   <Button
 //                     onClick={() => {
@@ -1182,12 +1235,14 @@
 //           onAddRule={handleAddRule}
 //           initialRule={editingRule !== null ? rules[editingRule] : undefined}
 //         />
+
 //         <BusinessRuleValidationDialog
 //           open={showValidationDialog}
 //           onOpenChange={setShowValidationDialog}
-//           progress={validationProgress}
+//           // progress={validating ? 75 : 100}
 //           rulesCount={rules.length}
 //         />
+
 //         <BusinessRuleCompleteDialog
 //           open={showCompleteDialog}
 //           onOpenChange={setShowCompleteDialog}
@@ -1197,6 +1252,7 @@
 //             setShowCompleteDialog(false);
 //             setShowScheduleDialog(true);
 //           }}
+//           jobInfo={jobInfo}
 //           isETLFlow={true}
 //         />
 
@@ -1217,7 +1273,7 @@
 //             </div>
 //             <div className="flex-1 overflow-auto border border-border rounded-lg">
 //               <table className="w-full">
-//                 <thead className="sticky top-0 bg-primary/90 text-white">
+//                 <thead className="sticky top-0 bg-primary/100 text-white">
 //                   <tr>
 //                     {builtDataset?.columns.map((col) => (
 //                       <th
@@ -1331,7 +1387,7 @@
 //                         onChange={(e) => setTime(e.target.value)}
 //                         className="rounded-lg bg-muted/40 pr-10"
 //                       />
-//                       {/* <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /> */}
+//                       <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
 //                     </div>
 //                   </div>
 //                 </div>
@@ -1377,6 +1433,9 @@
 //     </WorkflowLayout>
 //   );
 // }
+
+
+
 
 import { useState, useEffect } from "react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
@@ -1475,10 +1534,11 @@ export default function ETLOutput() {
   const [rules, setRules] = useState<any[]>([]);
   const [showAddRuleDialog, setShowAddRuleDialog] = useState(false);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
-  const [validationProgress, setValidationProgress] = useState(0);
+  const [validating, setValidating] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [editingRule, setEditingRule] = useState<number | null>(null);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [jobInfo, setJobInfo] = useState<{ correlation_id?: string; databricks_run_id?: string; message?: string } | null>(null);
 
   // Schedule Job dialog state
   const [triggerType, setTriggerType] = useState<"schedule" | "file">("schedule");
@@ -1501,6 +1561,17 @@ export default function ETLOutput() {
     ? JSON.parse(localStorage.getItem("user") || "{}").id
     : null;
   const job_id = localStorage.getItem("current_job_id");
+
+  // Reusable X close button for all toasts
+  const closeToastButton = (
+    <button
+      onClick={() => toast.dismiss()}
+      className="absolute top-2 right-2 rounded-full p-1 hover:bg-muted/50 transition-colors"
+      aria-label="Close toast"
+    >
+      <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+    </button>
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem("customCreatedTables");
@@ -1564,6 +1635,7 @@ export default function ETLOutput() {
         title: "Preview Error",
         description: "Could not load dataset preview",
         variant: "destructive",
+        action: closeToastButton,
       });
       setFullPreviewData([]);
     } finally {
@@ -1610,6 +1682,7 @@ export default function ETLOutput() {
         variant: "destructive",
         title: "Validation Error",
         description: "Please select a frequency",
+        action: closeToastButton,
       });
       return;
     }
@@ -1620,6 +1693,7 @@ export default function ETLOutput() {
         variant: "destructive",
         title: "Authentication Error",
         description: "User ID not found. Please log in.",
+        action: closeToastButton,
       });
       return;
     }
@@ -1660,6 +1734,7 @@ export default function ETLOutput() {
         toast({
           title: "Success",
           description: data.message || "Job scheduled successfully!",
+          action: closeToastButton,
         });
 
         // Save to localStorage
@@ -1719,6 +1794,7 @@ export default function ETLOutput() {
         variant: "destructive",
         title: "Error",
         description: err.message || "Failed to schedule job",
+        action: closeToastButton,
       });
     } finally {
       setLoading(false);
@@ -1767,6 +1843,7 @@ export default function ETLOutput() {
           title: "Column Added",
           description: `${draggedColumn.name} from ${draggedColumn.table} added`,
           duration: 1000,
+          action: closeToastButton,
         });
       }
     }
@@ -1783,6 +1860,7 @@ export default function ETLOutput() {
         title: "Column Added",
         description: `${column.name} added to dataset`,
         duration: 1000,
+        action: closeToastButton,
       });
     }
   };
@@ -1797,6 +1875,7 @@ export default function ETLOutput() {
         title: "No Columns Selected",
         description: "Please add at least one column to your dataset",
         variant: "destructive",
+        action: closeToastButton,
       });
       return;
     }
@@ -1847,12 +1926,14 @@ export default function ETLOutput() {
           toast({
             title: "Transfer Started (Background)",
             description: "Dataset created, transfer may be processing...",
+            action: closeToastButton,
           });
         } else {
           toast({
             title: "Transfer Started",
             description: "Moving data to blob storage...",
             duration: 3000,
+            action: closeToastButton,
           });
         }
       } catch (transferErr) {
@@ -1881,6 +1962,7 @@ export default function ETLOutput() {
       toast({
         title: "Dataset Built Successfully",
         description: `${customDatasetName} created • ${sampleRows.length} preview rows`,
+        action: closeToastButton,
       });
 
       setWorkflowStep("dataset-preview");
@@ -1890,6 +1972,7 @@ export default function ETLOutput() {
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to build dataset",
         variant: "destructive",
+        action: closeToastButton,
       });
     } finally {
       setIsBuilding(false);
@@ -1902,6 +1985,7 @@ export default function ETLOutput() {
         title: "No Table Selected",
         description: "Please select at least one table first",
         variant: "destructive",
+        action: closeToastButton,
       });
       return;
     }
@@ -1938,6 +2022,7 @@ export default function ETLOutput() {
         title: "Preview Failed",
         description: "Could not load preview for selected table",
         variant: "destructive",
+        action: closeToastButton,
       });
     } finally {
       setIsPreviewLoading(false);
@@ -1958,6 +2043,7 @@ export default function ETLOutput() {
       title: editingRule !== null ? "Rule Updated" : "Rule Added",
       description: `Business rule has been ${editingRule !== null ? "updated" : "added"} successfully`,
       duration: 1000,
+      action: closeToastButton,
     });
   };
 
@@ -1968,26 +2054,94 @@ export default function ETLOutput() {
 
   const handleDeleteRule = (index: number) => {
     setRules(rules.filter((_, i) => i !== index));
-    toast({ title: "Rule Deleted", description: "Business rule has been deleted", duration: 1000 });
+    toast({
+      title: "Rule Deleted",
+      description: "Business rule has been deleted",
+      duration: 1000,
+      action: closeToastButton,
+    });
   };
 
-  const handleRunAllRules = () => {
-    if (rules.length === 0) return;
-    setShowValidationDialog(true);
-    setValidationProgress(0);
-    const interval = setInterval(() => {
-      setValidationProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setShowValidationDialog(false);
-            setShowCompleteDialog(true);
-          }, 500);
-          return 100;
-        }
-        return prev + 10;
+  const handleRunAllRules = async () => {
+    if (rules.length === 0) {
+      toast.error("No rules to run", {
+        action: closeToastButton,
       });
-    }, 200);
+      return;
+    }
+
+    if (!builtDataset?.name) {
+      toast.error("No dataset selected for processing", {
+        action: closeToastButton,
+      });
+      return;
+    }
+
+    let filename = builtDataset.name;
+    if (!filename.toLowerCase().endsWith(".csv")) {
+      filename += ".csv";
+    }
+
+    const blobPath = `${user_id}/${job_id}/${filename}`;
+
+    const rulesPayload: Record<string, string> = {};
+    rules.forEach((rule) => {
+      rulesPayload[rule.name] = rule.logic;
+    });
+
+    const payload = {
+      blob_path: blobPath,
+      rules: rulesPayload,
+      mode: "auto",
+      overwrite_source: false,
+      output_blob_path: `processed/${builtDataset.name.replace(/\.csv$/i, "")}_filtered.csv`,
+    };
+
+    setValidating(true);
+    setShowValidationDialog(true);
+    setJobInfo(null);
+
+    try {
+      const response = await fetch("https://20.81.213.147/api/v1/business-rules/process", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `API error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.status === "job_submitted") {
+        setJobInfo({
+          correlation_id: result.correlation_id,
+          databricks_run_id: result.databricks_run_id,
+          message: result.message,
+        });
+        toast.success("Business rules processing job submitted successfully!", {
+          action: closeToastButton,
+        });
+      } else {
+        throw new Error(result.message || "Unexpected response");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit business rules job", {
+        action: closeToastButton,
+      });
+      setJobInfo(null);
+    } finally {
+      setValidating(false);
+      setTimeout(() => {
+        setShowValidationDialog(false);
+        setShowCompleteDialog(true);
+      }, 1200);
+    }
   };
 
   const handleBack = () => {
@@ -2028,37 +2182,36 @@ export default function ETLOutput() {
             </Button>
           )}
           {workflowStep === "build-dataset" && (
-             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                           <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={() => {
-                          if (selectedTables.length > 0) {
-                            handlePreviewSelectedTable();
-                          } else {
-                            toast({
-                              title: "No Table Selected",
-                              description: "Select a table first to preview",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        disabled={isPreviewLoading}
-                      >
-                        {isPreviewLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Loading Preview...
-                          </>
-                        ) : (
-                          <>
-                            Next: Preview Selected Dataset
-                          </>
-                        )}
-                      </Button>
-
-                      
-                     </div>
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => {
+                  if (selectedTables.length > 0) {
+                    handlePreviewSelectedTable();
+                  } else {
+                    toast({
+                      title: "No Table Selected",
+                      description: "Select a table first to preview",
+                      variant: "destructive",
+                      action: closeToastButton,
+                    });
+                  }
+                }}
+                disabled={isPreviewLoading}
+              >
+                {isPreviewLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading Preview...
+                  </>
+                ) : (
+                  <>
+                    Next: Preview Selected Dataset
+                  </>
+                )}
+              </Button>
+            </div>
           )}
         </div>
 
@@ -2075,6 +2228,12 @@ export default function ETLOutput() {
               <Button size="lg" onClick={() => navigate("/workflow/data-creation")} className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Go to Create Dataset
+              </Button>
+            </div>
+            <div className="absolute bottom-6 left-16 xs:bottom-3 sm:bottom-6 sm:left-16">
+              <Button variant="outline" onClick={() => navigate("/workflow/path-selection")}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Path Selection
               </Button>
             </div>
           </div>
@@ -2156,7 +2315,6 @@ export default function ETLOutput() {
             {/* Build Dataset Step */}
             {workflowStep === "build-dataset" && (
               <div className="space-y-6">
-                 
                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                   <p className="text-sm text-foreground">
                     <span className="font-semibold">Building from: </span>
@@ -2236,15 +2394,14 @@ export default function ETLOutput() {
                         ))}
                       </div>
                     </ScrollArea>
-                    <div >
-                      <div className=" top-20 flex mt-20 ">
+                    <div>
+                      <div className="top-20 flex mt-20">
                         <Button variant="outline" onClick={handleBack}>
-                        <ArrowLeft className="h-4 w-4 mr-2" />
+                          <ArrowLeft className="h-4 w-4 mr-2" />
                           Back
-                      </Button>
+                        </Button>
                       </div>
-                          
-                       </div>
+                    </div>
                   </div>
 
                   {/* Right: Your Custom Dataset */}
@@ -2313,59 +2470,28 @@ export default function ETLOutput() {
                       </ScrollArea>
                     </div>
 
-                    <div className="flex justify-between " >
-                       
-                        
-                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                           {/* <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={() => {
-                          if (selectedTables.length > 0) {
-                            handlePreviewSelectedTable();
-                          } else {
-                            toast({
-                              title: "No Table Selected",
-                              description: "Select a table first to preview",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        disabled={isPreviewLoading}
-                      >
-                        {isPreviewLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Loading Preview...
-                          </>
-                        ) : (
-                          <>
-                            Next: Preview Selected Dataset
-                          </>
-                        )}
-                      </Button> */}
-
-                      <Button
-                        variant="default"
-                        size="lg"
-                        className="bg-purple-600 hover:bg-purple-700 text-white flex-1"
-                        disabled={selectedColumns.length === 0 || isBuilding}
-                        onClick={handleSaveDataset}
-                      >
-                        {isBuilding ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="mr-2 h-4 w-4" />
-                            Save Custom Dataset
-                          </>
-                        )}
-                      </Button>
-                     </div>
-                      
+                    <div className="flex justify-between">
+                      <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                        <Button
+                          variant="default"
+                          size="lg"
+                          className="bg-purple-600 hover:bg-purple-700 text-white flex-1"
+                          disabled={selectedColumns.length === 0 || isBuilding}
+                          onClick={handleSaveDataset}
+                        >
+                          {isBuilding ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="mr-2 h-4 w-4" />
+                              Save Custom Dataset
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2406,45 +2532,7 @@ export default function ETLOutput() {
                   </div>
                 ) : (
                   <div className="rounded-lg overflow-hidden">
-                    {/* <table className="w-full">
-                      <thead className="bg-muted sticky top-0">
-                        <tr>
-                          {builtDataset?.columns.map((col) => (
-                            <th
-                              key={`preview-${col.name}`}
-                              className="text-left p-4 text-sm font-medium text-foreground whitespace-nowrap border-b border-border"
-                            >
-                              <div>{col.name}</div>
-                              <div className="text-xs text-muted-foreground">({col.table})</div>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {fullPreviewData.map((row, idx) => (
-                          <tr
-                            key={`preview-row-${idx}`}
-                            className="border-b border-border last:border-0 hover:bg-muted/50"
-                          >
-                            {builtDataset?.columns.map((col) => (
-                              <td
-                                key={`preview-${col.name}-${idx}`}
-                                className="p-4 text-sm text-foreground whitespace-nowrap"
-                              >
-                                {String(row[col.name] ?? "-")}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                        {fullPreviewData.length === 0 && (
-                          <tr>
-                            <td colSpan={builtDataset?.columns.length ?? 1} className="p-8 text-center text-muted-foreground">
-                              No data available for preview
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table> */}
+                    {/* Preview table content remains unchanged */}
                   </div>
                 )}
 
@@ -2532,9 +2620,22 @@ export default function ETLOutput() {
                 </div>
 
                 <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={handleRunAllRules} disabled={rules.length === 0}>
-                    <Play className="h-4 w-4 mr-2" />
-                    Run All Rules
+                  <Button
+                    variant="outline"
+                    onClick={handleRunAllRules}
+                    disabled={rules.length === 0 || validating}
+                  >
+                    {validating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Run All Rules
+                      </>
+                    )}
                   </Button>
                   <Button
                     onClick={() => {
@@ -2610,12 +2711,13 @@ export default function ETLOutput() {
           onAddRule={handleAddRule}
           initialRule={editingRule !== null ? rules[editingRule] : undefined}
         />
+
         <BusinessRuleValidationDialog
           open={showValidationDialog}
           onOpenChange={setShowValidationDialog}
-          progress={validationProgress}
           rulesCount={rules.length}
         />
+
         <BusinessRuleCompleteDialog
           open={showCompleteDialog}
           onOpenChange={setShowCompleteDialog}
@@ -2625,6 +2727,7 @@ export default function ETLOutput() {
             setShowCompleteDialog(false);
             setShowScheduleDialog(true);
           }}
+          jobInfo={jobInfo}
           isETLFlow={true}
         />
 
@@ -2723,12 +2826,6 @@ export default function ETLOutput() {
                       <Clock className="w-4 h-4" /> Time-based Schedule
                     </Label>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/30 transition">
-                    <RadioGroupItem value="file" id="file" />
-                    <Label htmlFor="file" className="flex items-center gap-2 cursor-pointer">
-                      <Upload className="w-4 h-4" /> File Upload Trigger
-                    </Label>
-                  </div>
                 </RadioGroup>
               </div>
 
@@ -2762,13 +2859,6 @@ export default function ETLOutput() {
                       <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* File Trigger Info */}
-              {triggerType === "file" && (
-                <div className="mb-6 p-4 rounded-lg bg-muted/40 border text-sm">
-                  This job will automatically trigger when a new file is uploaded.
                 </div>
               )}
 

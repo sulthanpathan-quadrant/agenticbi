@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 interface ValidationProgressDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  progress: number;
+  // progress: number;
   rulesCount: number;
 }
  
 export function ValidationProgressDialog({
   open,
   onOpenChange,
-  progress,
+  // progress,
   rulesCount,
 }: ValidationProgressDialogProps) {
   return (
@@ -50,12 +50,12 @@ export function ValidationProgressDialog({
               </p>
             </div>
  
-            <div className="w-full space-y-2">
+            {/* <div className="w-full space-y-2">
               <Progress value={progress} className="h-2" />
               <p className="text-center text-sm text-muted-foreground">
                 {Math.round(progress)}% Complete
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </DialogContent>

@@ -103,7 +103,7 @@
 //   );
 // }
 
-DatasetSidebar 
+// DatasetSidebar 
  
  
 import { useState } from 'react';
@@ -148,7 +148,7 @@ export function DatasetSidebar({ files, selectedFile, onSelectFile, loading = fa
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`Search ${files.length} datasets...`}
-            className="pl-9 h-10 bg-secondary/15 border-border focus:border-secondary"
+            className="pl-9 h-10 bg-primary/25 border-border "
             disabled={loading}
           />
         </div>
@@ -176,14 +176,14 @@ export function DatasetSidebar({ files, selectedFile, onSelectFile, loading = fa
                   key={file.id}
                   onClick={() => onSelectFile(file)}
                   className={cn(
-                    'w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 text-left',
-                    'hover:bg-secondary/10',
-                    isSelected && 'bg-secondary/10 border border-secondary/30'
+                    'w-full border-primary flex items-center gap-3 p-3 rounded-lg transition-all duration-200 text-left',
+                    'hover:bg-primary/25 border-primary'  ,
+                    isSelected && 'bg-primary/25 border border-primary'
                   )}
                 >
                   <div className={cn(
                     'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200',
-                    isSelected ? 'bg-secondary/50' : 'bg-primary/15 '
+                    isSelected ? 'bg-primary/25' : 'bg-primary/15 '
                   )}>
                     <Icon className={cn('w-4 h-4', iconColor)} />
                   </div>
@@ -199,7 +199,7 @@ export function DatasetSidebar({ files, selectedFile, onSelectFile, loading = fa
                     </p>
                   </div>
                   {isSelected && (
-                    <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   )}
                 </button>
               );

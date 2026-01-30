@@ -22,11 +22,11 @@ const HeroSection = () => {
 
       <div className="container mx-auto px-4 mt-{-2}">
         <div className="max-w-4xl mx-auto text-center animate-fade-in">
-          <h1 className="text-5xl md:text-7xl font-bold mb-8 pb-2 bg-gradient-to-r from-hero-from to-hero-to bg-clip-text text-transparent leading-tight">
+          <h1 className="text-5xl md:text-7xl font-bold mb-8 pb-2 bg-gradient-to-r from-hero-from to-hero-to bg-clip-text leading-tight">
             Transform Data into Intelligence
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl  max-w-2xl mx-auto">
             Automated data modeling, quality checks, and AI-driven insights to reports—all in one unified platform
           </p>
         </div>

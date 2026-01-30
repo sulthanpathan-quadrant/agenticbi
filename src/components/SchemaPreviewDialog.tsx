@@ -59,17 +59,17 @@ export function SchemaPreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto bg-card border-2 border-border">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-4 top-4 rounded-full"
-          onClick={() => onOpenChange(false)}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-        <DialogHeader>
+       
+      <div className="flex justify-between">
+      <DialogHeader>
           <DialogTitle className="text-xl">Schema Preview: {fileName}</DialogTitle>
         </DialogHeader>
+      <Button variant="link" size="icon" onClick={() => onOpenChange(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+         
+      </div>
+         
  
         <div className="mt-4">
           {loading ? (
@@ -115,7 +115,7 @@ export function SchemaPreviewDialog({
         </div>
  
         {/* Optional Pagination (kept for consistency with original design) */}
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <Pagination>
             <PaginationContent>
               <PaginationItem>
@@ -135,7 +135,7 @@ export function SchemaPreviewDialog({
               </PaginationItem>
             </PaginationContent>
           </Pagination>
-        </div>
+        </div> */}
       </DialogContent>
     </Dialog>
   );

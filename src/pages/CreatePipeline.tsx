@@ -60,7 +60,7 @@ const CreatePipeline = () => {
  
   // Get user_id
   const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") || "{}") : {};
-  const userId = user?.id || user?.user_id ;
+  const userId = user?.id || user?.user_id || "661ff9b1-6f16-4276-a393-bb13aec8f9a4";
  
   // Fetch ALL available jobs (sidebar)
   useEffect(() => {
@@ -336,12 +336,12 @@ const CreatePipeline = () => {
           />
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 rounded-lg">
+          {/* <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 rounded-lg">
             <Grid3X3 className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Snap to Grid</span>
             <Switch checked={snapToGrid} onCheckedChange={setSnapToGrid} />
-          </div>
-          <Button variant="ghost" onClick={clearCanvas} disabled={loadingPipeline}>
+          </div> */}
+          <Button variant="link1" onClick={clearCanvas} disabled={loadingPipeline}>
             Clear Canvas
           </Button>
           <Button variant="ghost" size="icon" onClick={() => navigate("/pipelines")}>
@@ -386,15 +386,15 @@ const CreatePipeline = () => {
               //       {job.stages} stages
               //     </Badge>
               //   </Card>
-
+ 
                 filteredJobs.map((job) => {
                 const isAlreadyAdded = canvasJobs.some((j) => j.id === job.id);
-
+ 
                 return (
                   <Card
                     key={job.id}
                     className={`
-                      p-3 hover:bg-muted/50 transition-colors 
+                      p-3 hover:bg-muted/50 transition-colors
                       border-l-4 border-l-primary flex items-center justify-between gap-3 group
                       ${isAlreadyAdded ? "opacity-60" : ""}
                     `}
@@ -406,15 +406,15 @@ const CreatePipeline = () => {
                         {job.stages} stages
                       </Badge>
                     </div>
-
+ 
                     <button
                       type="button"
                       onClick={() => !isAlreadyAdded && addJobToCanvas(job)}
                       disabled={isAlreadyAdded}
                       className={`
                         flex items-center justify-center h-8 w-8 rounded-md
-                        ${isAlreadyAdded 
-                          ? "opacity-40 cursor-not-allowed text-muted-foreground" 
+                        ${isAlreadyAdded
+                          ? "opacity-40 cursor-not-allowed text-muted-foreground"
                           : "text-primary hover:bg-primary/10 group-hover:text-primary/90 transition-colors"}
                       `}
                       title={isAlreadyAdded ? "Already added to canvas" : "Add to pipeline"}
@@ -424,7 +424,7 @@ const CreatePipeline = () => {
                   </Card>
               )}
             ))}
-            
+           
           </div>
         </div>
  
@@ -448,7 +448,7 @@ const CreatePipeline = () => {
               backgroundSize: "20px 20px",
             }}
           > */}
-
+ 
          <div
   ref={canvasRef}
   className={`
@@ -459,8 +459,8 @@ const CreatePipeline = () => {
   `}
   style={{ backgroundSize: "20px 20px" }}
 >
-
-
+ 
+ 
             <svg className="absolute inset-0 pointer-events-none" style={{ minWidth: "2000px", minHeight: "1200px" }}>
               <defs>
                 <marker
@@ -596,4 +596,5 @@ const CreatePipeline = () => {
 };
  
 export default CreatePipeline;
+ 
  

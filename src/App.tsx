@@ -27,6 +27,8 @@ import PowerBIDashboard from "./pages/PowerBIDashboard";
 import AutoMLDashboard from "./pages/AutoMLDashboard";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import '@xyflow/react/dist/style.css';
+
  
 // New: Force dark mode wrapper for landing pages
 const LandingLayout = ({ children }: { children: React.ReactNode }) => (

@@ -1,19 +1,19 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
+// import { Progress } from "@/components/ui/progress";
 import { RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BusinessRuleValidationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  progress: number;
+  // progress: number;
   rulesCount: number;
 }
 
 export function BusinessRuleValidationDialog({
   open,
   onOpenChange,
-  progress,
+  // progress,
   rulesCount,
 }: BusinessRuleValidationDialogProps) {
   return (
@@ -50,12 +50,12 @@ export function BusinessRuleValidationDialog({
               </p>
             </div>
 
-            <div className="w-full space-y-2">
+            {/* <div className="w-full space-y-2">
               <Progress value={progress} className="h-2" />
               <p className="text-center text-sm text-muted-foreground">
                 {progress}% Complete
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </DialogContent>

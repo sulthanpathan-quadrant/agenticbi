@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 interface QuickFixDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  progress: number;
+  // progress: number;
   isComplete: boolean;
   onContinue: () => void;
   fixMessage?: string; // from run_dq_fixing API
@@ -15,7 +15,7 @@ interface QuickFixDialogProps {
 export function QuickFixDialog({
   open,
   onOpenChange,
-  progress,
+  // progress,
   isComplete,
   onContinue,
   fixMessage = "Data fixed and saved",
@@ -53,12 +53,12 @@ export function QuickFixDialog({
                 <p className="text-muted-foreground">Resolving identified issues</p>
               </div>
  
-              <div className="w-full space-y-2">
+              {/* <div className="w-full space-y-2">
                 <Progress value={progress} className="h-2" />
                 <p className="text-center text-sm text-muted-foreground">
                   {Math.round(progress)}% Complete
                 </p>
-              </div>
+              </div> */}
             </div>
           ) : (
             <div className="flex flex-col items-center gap-6">

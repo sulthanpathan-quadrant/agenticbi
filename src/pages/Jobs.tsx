@@ -5,6 +5,13 @@
 // import { Badge } from "@/components/ui/badge";
 // import { Card } from "@/components/ui/card";
 // import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+//   DialogClose,
+// } from "@/components/ui/dialog";
+// import {
 //   Select,
 //   SelectContent,
 //   SelectItem,
@@ -13,7 +20,7 @@
 // } from "@/components/ui/select";
 // import {
 //   BarChart3,
-//   TableIcon,
+//   Table as TableIcon,
 //   Plus,
 //   Search,
 //   Calendar,
@@ -24,17 +31,39 @@
 //   LogOut,
 //   GitBranch,
 //   Loader2,
+//   X,
+//   Settings,
+//   Clock,
 // } from "lucide-react";
 // import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 // import { toast } from "sonner";
 // import { ThemeToggle } from "@/components/ThemeToggle";
- 
+
 // interface ApiJob {
 //   job_id: string;
 //   job_name: string;
 //   created_at: string;
 // }
- 
+
+// interface DetailedJobResponse {
+//   user_id: string;
+//   job_id: string;
+//   job_name: string;
+//   created_at: string;
+//   overall_job_status: string | null;
+//   overall_last_job_run: string | null;
+//   schedule: {
+//     frequency?: string;
+//     time_utc?: string;
+//     scheduled_at?: string;
+//   } | null;
+//   datasource_paths: string[];
+//   dq_enabled: boolean;
+//   ner_enabled: boolean;
+//   business_logic_enabled: boolean;
+//   business_logic_rules?: Record<string, string>;
+// }
+
 // interface Job {
 //   id: string;
 //   name: string;
@@ -49,9 +78,9 @@
 //     dataTransformations: "skipped" | "executed";
 //   };
 // }
- 
-// const API_BASE = "https://4.227.238.34";
- 
+
+// const API_BASE = "https://20.81.213.147";
+
 // const Jobs = () => {
 //   const navigate = useNavigate();
 //   const [viewMode, setViewMode] = useState<"chart" | "table">("table");
@@ -62,19 +91,49 @@
 //   const [endDate, setEndDate] = useState("");
 //   const [jobs, setJobs] = useState<Job[]>([]);
 //   const [loading, setLoading] = useState(true);
- 
+
+//   const [selectedJob, setSelectedJob] = useState<DetailedJobResponse | null>(null);
+//   const [showJobModal, setShowJobModal] = useState(false);
+//   const [modalLoading, setModalLoading] = useState(false);
+
 //   const storedUser = localStorage.getItem("user");
 //   const user = storedUser ? JSON.parse(storedUser) : null;
 //   const userName = user?.name || user?.email?.split("@")[0] || "User";
 //   const userId = user?.id || user?.user_id;
- 
+
+//   // Load persisted job statuses from localStorage on mount
+//   useEffect(() => {
+//     const persistedStatuses = localStorage.getItem("jobStatuses");
+//     if (persistedStatuses) {
+//       try {
+//         const parsed = JSON.parse(persistedStatuses);
+//         setJobs((prevJobs) =>
+//           prevJobs.map((job) => {
+//             const persisted = parsed[job.id];
+//             if (persisted) {
+//               return {
+//                 ...job,
+//                 status: persisted.status,
+//                 lastRun: persisted.lastRun || job.lastRun,
+//               };
+//             }
+//             return job;
+//           })
+//         );
+//       } catch (e) {
+//         console.error("Failed to parse persisted job statuses", e);
+//       }
+//     }
+//   }, []);
+
 //   const handleLogout = () => {
 //     localStorage.removeItem("user");
 //     localStorage.removeItem("token");
+//     localStorage.removeItem("jobStatuses");
 //     toast.success("Logged out successfully");
 //     navigate("/", { replace: true });
 //   };
- 
+
 //   useEffect(() => {
 //     const fetchJobs = async () => {
 //       if (!userId) {
@@ -82,18 +141,17 @@
 //         setLoading(false);
 //         return;
 //       }
- 
+
 //       try {
 //         setLoading(true);
-//         const response = await fetch(`${API_BASE}/get-all-jobs?user_id=${userId}`);
- 
+//         const response = await fetch(`https://4.227.238.34/get-all-jobs?user_id=${userId}`);
 //         if (!response.ok) {
 //           throw new Error(`Failed to fetch jobs: ${response.status}`);
 //         }
- 
+
 //         const data = await response.json();
- 
-//         const mappedJobs: Job[] = data.jobs.map((item: ApiJob) => ({
+
+//         let mappedJobs: Job[] = data.jobs.map((item: ApiJob) => ({
 //           id: item.job_id,
 //           name: item.job_name || "Unnamed Job",
 //           category: "Unknown",
@@ -106,7 +164,7 @@
 //             hour12: true,
 //           }),
 //           lastRun: "—",
-//           status: "Created",
+//           status: "Created" as const,
 //           steps: {
 //             dqRules: "skipped",
 //             ner: "skipped",
@@ -114,7 +172,28 @@
 //             dataTransformations: "skipped",
 //           },
 //         }));
- 
+
+//         // Merge persisted statuses
+//         const persistedStatusesStr = localStorage.getItem("jobStatuses");
+//         if (persistedStatusesStr) {
+//           try {
+//             const persisted = JSON.parse(persistedStatusesStr);
+//             mappedJobs = mappedJobs.map((job) => {
+//               const persistedJob = persisted[job.id];
+//               if (persistedJob) {
+//                 return {
+//                   ...job,
+//                   status: persistedJob.status,
+//                   lastRun: persistedJob.lastRun || job.lastRun,
+//                 };
+//               }
+//               return job;
+//             });
+//           } catch (e) {
+//             console.error("Failed to parse persisted statuses", e);
+//           }
+//         }
+
 //         setJobs(mappedJobs);
 //       } catch (error) {
 //         console.error("Error fetching jobs:", error);
@@ -123,10 +202,23 @@
 //         setLoading(false);
 //       }
 //     };
- 
+
 //     fetchJobs();
 //   }, [userId]);
- 
+
+//   useEffect(() => {
+//     if (jobs.length > 0) {
+//       const statusMap: Record<string, { status: string; lastRun: string }> = {};
+//       jobs.forEach((job) => {
+//         statusMap[job.id] = {
+//           status: job.status,
+//           lastRun: job.lastRun,
+//         };
+//       });
+//       localStorage.setItem("jobStatuses", JSON.stringify(statusMap));
+//     }
+//   }, [jobs]);
+
 //   const filteredJobs = jobs.filter((job) => {
 //     const matchesSearch = job.name.toLowerCase().includes(searchQuery.toLowerCase());
 //     const matchesCategory = categoryFilter === "all" || job.category === categoryFilter;
@@ -136,41 +228,45 @@
 //     const beforeEnd = !endDate || jobDate <= new Date(endDate);
 //     return matchesSearch && matchesCategory && matchesStatus && afterStart && beforeEnd;
 //   });
- 
+
 //   const jobsByCategory = [
 //     { name: "Unknown", value: jobs.filter((j) => j.category === "Unknown").length, color: "#3b82f6" },
 //     { name: "Glue", value: jobs.filter((j) => j.category === "Glue").length, color: "#10b981" },
 //   ];
- 
+
 //   const jobsByStatus = [
 //     { name: "PENDING", value: jobs.filter((j) => j.status === "PENDING").length, color: "#f97316" },
 //     { name: "Completed", value: jobs.filter((j) => j.status === "Completed").length, color: "#10b981" },
 //     { name: "Created", value: jobs.filter((j) => j.status === "Created").length, color: "#6b7280" },
 //   ];
- 
+
 //   const hourlyData = Array.from({ length: 8 }, (_, i) => ({
 //     time: `${String(i * 3).padStart(2, "0")}:00`,
 //     jobs: 0,
 //   }));
- 
+
 //   const runJob = (jobId: string) => {
-//     const updatedJobs = jobs.map((job) =>
-//       job.id === jobId
-//         ? { ...job, status: "Running" as const, lastRun: new Date().toLocaleString() }
-//         : job
+//     setJobs((prevJobs) =>
+//       prevJobs.map((job) =>
+//         job.id === jobId
+//           ? { ...job, status: "Running" as const, lastRun: new Date().toLocaleString() }
+//           : job
+//       )
 //     );
-//     setJobs(updatedJobs);
 //     toast.success("Job started successfully");
- 
+
 //     setTimeout(() => {
-//       const completedJobs = updatedJobs.map((job) =>
-//         job.id === jobId ? { ...job, status: "Completed" as const } : job
+//       setJobs((prevJobs) =>
+//         prevJobs.map((job) =>
+//           job.id === jobId
+//             ? { ...job, status: "Completed" as const, lastRun: new Date().toLocaleString() }
+//             : job
+//         )
 //       );
-//       setJobs(completedJobs);
 //       toast.success("Job completed successfully");
 //     }, 3000);
 //   };
- 
+
 //   const getStatusBadge = (status: string) => {
 //     const styles: Record<string, string> = {
 //       Completed: "bg-green-500/20 text-green-600 border-green-500/30",
@@ -181,11 +277,72 @@
 //     };
 //     return <Badge className={styles[status] || styles.Created}>{status}</Badge>;
 //   };
- 
+
+//   const getStepBadge = (status: "skipped" | "executed") => {
+//     if (status === "executed") {
+//       return <Badge className="bg-primary/20 text-primary border-primary/30">executed</Badge>;
+//     }
+//     return <Badge variant="secondary">skipped</Badge>;
+//   };
+
+//   const openJobDetails = async (job: Job) => {
+//     if (!userId) {
+//       toast.error("User ID not found. Please login again.");
+//       return;
+//     }
+
+//     setModalLoading(true);
+//     setShowJobModal(true);
+//     setSelectedJob(null);
+
+//     try {
+//       const response = await fetch(`${API_BASE}/view-job?user_id=${userId}&job_id=${job.id}`);
+
+//       if (!response.ok) {
+//         throw new Error(`Failed to fetch job details: ${response.status}`);
+//       }
+
+//       const data: DetailedJobResponse = await response.json();
+//       setSelectedJob(data);
+//     } catch (error) {
+//       console.error("Error fetching job details:", error);
+//       toast.error("Failed to load job details");
+//       setSelectedJob(null);
+//     } finally {
+//       setModalLoading(false);
+//     }
+//   };
+
+//   const getS3Path = (paths: string[] = []) => {
+//     const s3Path = paths.find((path) => path.startsWith("s3://"));
+//     return s3Path || "N/A";
+//   };
+
+//   const formatSchedule = (schedule: DetailedJobResponse["schedule"]) => {
+//     if (!schedule) return "N/A";
+//     const parts = [];
+//     if (schedule.frequency) parts.push(`Frequency: ${schedule.frequency}`);
+//     if (schedule.time_utc) parts.push(`Time (UTC): ${schedule.time_utc}`);
+//     if (schedule.scheduled_at) {
+//       const date = new Date(schedule.scheduled_at);
+//       parts.push(
+//         `Scheduled: ${date.toLocaleString("en-US", {
+//           month: "short",
+//           day: "numeric",
+//           year: "numeric",
+//           hour: "numeric",
+//           minute: "2-digit",
+//           hour12: true,
+//         })}`
+//       );
+//     }
+//     return parts.join(" • ") || "N/A";
+//   };
+
 //   return (
-//     <div className="min-h-screen bg-background">
+//     <div className=" h-screen flex flex-col overflow-hidden">
 //       {/* Header */}
-//       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
+//       <header className="border-b border-border backdrop-blur sticky">
 //         <div className="container mx-auto px-6 py-4">
 //           <div className="flex items-center justify-between">
 //             <div className="flex items-center gap-3">
@@ -199,7 +356,7 @@
 //                 </p>
 //               </div>
 //             </div>
- 
+
 //             <nav className="flex items-center gap-6">
 //               <button
 //                 onClick={() => navigate("/jobs")}
@@ -215,15 +372,15 @@
 //                 <GitBranch className="w-4 h-4" />
 //                 Pipelines
 //               </button>
- 
+
 //               <div className="flex items-center gap-3">
 //                 <ThemeToggle />
- 
+
 //                 <Button
 //                   variant="ghost"
 //                   size="icon"
 //                   onClick={handleLogout}
-//                   className="hover:bg-muted rounded-full"
+//                   className="hover:bg-primary rounded-full"
 //                   title="Logout"
 //                 >
 //                   <LogOut className="h-4 w-4" />
@@ -233,11 +390,10 @@
 //           </div>
 //         </div>
 //       </header>
- 
-//       <main className="container mx-auto px-6 py-8">
+
+//       <main className="container mx-auto px-6 py-8 flex-1 overflow-y-auto">
 //         {viewMode === "chart" ? (
 //           <>
-//             {/* Chart View Header */}
 //             <div className="flex items-center justify-between mb-8">
 //               <div>
 //                 <h2 className="text-2xl font-bold">Your Jobs at a Glance</h2>
@@ -250,8 +406,7 @@
 //                 Table View
 //               </Button>
 //             </div>
- 
-//             {/* Charts */}
+
 //             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 //               <Card className="p-6">
 //                 <h3 className="font-semibold mb-4">Jobs by Category</h3>
@@ -277,7 +432,7 @@
 //                   </ResponsiveContainer>
 //                 </div>
 //               </Card>
- 
+
 //               <Card className="p-6">
 //                 <h3 className="font-semibold mb-4">Job Status Distribution</h3>
 //                 <div className="h-64">
@@ -303,7 +458,7 @@
 //                 </div>
 //               </Card>
 //             </div>
- 
+
 //             <Card className="p-6">
 //               <div className="flex items-center justify-between mb-4">
 //                 <h3 className="font-semibold">
@@ -337,22 +492,25 @@
 //           </>
 //         ) : (
 //           <>
-//             {/* Table View Header */}
 //             <div className="flex items-center justify-between mb-8">
 //               <div>
 //                 <h2 className="text-2xl font-bold">All Jobs ({filteredJobs.length})</h2>
 //                 <p className="text-muted-foreground">View and manage your jobs</p>
 //               </div>
 //               <div className="flex items-center gap-3">
+//                 {/* <Button variant="outline" onClick={() => setViewMode("chart")}>
+//                   <BarChart3 className="w-4 h-4 mr-2" />
+//                   Chart View
+//                 </Button> */}
 //                 <Button onClick={() => navigate("/workflow/data-ingestion")}>
 //                   <Plus className="w-4 h-4 mr-2" />
 //                   Create Job
 //                 </Button>
 //               </div>
 //             </div>
- 
-//             {/* Filters */}
-//             <Card className="p-4 mb-6">
+
+//             <div className="p-4 mb-6">
+              
 //               <div className="flex flex-wrap items-center gap-4">
 //                 <div className="relative flex-1 min-w-[200px]">
 //                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -363,27 +521,50 @@
 //                     className="pl-10"
 //                   />
 //                 </div>
-//                 <div className="relative">
-//                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-//                   <Input
-//                     type="date"
-//                     placeholder="Start Date"
-//                     value={startDate}
-//                     onChange={(e) => setStartDate(e.target.value)}
-//                     className="pl-10 w-40"
-//                   />
-//                 </div>
-//                 <div className="relative">
-//                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-//                   <Input
-//                     type="date"
-//                     placeholder="End Date"
-//                     value={endDate}
-//                     onChange={(e) => setEndDate(e.target.value)}
-//                     className="pl-10 w-40"
-//                   />
-//                 </div>
-//                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+
+//                <div className="flex flex-col sm:flex-row gap-4">
+//   <div className="relative w-40">
+//     <Input
+//       type="date"
+//       value={startDate}
+//       onChange={(e) => setStartDate(e.target.value)}
+//       className="w-full text-center peer"
+//       placeholder=" "
+//     />
+//     <label 
+//       className="
+//         absolute left-2 -top-2.5 px-1 text-xs font-medium text-muted-foreground 
+//         bg-background transition-all peer-placeholder-shown:top-1/2 
+//         peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground/70 
+//         peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-foreground
+//       "
+//     >
+//       Start Date
+//     </label>
+//   </div>
+
+//   <div className="relative w-40">
+//     <Input
+//       type="date"
+//       value={endDate}
+//       onChange={(e) => setEndDate(e.target.value)}
+//       className="w-full text-center peer"
+//       placeholder=" "
+//     />
+//     <label 
+//       className="
+//         absolute left-2 -top-2.5 px-1 text-xs font-medium text-muted-foreground 
+//         bg-background transition-all peer-placeholder-shown:top-1/2 
+//         peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground/70 
+//         peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-foreground
+//       "
+//     >
+//       End Date
+//     </label>
+//   </div>
+// </div>
+
+//                 {/* <Select value={categoryFilter} onValueChange={setCategoryFilter}>
 //                   <SelectTrigger className="w-40">
 //                     <SelectValue placeholder="Filter by category" />
 //                   </SelectTrigger>
@@ -392,7 +573,23 @@
 //                     <SelectItem value="Unknown">Unknown</SelectItem>
 //                     <SelectItem value="Glue">Glue</SelectItem>
 //                   </SelectContent>
+//                 </Select> */}
+
+//                 {/* New status dropdown */}
+//                 <Select value={statusFilter} onValueChange={setStatusFilter}>
+//                   <SelectTrigger className="w-40">
+//                     <SelectValue placeholder="Filter jobs" />
+//                   </SelectTrigger>
+//                   <SelectContent>
+//                     <SelectItem className="hover:bg-primary/30" value="All">All Statuses</SelectItem>
+//                     <SelectItem className="hover:bg-primary/30" value="Created">Created</SelectItem>
+//                     <SelectItem className="hover:bg-primary/30" value="Running">Running</SelectItem>
+//                     <SelectItem className="hover:bg-primary/30" value="Completed">Completed</SelectItem>
+//                     <SelectItem className="hover:bg-primary/30" value="Failed">Failed</SelectItem>
+//                     <SelectItem className="hover:bg-primary/30" value="PENDING">Pending</SelectItem>
+//                   </SelectContent>
 //                 </Select>
+
 //                 <Button
 //                   variant="ghost"
 //                   onClick={() => {
@@ -402,25 +599,15 @@
 //                     setStartDate("");
 //                     setEndDate("");
 //                   }}
+//                   className="border border-border"
 //                 >
 //                   Clear
 //                 </Button>
-//                 <div className="flex items-center gap-1 border rounded-lg p-1">
-//                   {["All", "Completed", "Running", "Failed"].map((status) => (
-//                     <Button
-//                       key={status}
-//                       variant={statusFilter === status ? "default" : "ghost"}
-//                       size="sm"
-//                       onClick={() => setStatusFilter(status)}
-//                     >
-//                       {status}
-//                     </Button>
-//                   ))}
-//                 </div>
 //               </div>
-//             </Card>
- 
-//             {/* Jobs Table with local loading state */}
+            
+            
+//             </div>
+
 //             <Card className="min-h-[300px] flex flex-col">
 //               {loading ? (
 //                 <div className="flex-1 flex items-center justify-center py-12">
@@ -458,6 +645,7 @@
 //                                 size="icon"
 //                                 className="bg-primary hover:bg-primary/90 h-8 w-8"
 //                                 onClick={() => runJob(job.id)}
+//                                 disabled={job.status === "Running" || job.status === "Completed"}
 //                               >
 //                                 <Play className="w-4 h-4" />
 //                               </Button>
@@ -465,7 +653,7 @@
 //                                 size="icon"
 //                                 variant="ghost"
 //                                 className="h-8 w-8"
-//                                 onClick={() => navigate(`/job-details/${job.id}`)}
+//                                 onClick={() => openJobDetails(job)}
 //                               >
 //                                 <Eye className="w-4 h-4" />
 //                               </Button>
@@ -473,7 +661,11 @@
 //                                 size="icon"
 //                                 variant="ghost"
 //                                 className="h-8 w-8"
-//                                 onClick={() => navigate(`/edit-job/${job.id}`)}
+//                                 onClick={() =>
+//                                   navigate(`/edit-job/${job.id}`, {
+//                                     state: { business_logic_rules: selectedJob?.business_logic_rules || {} },
+//                                   })
+//                                 }
 //                               >
 //                                 <Edit className="w-4 h-4" />
 //                               </Button>
@@ -489,14 +681,166 @@
 //           </>
 //         )}
 //       </main>
+
+//       {/* Job Details Modal */}
+//       <Dialog open={showJobModal} onOpenChange={setShowJobModal}>
+//         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
+//           <DialogHeader className="flex flex-row items-center justify-between pb-4 ">
+//             <DialogTitle className="text-2xl font-bold">
+//               Job Details - {selectedJob?.job_name || "Loading..."}
+//             </DialogTitle>
+//             <DialogClose asChild>
+//               <Button variant="ghost" size="icon">
+//                 <X className="h-5 w-5" />
+//               </Button>
+//             </DialogClose>
+//           </DialogHeader>
+
+//           {modalLoading ? (
+//             <div className="flex flex-col items-center justify-center py-12">
+//               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+//               <p className="text-muted-foreground">Loading job details...</p>
+//             </div>
+//           ) : selectedJob ? (
+//             <>
+//               <div className="grid grid-cols-2 gap-4 mb-6">
+//                 <Card className="p-4 flex items-center gap-3">
+//                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+//                     <Settings className="w-5 h-5 text-primary" />
+//                   </div>
+//                   <div>
+//                     <p className="text-sm text-muted-foreground">Job Name</p>
+//                     <p className="font-medium">{selectedJob.job_name || "N/A"}</p>
+//                   </div>
+//                 </Card>
+//                 <Card className="p-4 flex items-center gap-3">
+//                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+//                     <Database className="w-5 h-5 text-primary" />
+//                   </div>
+//                   <div>
+//                     <p className="text-sm text-muted-foreground">Data Source</p>
+//                     <p className="font-medium">{getS3Path(selectedJob.datasource_paths)}</p>
+//                   </div>
+//                 </Card>
+//               </div>
+
+//               <Card className="p-6 mb-6">
+//                 <div className="grid grid-cols-2 gap-8">
+//                   <div>
+//                     <h4 className="font-semibold mb-4">Job Information</h4>
+//                     <div className="space-y-3">
+//                       <div>
+//                         <p className="text-sm text-muted-foreground">Job Name:</p>
+//                         <p className="font-medium">{selectedJob.job_name || "N/A"}</p>
+//                       </div>
+//                       <div>
+//                         <p className="text-sm text-muted-foreground">Created At:</p>
+//                         <p className="font-medium">
+//                           {new Date(selectedJob.created_at).toLocaleString("en-US", {
+//                             month: "short",
+//                             day: "numeric",
+//                             year: "numeric",
+//                             hour: "numeric",
+//                             minute: "2-digit",
+//                             hour12: true,
+//                           })}
+//                         </p>
+//                       </div>
+//                       <div>
+//                         <p className="text-sm text-muted-foreground">Data Source:</p>
+//                         <p className="font-medium">{getS3Path(selectedJob.datasource_paths)}</p>
+//                       </div>
+//                     </div>
+//                   </div>
+//                   <div>
+//                     <h4 className="font-semibold mb-4">Execution Details</h4>
+//                     <div className="space-y-3">
+//                       <div>
+//                         <p className="text-sm text-muted-foreground">Overall Status:</p>
+//                         <Badge variant="outline">{selectedJob.overall_job_status || "N/A"}</Badge>
+//                       </div>
+//                       <div>
+//                         <p className="text-sm text-muted-foreground">Last Run:</p>
+//                         <p className="font-medium">
+//                           {selectedJob.overall_last_job_run
+//                             ? new Date(selectedJob.overall_last_job_run).toLocaleString("en-US", {
+//                                 month: "short",
+//                                 day: "numeric",
+//                                 year: "numeric",
+//                                 hour: "numeric",
+//                                 minute: "2-digit",
+//                                 hour12: true,
+//                               })
+//                             : "N/A"}
+//                         </p>
+//                       </div>
+//                       <div>
+//                         <p className="text-sm text-muted-foreground">Schedule:</p>
+//                         <p className="font-medium">{formatSchedule(selectedJob.schedule)}</p>
+//                       </div>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </Card>
+
+//               <h3 className="text-lg font-semibold mb-4">Job Stages (3)</h3>
+//               <div className="grid grid-cols-3 gap-4 mb-6">
+//                 <Card className="p-4">
+//                   <div className="flex items-center gap-2 mb-2">
+//                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+//                       <Settings className="w-4 h-4 text-primary" />
+//                     </div>
+//                     <div className="flex items-center gap-1">
+//                       <span className="text-sm font-medium">Stage 1</span>
+//                       <Clock className="w-3 h-3 text-muted-foreground" />
+//                     </div>
+//                   </div>
+//                   <p className="font-medium mb-2">DQ Rules</p>
+//                   {getStepBadge(selectedJob.dq_enabled ? "executed" : "skipped")}
+//                 </Card>
+
+//                 <Card className="p-4">
+//                   <div className="flex items-center gap-2 mb-2">
+//                     <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
+//                       <Settings className="w-4 h-4 text-orange-500" />
+//                     </div>
+//                     <div className="flex items-center gap-1">
+//                       <span className="text-sm font-medium">Stage 2</span>
+//                       <Clock className="w-3 h-3 text-muted-foreground" />
+//                     </div>
+//                   </div>
+//                   <p className="font-medium mb-2">NER</p>
+//                   {getStepBadge(selectedJob.ner_enabled ? "executed" : "skipped")}
+//                 </Card>
+
+//                 <Card className="p-4">
+//                   <div className="flex items-center gap-2 mb-2">
+//                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+//                       <Settings className="w-4 h-4 text-primary" />
+//                     </div>
+//                     <div className="flex items-center gap-1">
+//                       <span className="text-sm font-medium">Stage 3</span>
+//                       <Clock className="w-3 h-3 text-muted-foreground" />
+//                     </div>
+//                   </div>
+//                   <p className="font-medium mb-2">Business Logic</p>
+//                   {getStepBadge(selectedJob.business_logic_enabled ? "executed" : "skipped")}
+//                 </Card>
+//               </div>
+//             </>
+//           ) : (
+//             <div className="text-center py-12 text-muted-foreground">No job details available</div>
+//           )}
+//         </DialogContent>
+//       </Dialog>
 //     </div>
 //   );
 // };
- 
+
 // export default Jobs;
- 
- 
- 
+
+
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -537,13 +881,13 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
- 
+
 interface ApiJob {
   job_id: string;
   job_name: string;
   created_at: string;
 }
- 
+
 interface DetailedJobResponse {
   user_id: string;
   job_id: string;
@@ -562,7 +906,7 @@ interface DetailedJobResponse {
   business_logic_enabled: boolean;
   business_logic_rules?: Record<string, string>;
 }
- 
+
 interface Job {
   id: string;
   name: string;
@@ -577,9 +921,9 @@ interface Job {
     dataTransformations: "skipped" | "executed";
   };
 }
- 
+
 const API_BASE = "https://20.81.213.147";
- 
+
 const Jobs = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"chart" | "table">("table");
@@ -590,24 +934,35 @@ const Jobs = () => {
   const [endDate, setEndDate] = useState("");
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
- 
+
   const [selectedJob, setSelectedJob] = useState<DetailedJobResponse | null>(null);
   const [showJobModal, setShowJobModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
- 
+
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
   const userName = user?.name || user?.email?.split("@")[0] || "User";
   const userId = user?.id || user?.user_id;
- 
+
+  // Reusable X close button for all toasts (Sonner style)
+  const closeToastButton = (
+    <button
+      onClick={() => toast.dismiss()}
+      className="absolute top-2 right-2 rounded-full p-1 hover:bg-muted/50 transition-colors"
+      aria-label="Close toast"
+    >
+      <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+    </button>
+  );
+
   // Load persisted job statuses from localStorage on mount
   useEffect(() => {
     const persistedStatuses = localStorage.getItem("jobStatuses");
     if (persistedStatuses) {
       try {
         const parsed = JSON.parse(persistedStatuses);
-        setJobs(prevJobs =>
-          prevJobs.map(job => {
+        setJobs((prevJobs) =>
+          prevJobs.map((job) => {
             const persisted = parsed[job.id];
             if (persisted) {
               return {
@@ -624,32 +979,36 @@ const Jobs = () => {
       }
     }
   }, []);
- 
+
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     localStorage.removeItem("jobStatuses");
-    toast.success("Logged out successfully");
+    toast.success("Logged out successfully", {
+      action: closeToastButton,
+    });
     navigate("/", { replace: true });
   };
- 
+
   useEffect(() => {
     const fetchJobs = async () => {
       if (!userId) {
-        toast.error("User ID not found in localStorage");
+        toast.error("User ID not found in localStorage", {
+          action: closeToastButton,
+        });
         setLoading(false);
         return;
       }
- 
+
       try {
         setLoading(true);
         const response = await fetch(`https://4.227.238.34/get-all-jobs?user_id=${userId}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch jobs: ${response.status}`);
         }
- 
+
         const data = await response.json();
- 
+
         let mappedJobs: Job[] = data.jobs.map((item: ApiJob) => ({
           id: item.job_id,
           name: item.job_name || "Unnamed Job",
@@ -671,13 +1030,13 @@ const Jobs = () => {
             dataTransformations: "skipped",
           },
         }));
- 
+
         // Merge persisted statuses
         const persistedStatusesStr = localStorage.getItem("jobStatuses");
         if (persistedStatusesStr) {
           try {
             const persisted = JSON.parse(persistedStatusesStr);
-            mappedJobs = mappedJobs.map(job => {
+            mappedJobs = mappedJobs.map((job) => {
               const persistedJob = persisted[job.id];
               if (persistedJob) {
                 return {
@@ -692,23 +1051,25 @@ const Jobs = () => {
             console.error("Failed to parse persisted statuses", e);
           }
         }
- 
+
         setJobs(mappedJobs);
       } catch (error) {
         console.error("Error fetching jobs:", error);
-        toast.error("Failed to load jobs");
+        toast.error("Failed to load jobs", {
+          action: closeToastButton,
+        });
       } finally {
         setLoading(false);
       }
     };
- 
+
     fetchJobs();
   }, [userId]);
- 
+
   useEffect(() => {
     if (jobs.length > 0) {
       const statusMap: Record<string, { status: string; lastRun: string }> = {};
-      jobs.forEach(job => {
+      jobs.forEach((job) => {
         statusMap[job.id] = {
           status: job.status,
           lastRun: job.lastRun,
@@ -717,7 +1078,7 @@ const Jobs = () => {
       localStorage.setItem("jobStatuses", JSON.stringify(statusMap));
     }
   }, [jobs]);
- 
+
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch = job.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "all" || job.category === categoryFilter;
@@ -727,45 +1088,49 @@ const Jobs = () => {
     const beforeEnd = !endDate || jobDate <= new Date(endDate);
     return matchesSearch && matchesCategory && matchesStatus && afterStart && beforeEnd;
   });
- 
+
   const jobsByCategory = [
     { name: "Unknown", value: jobs.filter((j) => j.category === "Unknown").length, color: "#3b82f6" },
     { name: "Glue", value: jobs.filter((j) => j.category === "Glue").length, color: "#10b981" },
   ];
- 
+
   const jobsByStatus = [
     { name: "PENDING", value: jobs.filter((j) => j.status === "PENDING").length, color: "#f97316" },
     { name: "Completed", value: jobs.filter((j) => j.status === "Completed").length, color: "#10b981" },
     { name: "Created", value: jobs.filter((j) => j.status === "Created").length, color: "#6b7280" },
   ];
- 
+
   const hourlyData = Array.from({ length: 8 }, (_, i) => ({
     time: `${String(i * 3).padStart(2, "0")}:00`,
     jobs: 0,
   }));
- 
+
   const runJob = (jobId: string) => {
-    setJobs(prevJobs =>
-      prevJobs.map(job =>
+    setJobs((prevJobs) =>
+      prevJobs.map((job) =>
         job.id === jobId
           ? { ...job, status: "Running" as const, lastRun: new Date().toLocaleString() }
           : job
       )
     );
-    toast.success("Job started successfully");
- 
+    toast.success("Job started successfully", {
+      action: closeToastButton,
+    });
+
     setTimeout(() => {
-      setJobs(prevJobs =>
-        prevJobs.map(job =>
+      setJobs((prevJobs) =>
+        prevJobs.map((job) =>
           job.id === jobId
             ? { ...job, status: "Completed" as const, lastRun: new Date().toLocaleString() }
             : job
         )
       );
-      toast.success("Job completed successfully");
+      toast.success("Job completed successfully", {
+        action: closeToastButton,
+      });
     }, 3000);
   };
- 
+
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       Completed: "bg-green-500/20 text-green-600 border-green-500/30",
@@ -776,50 +1141,51 @@ const Jobs = () => {
     };
     return <Badge className={styles[status] || styles.Created}>{status}</Badge>;
   };
- 
+
   const getStepBadge = (status: "skipped" | "executed") => {
     if (status === "executed") {
       return <Badge className="bg-primary/20 text-primary border-primary/30">executed</Badge>;
     }
     return <Badge variant="secondary">skipped</Badge>;
   };
- 
+
   const openJobDetails = async (job: Job) => {
     if (!userId) {
-      toast.error("User ID not found. Please login again.");
+      toast.error("User ID not found. Please login again.", {
+        action: closeToastButton,
+      });
       return;
     }
- 
+
     setModalLoading(true);
     setShowJobModal(true);
     setSelectedJob(null);
- 
+
     try {
-      const response = await fetch(
-        `${API_BASE}/view-job?user_id=${userId}&job_id=${job.id}`
-      );
- 
+      const response = await fetch(`${API_BASE}/view-job?user_id=${userId}&job_id=${job.id}`);
+
       if (!response.ok) {
         throw new Error(`Failed to fetch job details: ${response.status}`);
       }
- 
+
       const data: DetailedJobResponse = await response.json();
       setSelectedJob(data);
     } catch (error) {
       console.error("Error fetching job details:", error);
-      toast.error("Failed to load job details");
+      toast.error("Failed to load job details", {
+        action: closeToastButton,
+      });
       setSelectedJob(null);
     } finally {
       setModalLoading(false);
     }
   };
- 
+
   const getS3Path = (paths: string[] = []) => {
     const s3Path = paths.find((path) => path.startsWith("s3://"));
     return s3Path || "N/A";
   };
- 
-  // Helper to format schedule object nicely
+
   const formatSchedule = (schedule: DetailedJobResponse["schedule"]) => {
     if (!schedule) return "N/A";
     const parts = [];
@@ -827,22 +1193,24 @@ const Jobs = () => {
     if (schedule.time_utc) parts.push(`Time (UTC): ${schedule.time_utc}`);
     if (schedule.scheduled_at) {
       const date = new Date(schedule.scheduled_at);
-      parts.push(`Scheduled: ${date.toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      })}`);
+      parts.push(
+        `Scheduled: ${date.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })}`
+      );
     }
     return parts.join(" • ") || "N/A";
   };
- 
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className=" h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
+      <header className="border-b border-border backdrop-blur sticky">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -856,7 +1224,7 @@ const Jobs = () => {
                 </p>
               </div>
             </div>
- 
+
             <nav className="flex items-center gap-6">
               <button
                 onClick={() => navigate("/jobs")}
@@ -872,15 +1240,15 @@ const Jobs = () => {
                 <GitBranch className="w-4 h-4" />
                 Pipelines
               </button>
- 
+
               <div className="flex items-center gap-3">
                 <ThemeToggle />
- 
+
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleLogout}
-                  className="hover:bg-muted rounded-full"
+                  className="hover:bg-primary rounded-full"
                   title="Logout"
                 >
                   <LogOut className="h-4 w-4" />
@@ -890,8 +1258,8 @@ const Jobs = () => {
           </div>
         </div>
       </header>
- 
-      <main className="container mx-auto px-6 py-8">
+
+      <main className="container mx-auto px-6 py-8 flex-1 overflow-y-auto">
         {viewMode === "chart" ? (
           <>
             <div className="flex items-center justify-between mb-8">
@@ -906,7 +1274,7 @@ const Jobs = () => {
                 Table View
               </Button>
             </div>
- 
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <Card className="p-6">
                 <h3 className="font-semibold mb-4">Jobs by Category</h3>
@@ -932,7 +1300,7 @@ const Jobs = () => {
                   </ResponsiveContainer>
                 </div>
               </Card>
- 
+
               <Card className="p-6">
                 <h3 className="font-semibold mb-4">Job Status Distribution</h3>
                 <div className="h-64">
@@ -958,7 +1326,7 @@ const Jobs = () => {
                 </div>
               </Card>
             </div>
- 
+
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold">
@@ -998,85 +1366,125 @@ const Jobs = () => {
                 <p className="text-muted-foreground">View and manage your jobs</p>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="outline" onClick={() => setViewMode("chart")}>
+                {/* <Button variant="outline" onClick={() => setViewMode("chart")}>
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Chart View
-                </Button>
+                </Button> */}
                 <Button onClick={() => navigate("/workflow/data-ingestion")}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Job
                 </Button>
               </div>
             </div>
- 
-            <Card className="p-4 mb-6">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search jobs..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="date"
-                    placeholder="Start Date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="pl-10 w-40"
-                  />
-                </div>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="date"
-                    placeholder="End Date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="pl-10 w-40"
-                  />
-                </div>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Filter by category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="Unknown">Unknown</SelectItem>
-                    <SelectItem value="Glue">Glue</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setCategoryFilter("all");
-                    setStatusFilter("All");
-                    setStartDate("");
-                    setEndDate("");
-                  }}
-                >
-                  Clear
-                </Button>
-                <div className="flex items-center gap-1 border rounded-lg p-1">
-                  {["All", "Completed", "Running", "Failed"].map((status) => (
-                    <Button
-                      key={status}
-                      variant={statusFilter === status ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setStatusFilter(status)}
-                    >
-                      {status}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </Card>
- 
+
+            <div className="p-4 mb-6">
+  <div className="flex flex-wrap items-center gap-4">
+    <div className="relative flex-1 min-w-[200px]">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <Input
+        placeholder="Search jobs..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="pl-10"
+      />
+    </div>
+
+    <div className="flex flex-col sm:flex-row gap-4">
+      <div className="relative w-40">
+        <Input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="w-full text-center peer"
+          placeholder=" "
+        />
+        <label 
+          className="
+            absolute left-2 -top-2.5 px-1 text-xs font-medium text-muted-foreground 
+            bg-background transition-all peer-placeholder-shown:top-1/2 
+            peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground/70 
+            peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-foreground
+          "
+        >
+          Start Date
+        </label>
+      </div>
+
+      <div className="relative w-40">
+        <Input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="w-full text-center peer"
+          placeholder=" "
+        />
+        <label 
+          className="
+            absolute left-2 -top-2.5 px-1 text-xs font-medium text-muted-foreground 
+            bg-background transition-all peer-placeholder-shown:top-1/2 
+            peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground/70 
+            peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-foreground
+          "
+        >
+          End Date
+        </label>
+      </div>
+
+      {/* Status dropdown with floating label */}
+      <div className="relative w-40">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger 
+            className="
+              w-full text-center peer 
+              [&>span]:text-muted-foreground/70 
+              peer-placeholder-shown:text-muted-foreground/70
+              focus-within:text-foreground
+            "
+          >
+            <SelectValue placeholder=" " />
+          </SelectTrigger>
+          <label 
+            className="
+              absolute left-2 -top-2.5 px-1 text-xs font-medium text-muted-foreground 
+              bg-background transition-all peer-placeholder-shown:top-1/2 
+              peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground/70 
+              peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-foreground
+            "
+          >
+            Status
+          </label>
+          <SelectContent>
+            <SelectItem className="hover:bg-primary/30" value="All">All Statuses</SelectItem>
+            <SelectItem className="hover:bg-primary/30" value="Created">Created</SelectItem>
+            <SelectItem className="hover:bg-primary/30" value="Running">Running</SelectItem>
+            <SelectItem className="hover:bg-primary/30" value="Completed">Completed</SelectItem>
+            <SelectItem className="hover:bg-primary/30" value="Failed">Failed</SelectItem>
+            <SelectItem className="hover:bg-primary/30" value="PENDING">Pending</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+
+    <Button
+      variant="ghost"
+      onClick={() => {
+        setSearchQuery("");
+        setCategoryFilter("all");
+        setStatusFilter("All");
+        setStartDate("");
+        setEndDate("");
+      }}
+      className="border border-border"
+    >
+      Clear
+    </Button>
+  </div>
+</div>
+
+
+
+            
+
             <Card className="min-h-[300px] flex flex-col">
               {loading ? (
                 <div className="flex-1 flex items-center justify-center py-12">
@@ -1130,9 +1538,11 @@ const Jobs = () => {
                                 size="icon"
                                 variant="ghost"
                                 className="h-8 w-8"
-                                onClick={() => navigate(`/edit-job/${job.id}`, {
-                                  state: { business_logic_rules: selectedJob?.business_logic_rules || {} }
-                                })}
+                                onClick={() =>
+                                  navigate(`/edit-job/${job.id}`, {
+                                    state: { business_logic_rules: selectedJob?.business_logic_rules || {} },
+                                  })
+                                }
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
@@ -1148,11 +1558,11 @@ const Jobs = () => {
           </>
         )}
       </main>
- 
+
       {/* Job Details Modal */}
       <Dialog open={showJobModal} onOpenChange={setShowJobModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6">
-          <DialogHeader className="flex flex-row items-center justify-between border-b pb-4 mb-6">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
+          <DialogHeader className="flex flex-row items-center justify-between pb-4 ">
             <DialogTitle className="text-2xl font-bold">
               Job Details - {selectedJob?.job_name || "Loading..."}
             </DialogTitle>
@@ -1162,7 +1572,7 @@ const Jobs = () => {
               </Button>
             </DialogClose>
           </DialogHeader>
- 
+
           {modalLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
@@ -1186,13 +1596,11 @@ const Jobs = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Data Source</p>
-                    <p className="font-medium">
-                      {getS3Path(selectedJob.datasource_paths)}
-                    </p>
+                    <p className="font-medium">{getS3Path(selectedJob.datasource_paths)}</p>
                   </div>
                 </Card>
               </div>
- 
+
               <Card className="p-6 mb-6">
                 <div className="grid grid-cols-2 gap-8">
                   <div>
@@ -1217,9 +1625,7 @@ const Jobs = () => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Data Source:</p>
-                        <p className="font-medium">
-                          {getS3Path(selectedJob.datasource_paths)}
-                        </p>
+                        <p className="font-medium">{getS3Path(selectedJob.datasource_paths)}</p>
                       </div>
                     </div>
                   </div>
@@ -1228,9 +1634,7 @@ const Jobs = () => {
                     <div className="space-y-3">
                       <div>
                         <p className="text-sm text-muted-foreground">Overall Status:</p>
-                        <Badge variant="outline">
-                          {selectedJob.overall_job_status || "N/A"}
-                        </Badge>
+                        <Badge variant="outline">{selectedJob.overall_job_status || "N/A"}</Badge>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Last Run:</p>
@@ -1249,15 +1653,13 @@ const Jobs = () => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Schedule:</p>
-                        <p className="font-medium">
-                          {formatSchedule(selectedJob.schedule)}
-                        </p>
+                        <p className="font-medium">{formatSchedule(selectedJob.schedule)}</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </Card>
- 
+
               <h3 className="text-lg font-semibold mb-4">Job Stages (3)</h3>
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <Card className="p-4">
@@ -1273,7 +1675,7 @@ const Jobs = () => {
                   <p className="font-medium mb-2">DQ Rules</p>
                   {getStepBadge(selectedJob.dq_enabled ? "executed" : "skipped")}
                 </Card>
- 
+
                 <Card className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -1287,7 +1689,7 @@ const Jobs = () => {
                   <p className="font-medium mb-2">NER</p>
                   {getStepBadge(selectedJob.ner_enabled ? "executed" : "skipped")}
                 </Card>
- 
+
                 <Card className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -1304,15 +1706,12 @@ const Jobs = () => {
               </div>
             </>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              No job details available
-            </div>
+            <div className="text-center py-12 text-muted-foreground">No job details available</div>
           )}
         </DialogContent>
       </Dialog>
     </div>
   );
 };
- 
+
 export default Jobs;
- 

@@ -18,12 +18,13 @@
 //   XCircle,
 //   ChevronRight,
 //   Check,
-//   Loader2
+//   Loader2,
+//   X,
 // } from 'lucide-react';
 // import { cn } from '@/lib/utils';
 // import { Button } from '@/components/ui/button';
 // import { toast } from 'sonner';
-
+ 
 // interface KPIWithTarget {
 //   id: string;
 //   name: string;
@@ -34,27 +35,28 @@
 //   metrics: KPI[];
 //   measurements: string[];
 // }
-
+ 
 // interface AnalysisPanelProps {
 //   file: DataFile | null;
 //   onBuildWithRecommendations: (data: { kpis: KPI[]; visuals: any[]; total_rows: number }) => void;
 //   onBuildCustomDashboard: () => void;
 //   isLoading: boolean;
 // }
-
+ 
 // const fileIcons = {
 //   csv: FileText,
 //   excel: Table,
 //   json: FileJson,
 // };
-
+ 
 // const fileColors = {
 //   csv: 'text-emerald-400',
 //   excel: 'text-green-400',
 //   json: 'text-amber-400',
 // };
+ 
 // type Step = 'select-kpis' | 'select-metrics' | 'confirmation';
-
+ 
 // export function AnalysisPanel({
 //   file,
 //   onBuildWithRecommendations,
@@ -72,15 +74,28 @@
 //   const [showDashboard, setShowDashboard] = useState(false);
 //   const [dashboardData, setDashboardData] = useState<any>(null);
 //   const [queryText, setQueryText] = useState('');
-//    const handleGenerateDashboard = (data: any, query: string) => {
+ 
+//   // Reusable X close button for all toasts (Sonner style)
+//   const closeToastButton = (
+//     <button
+//       onClick={() => toast.dismiss()}
+//       className="absolute top-2 right-2 rounded-full p-1 hover:bg-muted/50 transition-colors"
+//       aria-label="Close toast"
+//     >
+//       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+//     </button>
+//   );
+ 
+//   const handleGenerateDashboard = (data: any, query: string) => {
 //     setDashboardData(data);
 //     setQueryText(query);
 //     setShowDashboard(true);
 //   };
-
+ 
 //   const handleBackToChat = () => {
 //     setShowDashboard(false);
 //   };
+ 
 //   // Step 1: Discover KPIs
 //   useEffect(() => {
 //     if (!file) {
@@ -88,25 +103,27 @@
 //       setIsAnalyzing(false);
 //       return;
 //     }
-
+ 
 //     const userData = localStorage.getItem("user");
 //     const jobId = localStorage.getItem("current_job_id");
-
+ 
 //     if (!userData || !jobId) {
-//       toast.error("User or Job ID missing");
+//       toast.error("User or Job ID missing", {
+//         action: closeToastButton,
+//       });
 //       return;
 //     }
-
+ 
 //     const userId = JSON.parse(userData).id;
 //     const csvBlobPath = `${userId}/${jobId}/${file.name}.csv`;
-
+ 
 //     setIsAnalyzing(true);
 //     setKpisWithDetails([]);
 //     setSelectedKpis(new Set());
 //     setSelectedMetrics(new Set());
 //     setSelectedMeasurements(new Set());
 //     setCurrentStep('select-kpis');
-
+ 
 //     const fetchKPIs = async () => {
 //       try {
 //         const response = await fetch('https://20.81.213.147/discover_kpis', {
@@ -114,17 +131,17 @@
 //           headers: { 'Content-Type': 'application/json' },
 //           body: JSON.stringify({ csv_blob: csvBlobPath })
 //         });
-
+ 
 //         if (!response.ok) throw new Error("Failed to discover KPIs");
-
+ 
 //         const data = await response.json();
 //         const apiKpis = data.available_kpis || [];
-
+ 
 //         const generatedKPIs: KPIWithTarget[] = apiKpis.map((item: { kpi_name: string }, index: number) => {
 //           const statuses: ('on-track' | 'at-risk' | 'off-track')[] = ['on-track', 'at-risk', 'off-track'];
 //           const status = statuses[index % 3];
 //           const percentage = 75 + (index * 8) % 35;
-
+ 
 //           return {
 //             id: `kpi-${index}`,
 //             name: item.kpi_name,
@@ -136,41 +153,47 @@
 //             measurements: []
 //           };
 //         });
-
+ 
 //         setKpisWithDetails(generatedKPIs);
-//         toast.success(`${apiKpis.length} KPIs discovered!`);
+//         toast.success(`${apiKpis.length} KPIs discovered!`, {
+//           action: closeToastButton,
+//         });
 //       } catch (err) {
-//         toast.error("Failed to load KPIs");
+//         toast.error("Failed to load KPIs", {
+//           action: closeToastButton,
+//         });
 //         setKpisWithDetails([]);
 //       } finally {
 //         setIsAnalyzing(false);
 //       }
 //     };
-
+ 
 //     fetchKPIs();
 //   }, [file]);
-
+ 
 //   // Step 2: Compute real metrics
 //   const handleGenerateMetrics = async () => {
 //     if (selectedKpis.size === 0) return;
-
+ 
 //     setIsGeneratingMetrics(true);
-
+ 
 //     const userData = localStorage.getItem("user");
 //     const jobId = localStorage.getItem("current_job_id");
 //     const userId = userData ? JSON.parse(userData).id : null;
-
+ 
 //     if (!userId || !jobId || !file) {
-//       toast.error("Missing data");
+//       toast.error("Missing data", {
+//         action: closeToastButton,
+//       });
 //       setIsGeneratingMetrics(false);
 //       return;
 //     }
-
+ 
 //     const csvBlobPath = `${userId}/${jobId}/${file.name}.csv`;
 //     const selectedKpiNames = kpisWithDetails
 //       .filter(kpi => selectedKpis.has(kpi.id))
 //       .map(kpi => kpi.name);
-
+ 
 //     try {
 //       const response = await fetch('https://20.81.213.147/compute_kpis', {
 //         method: 'POST',
@@ -180,18 +203,18 @@
 //           selected_kpi_names: selectedKpiNames
 //         })
 //       });
-
+ 
 //       if (!response.ok) throw new Error("Failed to compute KPIs");
-
+ 
 //       const data = await response.json();
 //       const computedKpis = data.selected_kpis || [];
-
+ 
 //       const updatedKpis = kpisWithDetails.map(kpi => {
 //         if (!selectedKpis.has(kpi.id)) return kpi;
-
+ 
 //         const computed = computedKpis.find((c: any) => c.kpi_name === kpi.name);
 //         if (!computed) return kpi;
-
+ 
 //         return {
 //           ...kpi,
 //           actual: computed.metrics.toString(),
@@ -207,32 +230,38 @@
 //           measurements: [computed.measures]
 //         };
 //       });
-
+ 
 //       setKpisWithDetails(updatedKpis);
-//       toast.success("Metrics computed!");
+//       toast.success("Metrics computed!", {
+//         action: closeToastButton,
+//       });
 //       setCurrentStep('select-metrics');
 //     } catch (err) {
-//       toast.error("Failed to compute metrics");
+//       toast.error("Failed to compute metrics", {
+//         action: closeToastButton,
+//       });
 //     } finally {
 //       setIsGeneratingMetrics(false);
 //     }
 //   };
-
+ 
 //   // Step 3: Generate full dashboard
 //   const handleBuildDashboard = async () => {
 //     if (!file) return;
-
+ 
 //     const userData = localStorage.getItem("user");
 //     const jobId = localStorage.getItem("current_job_id");
 //     const userId = userData ? JSON.parse(userData).id : null;
-
+ 
 //     if (!userId || !jobId) {
-//       toast.error("User or Job ID missing");
+//       toast.error("User or Job ID missing", {
+//         action: closeToastButton,
+//       });
 //       return;
 //     }
-
+ 
 //     const csvBlobPath = `${userId}/${jobId}/${file.name}.csv`;
-
+ 
 //     const selectedComputedKpis = kpisWithDetails
 //       .filter(kpi => selectedKpis.has(kpi.id))
 //       .map(kpi => ({
@@ -240,12 +269,14 @@
 //         measures: kpi.measurements[0] || "",
 //         metrics: parseFloat(kpi.actual.replace(/,/g, '')) || 0
 //       }));
-
+ 
 //     if (selectedComputedKpis.length === 0) {
-//       toast.error("No KPIs selected");
+//       toast.error("No KPIs selected", {
+//         action: closeToastButton,
+//       });
 //       return;
 //     }
-
+ 
 //     // Always prepare fallback KPIs from our real computed data
 //     const fallbackKpis: KPI[] = selectedComputedKpis.map((k, i) => ({
 //       id: `fallback-${i}`,
@@ -254,7 +285,7 @@
 //       change: 0,
 //       changeLabel: 'From your selection'
 //     }));
-
+ 
 //     try {
 //       const response = await fetch('https://20.81.213.147/generate_visuals', {
 //         method: 'POST',
@@ -264,9 +295,9 @@
 //           computed_kpis: selectedComputedKpis
 //         })
 //       });
-
+ 
 //       const visualsData = response.ok ? await response.json() : { visuals: [], total_rows: 0 };
-
+ 
 //       // Extract KPI visuals from backend
 //       let finalKpis = visualsData.visuals
 //         ?.filter((v: any) => v.chart_type === "KPI")
@@ -277,24 +308,28 @@
 //           change: Math.random() * 30 - 10,
 //           changeLabel: v.description || 'AI Generated'
 //         })) || [];
-
+ 
 //       // If backend didn't return KPI visuals, use our real computed ones
 //       if (finalKpis.length === 0) {
 //         finalKpis = fallbackKpis;
 //       }
-
+ 
 //       // Pass FULL data to parent
 //       onBuildWithRecommendations({
 //         kpis: finalKpis,
 //         visuals: visualsData.visuals || [],
 //         total_rows: visualsData.total_rows || selectedComputedKpis.length
 //       });
-
-//       toast.success("Dashboard generated with real visuals!");
+ 
+//       toast.success("Dashboard generated with real visuals!", {
+//         action: closeToastButton,
+//       });
 //     } catch (err) {
 //       console.error("Generate visuals failed:", err);
-//       toast.info("Showing your selected KPIs");
-
+//       toast.info("Showing your selected KPIs", {
+//         action: closeToastButton,
+//       });
+ 
 //       // Always show something
 //       onBuildWithRecommendations({
 //         kpis: fallbackKpis,
@@ -303,47 +338,53 @@
 //       });
 //     }
 //   };
-
+ 
 //   const handleBuildCustomDashboard = async () => {
 //     if (!file) {
-//       toast.error("No file selected");
+//       toast.error("No file selected", {
+//         action: closeToastButton,
+//       });
 //       return;
 //     }
-
+ 
 //     const userData = localStorage.getItem("user");
 //     const jobId = localStorage.getItem("current_job_id");
 //     const userId = userData ? JSON.parse(userData).id : null;
-
+ 
 //     if (!userId || !jobId) {
-//       toast.error("User or Job ID missing");
+//       toast.error("User or Job ID missing", {
+//         action: closeToastButton,
+//       });
 //       return;
 //     }
-
+ 
 //     const blobPath = `${userId}/${jobId}/${file.name}.csv`;
-
+ 
 //     setIsCreatingThread(true); // Start loading
-
+ 
 //     try {
 //       // Step 1: Create thread
 //       const threadResponse = await createThread();
 //       const threadId = threadResponse.thread_id;
-
+ 
 //       // Store thread_id in localStorage
 //       localStorage.setItem("thread_id", threadId);
-      
-
+ 
 //       // Step 2: Attach file to agent
 //       await attachFileToAgent(blobPath);
-
+ 
 //       // Step 3: Proceed to custom dashboard
 //       onBuildCustomDashboard();
 //     } catch (error: any) {
 //       console.error("Error in custom dashboard flow:", error);
-//       toast.error(error.message || "Failed to initialize custom dashboard");
+//       toast.error(error.message || "Failed to initialize custom dashboard", {
+//         action: closeToastButton,
+//       });
 //     } finally {
 //       setIsCreatingThread(false); // Stop loading
 //     }
 //   };
+ 
 //   const toggleKpi = (kpiId: string) => {
 //     setSelectedKpis(prev => {
 //       const next = new Set(prev);
@@ -351,7 +392,7 @@
 //       return next;
 //     });
 //   };
-
+ 
 //   const toggleMetric = (metricId: string) => {
 //     setSelectedMetrics(prev => {
 //       const next = new Set(prev);
@@ -359,15 +400,16 @@
 //       return next;
 //     });
 //   };
-
-//   const toggleMeasurement = (measurement: string) => {
+ 
+//   const toggleMeasurement = (measurement: string, kpiId: string) => {
+//     const uniqueKey = `${kpiId}-${measurement}`;
 //     setSelectedMeasurements(prev => {
 //       const next = new Set(prev);
-//       next.has(measurement) ? next.delete(measurement) : next.add(measurement);
+//       next.has(uniqueKey) ? next.delete(uniqueKey) : next.add(uniqueKey);
 //       return next;
 //     });
 //   };
-
+ 
 //   const handleProceedToConfirmation = () => setCurrentStep('confirmation');
 //   const handleBackToKpis = () => {
 //     setCurrentStep('select-kpis');
@@ -375,10 +417,10 @@
 //     setSelectedMeasurements(new Set());
 //   };
 //   const handleBackToMetrics = () => setCurrentStep('select-metrics');
-
+ 
 //   const selectedKpisData = kpisWithDetails.filter(kpi => selectedKpis.has(kpi.id));
 //   const hasMetricSelection = selectedMetrics.size > 0 || selectedMeasurements.size > 0;
-
+ 
 //   const getStatusColor = (status: KPIWithTarget['status']) => {
 //     switch (status) {
 //       case 'on-track': return 'text-emerald-400';
@@ -387,7 +429,7 @@
 //       default: return 'text-muted-foreground';
 //     }
 //   };
-
+ 
 //   const getStatusBg = (status: KPIWithTarget['status']) => {
 //     switch (status) {
 //       case 'on-track': return 'bg-emerald-400/10 border-emerald-400/30';
@@ -396,7 +438,7 @@
 //       default: return 'bg-secondary';
 //     }
 //   };
-
+ 
 //   const getStatusIcon = (status: KPIWithTarget['status']) => {
 //     switch (status) {
 //       case 'on-track': return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
@@ -405,9 +447,10 @@
 //       default: return null;
 //     }
 //   };
-//  if (showDashboard && dashboardData) {
+ 
+//   if (showDashboard && dashboardData) {
 //     return (
-//       <DashboardPreview 
+//       <DashboardPreview
 //         dashboardData={dashboardData}
 //         file={file!}
 //         query={queryText}
@@ -415,12 +458,13 @@
 //       />
 //     );
 //   }
+ 
 //   if (!file) {
 //     return (
 //       <div className="flex-1 flex items-center justify-center">
 //         <div className="text-center animate-fade-in">
-//           <div className="w-20 h-20 rounded-2xl bg-secondary/50 border border-border flex items-center justify-center mx-auto mb-6">
-//             <BarChart3 className="w-10 h-10 text-muted-foreground" />
+//           <div className="w-20 h-20 rounded-2xl bg-primary/20 border border-primary flex items-center justify-center mx-auto mb-6">
+//             <BarChart3 className="w-10 h-10 text-primary" />
 //           </div>
 //           <h2 className="text-xl font-semibold text-foreground mb-2">Select a Dataset</h2>
 //           <p className="text-muted-foreground text-sm max-w-sm">
@@ -430,10 +474,10 @@
 //       </div>
 //     );
 //   }
-
+ 
 //   const Icon = fileIcons[file.type] || FileText;
 //   const iconColor = fileColors[file.type] || 'text-muted-foreground';
-
+ 
 //   if (isAnalyzing) {
 //     return (
 //       <div className="flex-1 flex items-center justify-center">
@@ -452,7 +496,7 @@
 //       </div>
 //     );
 //   }
-
+ 
 //   if (kpisWithDetails.length === 0) {
 //     return (
 //       <div className="flex-1 flex items-center justify-center text-center">
@@ -460,7 +504,7 @@
 //       </div>
 //     );
 //   }
-
+ 
 //   const StepIndicator = () => (
 //     <div className="flex items-center justify-center gap-2 mb-8">
 //       <div className={cn(
@@ -475,7 +519,7 @@
 //         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
 //         currentStep === 'select-metrics'
 //           ? "bg-primary text-primary-foreground"
-//           : currentStep === 'confirmation' ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"
+//           : currentStep === 'confirmation' ? "bg-primary/20 text-primary" : "bg-primary/20 text-muted-foreground"
 //       )}>
 //         <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center">2</span>
 //         Select Metrics
@@ -483,14 +527,14 @@
 //       <ChevronRight className="w-4 h-4 text-muted-foreground" />
 //       <div className={cn(
 //         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-//         currentStep === 'confirmation' ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+//         currentStep === 'confirmation' ? "bg-primary text-primary-foreground" : "bg-primary/20 text-muted-foreground"
 //       )}>
 //         <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center">3</span>
 //         Confirm
 //       </div>
 //     </div>
 //   );
-
+ 
 //   if (currentStep === 'select-kpis') {
 //     return (
 //       <div className="flex-1 overflow-auto">
@@ -506,9 +550,9 @@
 //               </div>
 //             </div>
 //           </div>
-
+ 
 //           <StepIndicator />
-
+ 
 //           <div className="space-y-4 animate-slide-up">
 //             <div className="flex items-center gap-2">
 //               <Target className="w-5 h-5 text-primary" />
@@ -517,7 +561,7 @@
 //             <p className="text-sm text-muted-foreground">
 //               Choose the Key Performance Indicators you want to track.
 //             </p>
-
+ 
 //             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 //               {kpisWithDetails.map((kpi, index) => {
 //                 const isSelected = selectedKpis.has(kpi.id);
@@ -542,9 +586,9 @@
 //                       </div>
 //                       {getStatusIcon(kpi.status)}
 //                     </div>
-
+ 
 //                     <h4 className="text-sm font-semibold text-foreground mb-3">{kpi.name}</h4>
-
+ 
 //                     <div className="space-y-2">
 //                       <div className="flex justify-between text-xs">
 //                         <span className="text-muted-foreground">Actual</span>
@@ -564,7 +608,7 @@
 //                         <span className={cn("font-mono font-semibold", getStatusColor(kpi.status))}>{kpi.percentage}%</span>
 //                       </div>
 //                     </div>
-
+ 
 //                     <div className="mt-3 pt-3 border-t border-border/50">
 //                       <p className="text-xs text-muted-foreground">
 //                         {kpi.metrics.length} metrics • {kpi.measurements.length} measurements
@@ -575,7 +619,7 @@
 //               })}
 //             </div>
 //           </div>
-
+ 
 //           <div className="flex flex-col sm:flex-row gap-4 pt-4">
 //             <Button
 //               onClick={handleGenerateMetrics}
@@ -596,7 +640,7 @@
 //                 </>
 //               )}
 //             </Button>
-
+ 
 //             <Button
 //               onClick={handleBuildCustomDashboard}
 //               disabled={isLoading || isCreatingThread}
@@ -621,7 +665,7 @@
 //       </div>
 //     );
 //   }
-
+ 
 //   if (currentStep === 'select-metrics') {
 //     return (
 //       <div className="flex-1 overflow-auto">
@@ -639,9 +683,9 @@
 //               </div>
 //             </div>
 //           </div>
-
+ 
 //           <StepIndicator />
-
+ 
 //           <div className="space-y-8 animate-slide-up">
 //             {selectedKpisData.map((kpi, kpiIndex) => (
 //               <div key={kpi.id} className="space-y-4" style={{ animationDelay: `${kpiIndex * 100}ms` }}>
@@ -656,7 +700,7 @@
 //                     </p>
 //                   </div>
 //                 </div>
-
+ 
 //                 <div className="space-y-3">
 //                   <div className="flex items-center gap-2">
 //                     <TrendingUp className="w-4 h-4 text-primary" />
@@ -685,20 +729,22 @@
 //                               )}>
 //                                 {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
 //                               </div>
-//                               <span className="text-sm text-muted-foreground">{metric.label}</span>
+//                               <span className="text-sm text-muted-foreground truncate max-w-[140px]">{metric.label}</span>
 //                             </div>
-//                             <span className="text-lg font-bold text-foreground font-mono">{metric.value}</span>
+//                             <span className="text-base sm:text-lg font-bold text-foreground font-mono truncate max-w-full overflow-hidden">
+//                               {metric.value}
+//                             </span>
 //                           </div>
 //                           <div className="flex items-center gap-1 text-xs mt-2 ml-7 text-emerald-400">
 //                             <TrendingUp className="w-3 h-3" />
-//                             <span>{metric.changeLabel}</span>
+//                             <span className="truncate">{metric.changeLabel}</span>
 //                           </div>
 //                         </div>
 //                       );
 //                     })}
 //                   </div>
 //                 </div>
-
+ 
 //                 <div className="space-y-3">
 //                   <div className="flex items-center gap-2">
 //                     <BarChart3 className="w-4 h-4 text-primary" />
@@ -707,16 +753,17 @@
 //                   </div>
 //                   <div className="flex flex-wrap gap-2">
 //                     {kpi.measurements.map((measurement, idx) => {
-//                       const isSelected = selectedMeasurements.has(measurement);
+//                       const uniqueKey = `${kpi.id}-${measurement}`;
+//                       const isSelected = selectedMeasurements.has(uniqueKey);
 //                       return (
 //                         <button
-//                           key={idx}
-//                           onClick={() => toggleMeasurement(measurement)}
+//                           key={uniqueKey}
+//                           onClick={() => toggleMeasurement(measurement, kpi.id)}
 //                           className={cn(
 //                             "px-4 py-2 rounded-full text-sm font-medium border transition-all",
 //                             isSelected
 //                               ? "bg-primary text-primary-foreground border-primary"
-//                               : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+//                               : "bg-primary/20 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
 //                           )}
 //                         >
 //                           {measurement}
@@ -728,7 +775,7 @@
 //               </div>
 //             ))}
 //           </div>
-
+ 
 //           <div className="flex flex-col sm:flex-row gap-4 pt-4">
 //             <Button onClick={handleBackToKpis} variant="outline" size="lg" className="gap-2">
 //               Back to KPIs
@@ -748,7 +795,7 @@
 //       </div>
 //     );
 //   }
-
+ 
 //   // Step 3: Confirmation
 //   return (
 //     <div className="flex-1 overflow-auto">
@@ -764,21 +811,22 @@
 //             </div>
 //           </div>
 //         </div>
-
+ 
 //         <StepIndicator />
-
+ 
 //         <div className="space-y-6 animate-slide-up">
 //           <div className="p-6 rounded-xl border border-primary/30 bg-primary/5">
 //             <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
 //               <CheckCircle2 className="w-5 h-5 text-primary" />
 //               Your Dashboard will include:
 //             </h3>
-
+ 
 //             <div className="space-y-4">
 //               {selectedKpisData.map((kpi) => {
 //                 const selectedKpiMetrics = kpi.metrics.filter(m => selectedMetrics.has(m.id));
-//                 const selectedKpiMeasurements = kpi.measurements.filter(m => selectedMeasurements.has(m));
-
+//                 const selectedKpiMeasurements = kpi.measurements
+//                   .filter(m => selectedMeasurements.has(`${kpi.id}-${m}`));
+ 
 //                 return (
 //                   <div key={kpi.id} className="p-4 rounded-lg bg-card/80 border border-border">
 //                     <div className="flex items-center gap-2 mb-3">
@@ -788,7 +836,7 @@
 //                         {kpi.percentage}%
 //                       </span>
 //                     </div>
-
+ 
 //                     {selectedKpiMetrics.length > 0 && (
 //                       <div className="mb-2">
 //                         <span className="text-xs text-muted-foreground">Metrics: </span>
@@ -797,7 +845,7 @@
 //                         </span>
 //                       </div>
 //                     )}
-
+ 
 //                     {selectedKpiMeasurements.length > 0 && (
 //                       <div>
 //                         <span className="text-xs text-muted-foreground">Measurements: </span>
@@ -810,7 +858,7 @@
 //                 );
 //               })}
 //             </div>
-
+ 
 //             <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
 //               <div className="text-center">
 //                 <div className="text-2xl font-bold text-primary">{selectedKpis.size}</div>
@@ -827,7 +875,7 @@
 //             </div>
 //           </div>
 //         </div>
-
+ 
 //         <div className="flex flex-col sm:flex-row gap-4 pt-4">
 //           <Button onClick={handleBackToMetrics} variant="outline" size="lg" className="gap-2">
 //             Back to Metrics
@@ -856,11 +904,9 @@
 //     </div>
 //   );
 // }
-
-
-
-
-import { useState, useEffect } from 'react';
+ 
+ 
+import { useState, useEffect, useRef } from 'react';
 import { DataFile, KPI } from '@/components/types/dashboard';
 import { createThread, attachFileToAgent } from '../api/api';
 import { DashboardPreview } from './DashboardPreview';
@@ -886,7 +932,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-
+ 
 interface KPIWithTarget {
   id: string;
   name: string;
@@ -897,28 +943,28 @@ interface KPIWithTarget {
   metrics: KPI[];
   measurements: string[];
 }
-
+ 
 interface AnalysisPanelProps {
   file: DataFile | null;
   onBuildWithRecommendations: (data: { kpis: KPI[]; visuals: any[]; total_rows: number }) => void;
   onBuildCustomDashboard: () => void;
   isLoading: boolean;
 }
-
+ 
 const fileIcons = {
   csv: FileText,
   excel: Table,
   json: FileJson,
 };
-
+ 
 const fileColors = {
   csv: 'text-emerald-400',
   excel: 'text-green-400',
   json: 'text-amber-400',
 };
-
+ 
 type Step = 'select-kpis' | 'select-metrics' | 'confirmation';
-
+ 
 export function AnalysisPanel({
   file,
   onBuildWithRecommendations,
@@ -936,7 +982,9 @@ export function AnalysisPanel({
   const [showDashboard, setShowDashboard] = useState(false);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [queryText, setQueryText] = useState('');
-
+  const [stateRestored, setStateRestored] = useState(false);
+  const hasInitializedRef = useRef(false);
+ 
   // Reusable X close button for all toasts (Sonner style)
   const closeToastButton = (
     <button
@@ -947,45 +995,87 @@ export function AnalysisPanel({
       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
     </button>
   );
-
+ 
+  // Restore ONLY stage and KPI data from sessionStorage, NOT selections
+  useEffect(() => {
+    if (!file || stateRestored) return;
+ 
+    const savedState = sessionStorage.getItem(`analysis_panel_state_${file.id}`);
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState);
+       
+        // Restore KPI data and current step ONLY
+        if (parsedState.kpisWithDetails && parsedState.kpisWithDetails.length > 0) {
+          setKpisWithDetails(parsedState.kpisWithDetails);
+        }
+        if (parsedState.currentStep) {
+          setCurrentStep(parsedState.currentStep);
+        }
+       
+        // DO NOT restore selections - they should start fresh
+        // setSelectedKpis, setSelectedMetrics, setSelectedMeasurements remain empty
+       
+        hasInitializedRef.current = true;
+      } catch (error) {
+        console.error('Error parsing saved analysis state:', error);
+        sessionStorage.removeItem(`analysis_panel_state_${file.id}`);
+      }
+    }
+   
+    setStateRestored(true);
+  }, [file?.id]);
+ 
+  // Save ONLY stage and KPI data to sessionStorage, NOT selections
+  useEffect(() => {
+    if (!file || !stateRestored) return;
+ 
+    const stateToSave = {
+      kpisWithDetails,
+      currentStep,
+      // DO NOT save selections
+    };
+   
+    sessionStorage.setItem(`analysis_panel_state_${file.id}`, JSON.stringify(stateToSave));
+  }, [
+    file?.id,
+    kpisWithDetails,
+    currentStep,
+    stateRestored,
+  ]);
+ 
   const handleGenerateDashboard = (data: any, query: string) => {
     setDashboardData(data);
     setQueryText(query);
     setShowDashboard(true);
   };
-
+ 
   const handleBackToChat = () => {
     setShowDashboard(false);
   };
-
-  // Step 1: Discover KPIs
+ 
+  // Step 1: Discover KPIs - Only if state not restored or no KPIs exist
   useEffect(() => {
-    if (!file) {
-      setKpisWithDetails([]);
-      setIsAnalyzing(false);
-      return;
-    }
-
+    if (!file || !stateRestored) return;
+   
+    // If we already have KPIs (from restored state or previous fetch), don't fetch again
+    if (kpisWithDetails.length > 0 || hasInitializedRef.current) return;
+ 
     const userData = localStorage.getItem("user");
     const jobId = localStorage.getItem("current_job_id");
-
+ 
     if (!userData || !jobId) {
       toast.error("User or Job ID missing", {
         action: closeToastButton,
       });
       return;
     }
-
+ 
     const userId = JSON.parse(userData).id;
     const csvBlobPath = `${userId}/${jobId}/${file.name}.csv`;
-
+ 
     setIsAnalyzing(true);
-    setKpisWithDetails([]);
-    setSelectedKpis(new Set());
-    setSelectedMetrics(new Set());
-    setSelectedMeasurements(new Set());
-    setCurrentStep('select-kpis');
-
+ 
     const fetchKPIs = async () => {
       try {
         const response = await fetch('https://20.81.213.147/discover_kpis', {
@@ -993,17 +1083,17 @@ export function AnalysisPanel({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ csv_blob: csvBlobPath })
         });
-
+ 
         if (!response.ok) throw new Error("Failed to discover KPIs");
-
+ 
         const data = await response.json();
         const apiKpis = data.available_kpis || [];
-
+ 
         const generatedKPIs: KPIWithTarget[] = apiKpis.map((item: { kpi_name: string }, index: number) => {
           const statuses: ('on-track' | 'at-risk' | 'off-track')[] = ['on-track', 'at-risk', 'off-track'];
           const status = statuses[index % 3];
           const percentage = 75 + (index * 8) % 35;
-
+ 
           return {
             id: `kpi-${index}`,
             name: item.kpi_name,
@@ -1015,8 +1105,11 @@ export function AnalysisPanel({
             measurements: []
           };
         });
-
+ 
         setKpisWithDetails(generatedKPIs);
+        setCurrentStep('select-kpis');
+        hasInitializedRef.current = true;
+       
         toast.success(`${apiKpis.length} KPIs discovered!`, {
           action: closeToastButton,
         });
@@ -1029,20 +1122,37 @@ export function AnalysisPanel({
         setIsAnalyzing(false);
       }
     };
-
+ 
     fetchKPIs();
+  }, [file?.id, stateRestored, kpisWithDetails.length]);
+ 
+  // Reset when file becomes null
+  useEffect(() => {
+    if (!file) {
+      setKpisWithDetails([]);
+      setSelectedKpis(new Set());
+      setSelectedMetrics(new Set());
+      setSelectedMeasurements(new Set());
+      setCurrentStep('select-kpis');
+      setIsAnalyzing(false);
+      setShowDashboard(false);
+      setDashboardData(null);
+      setQueryText('');
+      setStateRestored(false);
+      hasInitializedRef.current = false;
+    }
   }, [file]);
-
+ 
   // Step 2: Compute real metrics
   const handleGenerateMetrics = async () => {
     if (selectedKpis.size === 0) return;
-
+ 
     setIsGeneratingMetrics(true);
-
+ 
     const userData = localStorage.getItem("user");
     const jobId = localStorage.getItem("current_job_id");
     const userId = userData ? JSON.parse(userData).id : null;
-
+ 
     if (!userId || !jobId || !file) {
       toast.error("Missing data", {
         action: closeToastButton,
@@ -1050,12 +1160,12 @@ export function AnalysisPanel({
       setIsGeneratingMetrics(false);
       return;
     }
-
+ 
     const csvBlobPath = `${userId}/${jobId}/${file.name}.csv`;
     const selectedKpiNames = kpisWithDetails
       .filter(kpi => selectedKpis.has(kpi.id))
       .map(kpi => kpi.name);
-
+ 
     try {
       const response = await fetch('https://20.81.213.147/compute_kpis', {
         method: 'POST',
@@ -1065,18 +1175,18 @@ export function AnalysisPanel({
           selected_kpi_names: selectedKpiNames
         })
       });
-
+ 
       if (!response.ok) throw new Error("Failed to compute KPIs");
-
+ 
       const data = await response.json();
       const computedKpis = data.selected_kpis || [];
-
+ 
       const updatedKpis = kpisWithDetails.map(kpi => {
         if (!selectedKpis.has(kpi.id)) return kpi;
-
+ 
         const computed = computedKpis.find((c: any) => c.kpi_name === kpi.name);
         if (!computed) return kpi;
-
+ 
         return {
           ...kpi,
           actual: computed.metrics.toString(),
@@ -1092,7 +1202,7 @@ export function AnalysisPanel({
           measurements: [computed.measures]
         };
       });
-
+ 
       setKpisWithDetails(updatedKpis);
       toast.success("Metrics computed!", {
         action: closeToastButton,
@@ -1106,24 +1216,24 @@ export function AnalysisPanel({
       setIsGeneratingMetrics(false);
     }
   };
-
+ 
   // Step 3: Generate full dashboard
   const handleBuildDashboard = async () => {
     if (!file) return;
-
+ 
     const userData = localStorage.getItem("user");
     const jobId = localStorage.getItem("current_job_id");
     const userId = userData ? JSON.parse(userData).id : null;
-
+ 
     if (!userId || !jobId) {
       toast.error("User or Job ID missing", {
         action: closeToastButton,
       });
       return;
     }
-
+ 
     const csvBlobPath = `${userId}/${jobId}/${file.name}.csv`;
-
+ 
     const selectedComputedKpis = kpisWithDetails
       .filter(kpi => selectedKpis.has(kpi.id))
       .map(kpi => ({
@@ -1131,14 +1241,14 @@ export function AnalysisPanel({
         measures: kpi.measurements[0] || "",
         metrics: parseFloat(kpi.actual.replace(/,/g, '')) || 0
       }));
-
+ 
     if (selectedComputedKpis.length === 0) {
       toast.error("No KPIs selected", {
         action: closeToastButton,
       });
       return;
     }
-
+ 
     // Always prepare fallback KPIs from our real computed data
     const fallbackKpis: KPI[] = selectedComputedKpis.map((k, i) => ({
       id: `fallback-${i}`,
@@ -1147,7 +1257,7 @@ export function AnalysisPanel({
       change: 0,
       changeLabel: 'From your selection'
     }));
-
+ 
     try {
       const response = await fetch('https://20.81.213.147/generate_visuals', {
         method: 'POST',
@@ -1157,9 +1267,9 @@ export function AnalysisPanel({
           computed_kpis: selectedComputedKpis
         })
       });
-
+ 
       const visualsData = response.ok ? await response.json() : { visuals: [], total_rows: 0 };
-
+ 
       // Extract KPI visuals from backend
       let finalKpis = visualsData.visuals
         ?.filter((v: any) => v.chart_type === "KPI")
@@ -1170,19 +1280,24 @@ export function AnalysisPanel({
           change: Math.random() * 30 - 10,
           changeLabel: v.description || 'AI Generated'
         })) || [];
-
+ 
       // If backend didn't return KPI visuals, use our real computed ones
       if (finalKpis.length === 0) {
         finalKpis = fallbackKpis;
       }
-
+ 
+      // Clear session state when building dashboard
+      if (file) {
+        sessionStorage.removeItem(`analysis_panel_state_${file.id}`);
+      }
+ 
       // Pass FULL data to parent
       onBuildWithRecommendations({
         kpis: finalKpis,
         visuals: visualsData.visuals || [],
         total_rows: visualsData.total_rows || selectedComputedKpis.length
       });
-
+ 
       toast.success("Dashboard generated with real visuals!", {
         action: closeToastButton,
       });
@@ -1191,7 +1306,7 @@ export function AnalysisPanel({
       toast.info("Showing your selected KPIs", {
         action: closeToastButton,
       });
-
+ 
       // Always show something
       onBuildWithRecommendations({
         kpis: fallbackKpis,
@@ -1200,7 +1315,7 @@ export function AnalysisPanel({
       });
     }
   };
-
+ 
   const handleBuildCustomDashboard = async () => {
     if (!file) {
       toast.error("No file selected", {
@@ -1208,34 +1323,30 @@ export function AnalysisPanel({
       });
       return;
     }
-
+ 
     const userData = localStorage.getItem("user");
     const jobId = localStorage.getItem("current_job_id");
     const userId = userData ? JSON.parse(userData).id : null;
-
+ 
     if (!userId || !jobId) {
       toast.error("User or Job ID missing", {
         action: closeToastButton,
       });
       return;
     }
-
+ 
     const blobPath = `${userId}/${jobId}/${file.name}.csv`;
-
-    setIsCreatingThread(true); // Start loading
-
+ 
+    setIsCreatingThread(true);
+ 
     try {
-      // Step 1: Create thread
       const threadResponse = await createThread();
       const threadId = threadResponse.thread_id;
-
-      // Store thread_id in localStorage
+ 
       localStorage.setItem("thread_id", threadId);
-
-      // Step 2: Attach file to agent
+ 
       await attachFileToAgent(blobPath);
-
-      // Step 3: Proceed to custom dashboard
+ 
       onBuildCustomDashboard();
     } catch (error: any) {
       console.error("Error in custom dashboard flow:", error);
@@ -1243,10 +1354,10 @@ export function AnalysisPanel({
         action: closeToastButton,
       });
     } finally {
-      setIsCreatingThread(false); // Stop loading
+      setIsCreatingThread(false);
     }
   };
-
+ 
   const toggleKpi = (kpiId: string) => {
     setSelectedKpis(prev => {
       const next = new Set(prev);
@@ -1254,7 +1365,7 @@ export function AnalysisPanel({
       return next;
     });
   };
-
+ 
   const toggleMetric = (metricId: string) => {
     setSelectedMetrics(prev => {
       const next = new Set(prev);
@@ -1262,26 +1373,29 @@ export function AnalysisPanel({
       return next;
     });
   };
-
-  const toggleMeasurement = (measurement: string) => {
+ 
+  const toggleMeasurement = (measurement: string, kpiId: string) => {
+    const uniqueKey = `${kpiId}-${measurement}`;
     setSelectedMeasurements(prev => {
       const next = new Set(prev);
-      next.has(measurement) ? next.delete(measurement) : next.add(measurement);
+      next.has(uniqueKey) ? next.delete(uniqueKey) : next.add(uniqueKey);
       return next;
     });
   };
-
+ 
   const handleProceedToConfirmation = () => setCurrentStep('confirmation');
+ 
   const handleBackToKpis = () => {
     setCurrentStep('select-kpis');
     setSelectedMetrics(new Set());
     setSelectedMeasurements(new Set());
   };
+ 
   const handleBackToMetrics = () => setCurrentStep('select-metrics');
-
+ 
   const selectedKpisData = kpisWithDetails.filter(kpi => selectedKpis.has(kpi.id));
   const hasMetricSelection = selectedMetrics.size > 0 || selectedMeasurements.size > 0;
-
+ 
   const getStatusColor = (status: KPIWithTarget['status']) => {
     switch (status) {
       case 'on-track': return 'text-emerald-400';
@@ -1290,7 +1404,7 @@ export function AnalysisPanel({
       default: return 'text-muted-foreground';
     }
   };
-
+ 
   const getStatusBg = (status: KPIWithTarget['status']) => {
     switch (status) {
       case 'on-track': return 'bg-emerald-400/10 border-emerald-400/30';
@@ -1299,7 +1413,7 @@ export function AnalysisPanel({
       default: return 'bg-secondary';
     }
   };
-
+ 
   const getStatusIcon = (status: KPIWithTarget['status']) => {
     switch (status) {
       case 'on-track': return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
@@ -1308,10 +1422,10 @@ export function AnalysisPanel({
       default: return null;
     }
   };
-
+ 
   if (showDashboard && dashboardData) {
     return (
-      <DashboardPreview 
+      <DashboardPreview
         dashboardData={dashboardData}
         file={file!}
         query={queryText}
@@ -1319,7 +1433,7 @@ export function AnalysisPanel({
       />
     );
   }
-
+ 
   if (!file) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -1335,10 +1449,10 @@ export function AnalysisPanel({
       </div>
     );
   }
-
+ 
   const Icon = fileIcons[file.type] || FileText;
   const iconColor = fileColors[file.type] || 'text-muted-foreground';
-
+ 
   if (isAnalyzing) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -1357,20 +1471,20 @@ export function AnalysisPanel({
       </div>
     );
   }
-
-  if (kpisWithDetails.length === 0) {
+ 
+  if (kpisWithDetails.length === 0 && stateRestored) {
     return (
       <div className="flex-1 flex items-center justify-center text-center">
         <p className="text-muted-foreground">No KPIs discovered for this dataset.</p>
       </div>
     );
   }
-
+ 
   const StepIndicator = () => (
     <div className="flex items-center justify-center gap-2 mb-8">
       <div className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-        currentStep === 'select-kpis' ? "bg-primary" : "bg-primary/20 "
+        currentStep === 'select-kpis' ? "bg-primary text-primary-foreground" : "bg-primary/20 text-primary"
       )}>
         <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center">1</span>
         Select KPIs
@@ -1380,7 +1494,7 @@ export function AnalysisPanel({
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
         currentStep === 'select-metrics'
           ? "bg-primary text-primary-foreground"
-          : currentStep === 'confirmation' ? "bg-primary/20 text-primary" : "bg-primary/40"
+          : currentStep === 'confirmation' ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"
       )}>
         <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center">2</span>
         Select Metrics
@@ -1388,14 +1502,14 @@ export function AnalysisPanel({
       <ChevronRight className="w-4 h-4 text-muted-foreground" />
       <div className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-        currentStep === 'confirmation' ? "bg-primary text-primary-foreground" : "bg-primary/40"
+        currentStep === 'confirmation' ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
       )}>
         <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center">3</span>
         Confirm
       </div>
     </div>
   );
-
+ 
   if (currentStep === 'select-kpis') {
     return (
       <div className="flex-1 overflow-auto">
@@ -1411,9 +1525,9 @@ export function AnalysisPanel({
               </div>
             </div>
           </div>
-
+ 
           <StepIndicator />
-
+ 
           <div className="space-y-4 animate-slide-up">
             <div className="flex items-center gap-2">
               <Target className="w-5 h-5 text-primary" />
@@ -1422,7 +1536,7 @@ export function AnalysisPanel({
             <p className="text-sm text-muted-foreground">
               Choose the Key Performance Indicators you want to track.
             </p>
-
+ 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {kpisWithDetails.map((kpi, index) => {
                 const isSelected = selectedKpis.has(kpi.id);
@@ -1447,9 +1561,9 @@ export function AnalysisPanel({
                       </div>
                       {getStatusIcon(kpi.status)}
                     </div>
-
+ 
                     <h4 className="text-sm font-semibold text-foreground mb-3">{kpi.name}</h4>
-
+ 
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">Actual</span>
@@ -1469,7 +1583,7 @@ export function AnalysisPanel({
                         <span className={cn("font-mono font-semibold", getStatusColor(kpi.status))}>{kpi.percentage}%</span>
                       </div>
                     </div>
-
+ 
                     <div className="mt-3 pt-3 border-t border-border/50">
                       <p className="text-xs text-muted-foreground">
                         {kpi.metrics.length} metrics • {kpi.measurements.length} measurements
@@ -1480,7 +1594,7 @@ export function AnalysisPanel({
               })}
             </div>
           </div>
-
+ 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button
               onClick={handleGenerateMetrics}
@@ -1501,7 +1615,7 @@ export function AnalysisPanel({
                 </>
               )}
             </Button>
-
+ 
             <Button
               onClick={handleBuildCustomDashboard}
               disabled={isLoading || isCreatingThread}
@@ -1526,7 +1640,7 @@ export function AnalysisPanel({
       </div>
     );
   }
-
+ 
   if (currentStep === 'select-metrics') {
     return (
       <div className="flex-1 overflow-auto">
@@ -1544,9 +1658,9 @@ export function AnalysisPanel({
               </div>
             </div>
           </div>
-
+ 
           <StepIndicator />
-
+ 
           <div className="space-y-8 animate-slide-up">
             {selectedKpisData.map((kpi, kpiIndex) => (
               <div key={kpi.id} className="space-y-4" style={{ animationDelay: `${kpiIndex * 100}ms` }}>
@@ -1561,7 +1675,7 @@ export function AnalysisPanel({
                     </p>
                   </div>
                 </div>
-
+ 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-primary" />
@@ -1590,20 +1704,22 @@ export function AnalysisPanel({
                               )}>
                                 {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
                               </div>
-                              <span className="text-sm text-muted-foreground">{metric.label}</span>
+                              <span className="text-sm text-muted-foreground truncate max-w-[140px]">{metric.label}</span>
                             </div>
-                            <span className="text-lg font-bold text-foreground font-mono">{metric.value}</span>
+                            <span className="text-base sm:text-lg font-bold text-foreground font-mono truncate max-w-full overflow-hidden">
+                              {metric.value}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1 text-xs mt-2 ml-7 text-emerald-400">
                             <TrendingUp className="w-3 h-3" />
-                            <span>{metric.changeLabel}</span>
+                            <span className="truncate">{metric.changeLabel}</span>
                           </div>
                         </div>
                       );
                     })}
                   </div>
                 </div>
-
+ 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-primary" />
@@ -1612,16 +1728,17 @@ export function AnalysisPanel({
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {kpi.measurements.map((measurement, idx) => {
-                      const isSelected = selectedMeasurements.has(measurement);
+                      const uniqueKey = `${kpi.id}-${measurement}`;
+                      const isSelected = selectedMeasurements.has(uniqueKey);
                       return (
                         <button
-                          key={idx}
-                          onClick={() => toggleMeasurement(measurement)}
+                          key={uniqueKey}
+                          onClick={() => toggleMeasurement(measurement, kpi.id)}
                           className={cn(
                             "px-4 py-2 rounded-full text-sm font-medium border transition-all",
                             isSelected
                               ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-primary/20 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                              : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
                           )}
                         >
                           {measurement}
@@ -1633,7 +1750,7 @@ export function AnalysisPanel({
               </div>
             ))}
           </div>
-
+ 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button onClick={handleBackToKpis} variant="outline" size="lg" className="gap-2">
               Back to KPIs
@@ -1653,7 +1770,7 @@ export function AnalysisPanel({
       </div>
     );
   }
-
+ 
   // Step 3: Confirmation
   return (
     <div className="flex-1 overflow-auto">
@@ -1669,21 +1786,22 @@ export function AnalysisPanel({
             </div>
           </div>
         </div>
-
+ 
         <StepIndicator />
-
+ 
         <div className="space-y-6 animate-slide-up">
           <div className="p-6 rounded-xl border border-primary/30 bg-primary/5">
             <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-primary" />
               Your Dashboard will include:
             </h3>
-
+ 
             <div className="space-y-4">
               {selectedKpisData.map((kpi) => {
                 const selectedKpiMetrics = kpi.metrics.filter(m => selectedMetrics.has(m.id));
-                const selectedKpiMeasurements = kpi.measurements.filter(m => selectedMeasurements.has(m));
-
+                const selectedKpiMeasurements = kpi.measurements
+                  .filter(m => selectedMeasurements.has(`${kpi.id}-${m}`));
+ 
                 return (
                   <div key={kpi.id} className="p-4 rounded-lg bg-card/80 border border-border">
                     <div className="flex items-center gap-2 mb-3">
@@ -1693,7 +1811,7 @@ export function AnalysisPanel({
                         {kpi.percentage}%
                       </span>
                     </div>
-
+ 
                     {selectedKpiMetrics.length > 0 && (
                       <div className="mb-2">
                         <span className="text-xs text-muted-foreground">Metrics: </span>
@@ -1702,7 +1820,7 @@ export function AnalysisPanel({
                         </span>
                       </div>
                     )}
-
+ 
                     {selectedKpiMeasurements.length > 0 && (
                       <div>
                         <span className="text-xs text-muted-foreground">Measurements: </span>
@@ -1715,7 +1833,7 @@ export function AnalysisPanel({
                 );
               })}
             </div>
-
+ 
             <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{selectedKpis.size}</div>
@@ -1732,7 +1850,7 @@ export function AnalysisPanel({
             </div>
           </div>
         </div>
-
+ 
         <div className="flex flex-col sm:flex-row gap-4 pt-4">
           <Button onClick={handleBackToMetrics} variant="outline" size="lg" className="gap-2">
             Back to Metrics
@@ -1761,3 +1879,4 @@ export function AnalysisPanel({
     </div>
   );
 }
+ 

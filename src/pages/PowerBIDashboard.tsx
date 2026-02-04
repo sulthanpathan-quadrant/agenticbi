@@ -1,4 +1,3 @@
- 
 // import { useState, useEffect } from 'react';
 // import { DatasetSidebar } from '@/components/dashboard/DatasetSidebar';
 // import { AnalysisPanel } from '@/components/dashboard/AnalysisPanel';
@@ -9,10 +8,10 @@
 // import { toast } from 'sonner';
 // import { Button } from "@/components/ui/button";
 // import { useNavigate } from 'react-router-dom';
-// import { ArrowLeft } from "lucide-react";
-
+// import { ArrowLeft, X } from "lucide-react";
+// import { DashBoardPreview1 } from '@/components/dashboard/DashBoardPreview1';
 // type ViewMode = 'analysis' | 'chatbot' | 'dashboard';
-
+ 
 // const PowerBIDashboard = () => {
 //   const [files, setFiles] = useState<DataFile[]>([]);
 //   const [selectedFile, setSelectedFile] = useState<DataFile | null>(null);
@@ -21,37 +20,50 @@
 //   const [isGenerating, setIsGenerating] = useState(false);
 //   const [viewMode, setViewMode] = useState<ViewMode>('analysis');
 //   const [loadingFiles, setLoadingFiles] = useState(true);
-
+ 
 //   const navigate = useNavigate();
-
+ 
+//   // Reusable X close button for all toasts (Sonner style)
+//   const closeToastButton = (
+//     <button
+//       onClick={() => toast.dismiss()}
+//       className="absolute top-2 right-2 rounded-full p-1 hover:bg-muted/50 transition-colors"
+//       aria-label="Close toast"
+//     >
+//       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+//     </button>
+//   );
+ 
 //   // Fetch datasets
 //   useEffect(() => {
 //     const fetchDatasets = async () => {
 //       try {
 //         const userData = localStorage.getItem("user");
 //         const jobId = localStorage.getItem("current_job_id");
-
+ 
 //         if (!userData || !jobId) {
-//           toast.error("User or Job ID not found. Please log in again.");
+//           toast.error("User or Job ID not found. Please log in again.", {
+//             action: closeToastButton,
+//           });
 //           setLoadingFiles(false);
 //           return;
 //         }
-
+ 
 //         const userId = JSON.parse(userData).id;
-
+ 
 //         setLoadingFiles(true);
 //         const response = await fetch(
 //           `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`
 //         );
-
+ 
 //         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
+ 
 //         const data = await response.json();
-
+ 
 //         const fetchedFiles: DataFile[] = data.datasets.map((dataset: any, index: number) => {
 //           const isCsv = dataset.filename.toLowerCase().endsWith('.csv');
 //           const isExcel = dataset.filename.toLowerCase().endsWith('.xlsx') || dataset.filename.toLowerCase().endsWith('.xls');
-
+ 
 //           return {
 //             id: `file-${index}-${dataset.filename}`,
 //             name: dataset.filename,
@@ -59,23 +71,25 @@
 //             rows: 0,
 //             columns: 0,
 //             dateModified: dataset.date_modified || new Date().toLocaleString(),
-//             csvBlob: `${userId}/${jobId}/${dataset.filename}`, // Correct path without "Files/Datasets/"
+//             csvBlob: `${userId}/${jobId}/${dataset.filename}`,
 //           };
 //         });
-
+ 
 //         setFiles(fetchedFiles);
 //       } catch (err) {
 //         console.error("Failed to load datasets:", err);
-//         toast.error("Failed to load datasets.");
+//         toast.error("Failed to load datasets.", {
+//           action: closeToastButton,
+//         });
 //         setFiles([]);
 //       } finally {
 //         setLoadingFiles(false);
 //       }
 //     };
-
+ 
 //     fetchDatasets();
 //   }, []);
-
+ 
 //   const handleFileSelect = (file: DataFile) => {
 //     if (selectedFile?.id === file.id) {
 //       setSelectedFile(null);
@@ -83,62 +97,116 @@
 //     } else {
 //       setSelectedFile(file);
 //       setViewMode('analysis');
-//       toast.success(`Selected: ${file.name}`);
+//       toast.success(`Selected: ${file.name}`, {
+//         action: closeToastButton,
+//       });
 //     }
 //   };
-
+ 
 //   const handleBuildWithRecommendations = (data: any) => {
 //     if (!selectedFile) return;
 //     setDashboardData(data);
 //     setCurrentQuery(`Recommended Dashboard: ${data.kpis.map((k: KPI) => k.label).join(', ')}`);
 //     setViewMode('dashboard');
-//     toast.success('Dashboard generated!');
+//     toast.success('Dashboard generated!', {
+//       action: closeToastButton,
+//     });
 //   };
-
+ 
 //   const handleBuildCustomDashboard = () => {
 //     setViewMode('chatbot');
 //   };
-
+ 
 //   const handleBackFromChatbot = () => {
 //     setViewMode('analysis');
 //   };
-
+ 
 //   const handleBackFromDashboard = () => {
 //     setDashboardData(null);
 //     setCurrentQuery('');
 //     setViewMode('analysis');
 //   };
-
+ 
 //   // Custom prompt dashboard generation
-//   // Custom prompt dashboard generation
-// // Custom prompt dashboard generation
-// const handleCustomGenerate = (dashboardData: any, query: string) => {
-//   if (!selectedFile) {
-//     toast.error("No file selected");
-//     return;
-//   }
-
-//   // Store the dashboard data and query
-//   setDashboardData(dashboardData);
-//   setCurrentQuery(query);
-  
-//   // Navigate to dashboard view
-//   setViewMode('dashboard');
-  
-//   toast.success('Dashboard generated successfully!');
-// };
-
+//   const handleCustomGenerate = (dashboardData: any, query: string) => {
+//     if (!selectedFile) {
+//       toast.error("No file selected", {
+//         action: closeToastButton,
+//       });
+//       return;
+//     }
+ 
+//     // Store the dashboard data and query
+//     setDashboardData(dashboardData);
+//     setCurrentQuery(query);
+   
+//     // Navigate to dashboard view
+//     setViewMode('dashboard');
+   
+//     toast.success('Dashboard generated successfully!', {
+//       action: closeToastButton,
+//     });
+//   };
+ 
+//   // if (viewMode === 'dashboard' && dashboardData && selectedFile) {
+//   //   return (
+//   //     <DashboardView
+//   //       data={dashboardData}
+//   //       file={selectedFile}
+//   //       query={currentQuery}
+//   //       onBack={handleBackFromDashboard}
+//   //     />
+//   //   );
+//   // }
+ 
 //   if (viewMode === 'dashboard' && dashboardData && selectedFile) {
+//     if (viewMode === 'dashboard' && dashboardData && selectedFile) {
+//   const isCustomDashboard = !dashboardData.kpis;
+ 
+//   if (isCustomDashboard) {
 //     return (
-//       <DashboardView
-//         data={dashboardData}
+//       <DashBoardPreview1
+//         dashboardData={dashboardData}
 //         file={selectedFile}
 //         query={currentQuery}
 //         onBack={handleBackFromDashboard}
 //       />
 //     );
 //   }
-
+ 
+//   return (
+//     <DashboardView
+//       data={dashboardData}
+//       file={selectedFile}
+//       query={currentQuery}
+//       onBack={handleBackFromDashboard}
+//     />
+//   );
+// }
+//   // Check if it's a custom dashboard (from chatbot) or recommended dashboard
+//   const isCustomDashboard = !dashboardData.kpis; // Custom dashboards don't have 'kpis' field
+ 
+//   if (isCustomDashboard) {
+//     return (
+//       <DashBoardPreview1
+//         dashboardData={dashboardData}
+//         file={selectedFile}
+//         query={currentQuery}
+//         onBack={handleBackFromDashboard}
+//       />
+//     );
+//   }
+ 
+//   return (
+//     <DashboardView
+//       data={dashboardData}
+//       file={selectedFile}
+//       query={currentQuery}
+//       onBack={handleBackFromDashboard}
+//     />
+//   );
+// }
+ 
 //   return (
 //     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
 //       <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
@@ -166,7 +234,7 @@
 //           </div>
 //         </div>
 //       </div>
-
+ 
 //       <div className="flex-1 flex overflow-hidden">
 //         <DatasetSidebar
 //           files={files}
@@ -174,7 +242,7 @@
 //           onSelectFile={handleFileSelect}
 //           loading={loadingFiles}
 //         />
-
+ 
 //         {viewMode === 'chatbot' && selectedFile ? (
 //           <ChatbotInterface
 //             file={selectedFile}
@@ -191,7 +259,7 @@
 //           />
 //         )}
 //       </div>
-
+ 
 //       {isGenerating && (
 //         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
 //           <div className="flex flex-col items-center justify-center animate-fade-in">
@@ -209,12 +277,10 @@
 //     </div>
 //   );
 // };
-
+ 
 // export default PowerBIDashboard;
-
-
-
-
+ 
+ 
 import { useState, useEffect } from 'react';
 import { DatasetSidebar } from '@/components/dashboard/DatasetSidebar';
 import { AnalysisPanel } from '@/components/dashboard/AnalysisPanel';
@@ -226,9 +292,10 @@ import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X } from "lucide-react";
-
+import { DashBoardPreview1 } from '@/components/dashboard/DashBoardPreview1';
+ 
 type ViewMode = 'analysis' | 'chatbot' | 'dashboard';
-
+ 
 const PowerBIDashboard = () => {
   const [files, setFiles] = useState<DataFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<DataFile | null>(null);
@@ -237,9 +304,10 @@ const PowerBIDashboard = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('analysis');
   const [loadingFiles, setLoadingFiles] = useState(true);
-
+  const [filesLoaded, setFilesLoaded] = useState(false);
+ 
   const navigate = useNavigate();
-
+ 
   // Reusable X close button for all toasts (Sonner style)
   const closeToastButton = (
     <button
@@ -250,14 +318,14 @@ const PowerBIDashboard = () => {
       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
     </button>
   );
-
+ 
   // Fetch datasets
   useEffect(() => {
     const fetchDatasets = async () => {
       try {
         const userData = localStorage.getItem("user");
         const jobId = localStorage.getItem("current_job_id");
-
+ 
         if (!userData || !jobId) {
           toast.error("User or Job ID not found. Please log in again.", {
             action: closeToastButton,
@@ -265,22 +333,22 @@ const PowerBIDashboard = () => {
           setLoadingFiles(false);
           return;
         }
-
+ 
         const userId = JSON.parse(userData).id;
-
+ 
         setLoadingFiles(true);
         const response = await fetch(
           `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`
         );
-
+ 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
+ 
         const data = await response.json();
-
+ 
         const fetchedFiles: DataFile[] = data.datasets.map((dataset: any, index: number) => {
           const isCsv = dataset.filename.toLowerCase().endsWith('.csv');
           const isExcel = dataset.filename.toLowerCase().endsWith('.xlsx') || dataset.filename.toLowerCase().endsWith('.xls');
-
+ 
           return {
             id: `file-${index}-${dataset.filename}`,
             name: dataset.filename,
@@ -291,59 +359,94 @@ const PowerBIDashboard = () => {
             csvBlob: `${userId}/${jobId}/${dataset.filename}`,
           };
         });
-
+ 
         setFiles(fetchedFiles);
+        setFilesLoaded(true);
+ 
+        // Restore selected file after files are loaded
+        const savedSelectedFileId = sessionStorage.getItem('powerbi_selected_file_id');
+        if (savedSelectedFileId) {
+          const fileToRestore = fetchedFiles.find(f => f.id === savedSelectedFileId);
+          if (fileToRestore) {
+            setSelectedFile(fileToRestore);
+          }
+        }
       } catch (err) {
         console.error("Failed to load datasets:", err);
         toast.error("Failed to load datasets.", {
           action: closeToastButton,
         });
         setFiles([]);
+        setFilesLoaded(true);
       } finally {
         setLoadingFiles(false);
       }
     };
-
+ 
     fetchDatasets();
   }, []);
-
+ 
+  // Save selectedFile ID to sessionStorage whenever it changes
+  useEffect(() => {
+    if (!filesLoaded) return; // Don't save until files are loaded
+   
+    if (selectedFile) {
+      sessionStorage.setItem('powerbi_selected_file_id', selectedFile.id);
+    } else {
+      sessionStorage.removeItem('powerbi_selected_file_id');
+    }
+  }, [selectedFile, filesLoaded]);
+ 
   const handleFileSelect = (file: DataFile) => {
+    // If clicking the same file, deselect it and clear state
     if (selectedFile?.id === file.id) {
       setSelectedFile(null);
       setViewMode('analysis');
+     
+      // Clear the session storage for this file
+      sessionStorage.removeItem(`analysis_panel_state_${file.id}`);
+      sessionStorage.removeItem('powerbi_selected_file_id');
+     
+      toast.info(`Deselected: ${file.name}`, {
+        action: closeToastButton,
+      });
     } else {
+      // Selecting a new file
       setSelectedFile(file);
       setViewMode('analysis');
+     
       toast.success(`Selected: ${file.name}`, {
         action: closeToastButton,
       });
     }
   };
-
+ 
   const handleBuildWithRecommendations = (data: any) => {
     if (!selectedFile) return;
+   
     setDashboardData(data);
     setCurrentQuery(`Recommended Dashboard: ${data.kpis.map((k: KPI) => k.label).join(', ')}`);
     setViewMode('dashboard');
+   
     toast.success('Dashboard generated!', {
       action: closeToastButton,
     });
   };
-
+ 
   const handleBuildCustomDashboard = () => {
     setViewMode('chatbot');
   };
-
+ 
   const handleBackFromChatbot = () => {
     setViewMode('analysis');
   };
-
+ 
   const handleBackFromDashboard = () => {
     setDashboardData(null);
     setCurrentQuery('');
     setViewMode('analysis');
   };
-
+ 
   // Custom prompt dashboard generation
   const handleCustomGenerate = (dashboardData: any, query: string) => {
     if (!selectedFile) {
@@ -352,20 +455,33 @@ const PowerBIDashboard = () => {
       });
       return;
     }
-
+ 
     // Store the dashboard data and query
     setDashboardData(dashboardData);
     setCurrentQuery(query);
-    
+   
     // Navigate to dashboard view
     setViewMode('dashboard');
-    
+   
     toast.success('Dashboard generated successfully!', {
       action: closeToastButton,
     });
   };
-
+ 
   if (viewMode === 'dashboard' && dashboardData && selectedFile) {
+    const isCustomDashboard = !dashboardData.kpis;
+   
+    if (isCustomDashboard) {
+      return (
+        <DashBoardPreview1
+          dashboardData={dashboardData}
+          file={selectedFile}
+          query={currentQuery}
+          onBack={handleBackFromDashboard}
+        />
+      );
+    }
+   
     return (
       <DashboardView
         data={dashboardData}
@@ -375,7 +491,7 @@ const PowerBIDashboard = () => {
       />
     );
   }
-
+ 
   return (
     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
       <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
@@ -403,7 +519,7 @@ const PowerBIDashboard = () => {
           </div>
         </div>
       </div>
-
+ 
       <div className="flex-1 flex overflow-hidden">
         <DatasetSidebar
           files={files}
@@ -411,7 +527,7 @@ const PowerBIDashboard = () => {
           onSelectFile={handleFileSelect}
           loading={loadingFiles}
         />
-
+ 
         {viewMode === 'chatbot' && selectedFile ? (
           <ChatbotInterface
             file={selectedFile}
@@ -428,7 +544,7 @@ const PowerBIDashboard = () => {
           />
         )}
       </div>
-
+ 
       {isGenerating && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="flex flex-col items-center justify-center animate-fade-in">
@@ -446,5 +562,6 @@ const PowerBIDashboard = () => {
     </div>
   );
 };
-
+ 
 export default PowerBIDashboard;
+ 

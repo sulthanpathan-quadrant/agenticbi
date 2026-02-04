@@ -1002,14 +1002,14 @@ export default function DataCreation() {
           >
             <History className="h-4 w-4" />
             History
-            {totalKnownDatasets > 0 && (
+            {/* {totalKnownDatasets > 0 && (
               <Badge
                 variant="secondary"
                 className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 p-0 flex items-center justify-center text-xs"
               >
                 {totalKnownDatasets}
               </Badge>
-            )}
+            )} */}
           </Button>
         </div>
 

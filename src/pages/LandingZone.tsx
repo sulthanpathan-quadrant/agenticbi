@@ -755,7 +755,7 @@ export default function LandingZone() {
 
     try {
       // Step 1: Detect fact-dimension
-      toast.loading("Detecting fact & dimension tables...", { id: "modeling-progress" });
+      // toast.loading("Detecting fact & dimension tables...", { id: "modeling-progress" });
 
       const detectResponse = await fetch(
         `https://4.227.238.34/detect-fact-dimension?user_id=${userId}&job_id=${jobId}`,
@@ -770,7 +770,7 @@ export default function LandingZone() {
       }
 
       // Step 2: Transfer to OneLake
-      toast.loading("Transferring data to OneLake...", { id: "modeling-progress" });
+      // toast.loading("Transferring data to OneLake...", { id: "modeling-progress" });
 
       const transferResponse = await fetch(
         "https://4.227.238.34/transferfromblobtoonelake-relation",
@@ -786,12 +786,12 @@ export default function LandingZone() {
       }
 
       // Step 3: Process job for modeling
-      toast.loading("Processing data model...", { id: "modeling-progress" });
+      // toast.loading("Processing data model...", { id: "modeling-progress" });
 
       await processJobForModeling({ user_id: userId, job_id: jobId });
 
       // Step 4: Poll for status until completed
-      toast.loading("Building star schema...", { id: "modeling-progress" });
+      // toast.loading("Building star schema...", { id: "modeling-progress" });
 
       let statusResponse;
       let attempts = 0;

@@ -527,10 +527,12 @@ const handleConfirm = () => {
     } else if (isAzure && currentContainer) {
       fullPath = `${currentContainer}/${file.name}`;
     } else if (isOneLake && currentWorkspace && currentLakehouse && currentPath) {
-      fullPath = `${currentPath.replace("Files", "").replace(/^\//, "")}/${file.name}`.replace(/^\//, '');
+      // fullPath = `${currentPath.replace("Files", "").replace(/^\//, "")}/${file.name}`.replace(/^\//, '');
+        fullPath = `${currentPath}/${file.name}`;
       if (fullPath.startsWith('/')) fullPath = fullPath.slice(1);
     } else if (isDatabricks && currentCatalog && currentSchema) {
-      fullPath = `${currentCatalog}/${currentSchema}/${file.name}`;
+      // fullPath = `${currentCatalog}/${currentSchema}/${file.name}`;
+      fullPath = file.name;
     } else if (isSnowflake && currentDatabase && currentSnowflakeSchema) {
       fullPath = `${currentDatabase}/${currentSnowflakeSchema}/${file.name}`;
     }

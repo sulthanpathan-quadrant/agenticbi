@@ -551,7 +551,7 @@ export default function BusinessLogic() {
     const fetchDatasets = async () => {
       setLoadingDatasets(true);
       try {
-        const url = `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`;
+        const url = `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${jobId}`;
         const res = await fetch(url, {
           headers: {
             accept: "application/json",
@@ -619,7 +619,7 @@ export default function BusinessLogic() {
     console.log(payload)
 
     try {
-      const response = await fetch("https://20.81.213.147/set-job-options", {
+      const response = await fetch("https://api.veriton.ai/api/service2/set-job-options", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -692,7 +692,7 @@ export default function BusinessLogic() {
     try {
       await updateBusinessLogicOptions();
 
-      const response = await fetch("https://20.81.213.147/api/v1/business-rules/process", {
+      const response = await fetch("https://api.veriton.ai/api/service2/api/v1/business-rules/process", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

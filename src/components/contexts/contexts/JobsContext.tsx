@@ -1,0 +1,221 @@
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+// import { Job } from '@/types/job';
+// import { useAuth } from '@/contexts/AuthContext';
+import { Job } from '../types/jobs';
+import { useAuth } from './AuthContext';
+
+interface JobsContextType {
+  jobs: Job[];
+  loading: boolean;
+  error: string | null;
+  totalCount: number;
+  currentPage: number;
+  fetchJobs: (page?: number, limit?: number) => Promise<void>;
+  addJob: (job: Job) => void;
+  updateJob: (id: string, updates: Partial<Job>) => void;
+  deleteJob: (id: string) => void;
+  runJob: (id: string) => Promise<void>;
+  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
+}
+
+const JobsContext = createContext<JobsContextType | undefined>(undefined);
+
+// ✅ Map API model names to UI display names
+const apiModelToUI: Record<string, string> = {
+  'logistic_regression': 'Logistic Regression',
+  'random_forest': 'Random Forest',
+  'gradient_boosting': 'Gradient Boosting',
+  'xgboost': 'XGBoost',
+  'ridge': 'Ridge',
+  'arima': 'ARIMA',
+  'prophet': 'Prophet',
+  'lightgbm': 'LightGBM',
+  'catboost': 'CatBoost',
+  'kmeans': 'KMeans',
+  'kmeans++': 'KMeans++',
+  'dbscan': 'DBSCAN',
+  'gmm': 'GMM',
+  'isolation_forest': 'Isolation Forest',
+  'one_class_svm': 'One-Class SVM',
+  'lof': 'Local Outlier Factor (LOF)',
+  'elliptic_envelope': 'Elliptic Envelope'
+};
+
+export const JobsProvider = ({ children }: { children: ReactNode }) => {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const { user } = useAuth();
+
+  // ✅ Wrap fetchJobs with useCallback to prevent infinite re-renders
+  const fetchJobs = useCallback(async (page: number = 1, limit: number = 10) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const userDataString = localStorage.getItem('aivolve_user');
+      if (!userDataString) {
+        throw new Error('User not found in localStorage');
+      }
+      
+      const userData = JSON.parse(userDataString);
+      const userEmail = userData.email;
+      
+      if (!userEmail) {
+        throw new Error('Email not found in user data');
+      }
+
+      console.log('Fetching jobs for email:', userEmail, 'Page:', page);
+
+      // Calculate start index for pagination
+      const start = (page - 1) * limit;
+
+      // Include start and limit parameters in API call
+      const apiUrl = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/user_models_summary?user_email=${encodeURIComponent(userEmail)}&start=${start}&limit=${limit}`;
+      
+      console.log('API URL:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('API Response:', data);
+      
+      if (!data.models || !Array.isArray(data.models)) {
+        throw new Error('Invalid API response format');
+      }
+
+      // Set total count from API response
+      setTotalCount(data.total_count || 0);
+      console.log('Total jobs count:', data.total_count);
+
+      // Map the jobs from API response
+      const mappedJobs: Job[] = data.models.map((model: any) => {
+        // Convert API model name to UI display name
+        const apiModelName = model.best_model?.toLowerCase() || '';
+        const uiModelName = apiModelToUI[apiModelName] || model.best_model || '';
+
+        console.log('Processing model:', {
+          model_id: model.model_id,
+          target: model.target,
+          task_type: model.task_type,
+          dataset_name: model.dataset_name
+        });
+
+        return {
+          id: model.model_id,
+          name: model.run_id || 'Untitled Job',
+          category: model.task_type,
+          createdAt: new Date(),
+          lastRun: new Date(),
+          status: 'completed' as const,
+          feature: model.task_type,
+          model: uiModelName,
+          features: [],
+          target: model.target || '',
+          datasetName: model.dataset_name || 'Unknown Dataset',
+          trainAccuracy: model.train_accuracy ? `${(model.train_accuracy * 100).toFixed(1)}%` : undefined,
+          testAccuracy: model.test_accuracy ? `${(model.test_accuracy * 100).toFixed(1)}%` : undefined,
+          task_type: model.task_type,
+        };
+      });
+
+      console.log('Mapped Jobs with details:', mappedJobs);
+      setJobs(mappedJobs);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch jobs';
+      setError(errorMessage);
+      console.error('Error fetching jobs:', err);
+      setJobs([]);
+      setTotalCount(0);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // ✅ Empty dependency array since it doesn't depend on any external values
+
+  // ✅ Fetch jobs when user changes (reset to page 1)
+  useEffect(() => {
+    if (user?.email) {
+      console.log('User changed, fetching jobs for:', user.email);
+      setCurrentPage(1); // Reset to page 1 when user changes
+      fetchJobs(1, 10);
+    } else {
+      setJobs([]);
+      setTotalCount(0);
+    }
+  }, [user?.email, fetchJobs]); // ✅ Now safe to include fetchJobs since it's memoized
+
+  // ✅ Fetch jobs when page changes
+  useEffect(() => {
+    if (user?.email && currentPage > 1) {
+      console.log('Page changed to:', currentPage);
+      fetchJobs(currentPage, 10);
+    }
+  }, [currentPage, user?.email, fetchJobs]); // ✅ Re-fetch when page changes
+
+  const addJob = (job: Job) => {
+    setJobs(prev => [job, ...prev]);
+    setTotalCount(prev => prev + 1);
+  };
+
+  const updateJob = (id: string, updates: Partial<Job>) => {
+    setJobs(prev => prev.map(job => 
+      job.id === id ? { ...job, ...updates } : job
+    ));
+  };
+
+  const deleteJob = (id: string) => {
+    setJobs(prev => prev.filter(job => job.id !== id));
+    setTotalCount(prev => Math.max(0, prev - 1));
+  };
+
+  const runJob = async (id: string) => {
+    updateJob(id, { status: 'running' });
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    updateJob(id, { 
+      status: 'completed',
+      lastRun: new Date(),
+      trainAccuracy: (92 + Math.random() * 6).toFixed(1) + '%',
+      testAccuracy: (88 + Math.random() * 8).toFixed(1) + '%'
+    });
+  };
+
+  return (
+    <JobsContext.Provider value={{ 
+      jobs, 
+      loading, 
+      error, 
+      totalCount,
+      currentPage,
+      fetchJobs, 
+      addJob, 
+      updateJob, 
+      deleteJob, 
+      runJob,
+      setCurrentPage
+    }}>
+      {children}
+    </JobsContext.Provider>
+  );
+};
+
+export const useJobs = () => {
+  const context = useContext(JobsContext);
+  if (!context) {
+    throw new Error('useJobs must be used within a JobsProvider');
+  }
+  return context;
+};

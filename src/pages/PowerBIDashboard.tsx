@@ -338,7 +338,7 @@ const PowerBIDashboard = () => {
  
         setLoadingFiles(true);
         const response = await fetch(
-          `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`
+          `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${jobId}`
         );
  
         if (!response.ok) throw new Error(`HTTP ${response.status}`);

@@ -38,7 +38,7 @@ interface Connection {
   to: string;
 }
  
-const API_BASE = "https://20.81.213.147";
+const API_BASE = "https://api.veriton.ai/api/service2";
  
 const CreatePipeline = () => {
   const navigate = useNavigate();
@@ -68,7 +68,7 @@ const CreatePipeline = () => {
       setLoadingJobs(true);
       try {
         const response = await fetch(
-          `https://4.227.238.34/get-all-jobs?user_id=${userId}`,
+          `https://api.veriton.ai/api/service1/get-all-jobs?user_id=${userId}`,
           {
             method: "GET",
             headers: { "Content-Type": "application/json" },

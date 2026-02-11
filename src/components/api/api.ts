@@ -675,8 +675,8 @@
 // };
 
 
-const API_BASE_URL = "https://4.227.238.34";
-const MODELING_API_BASE = "https://20.81.213.147";
+const API_BASE_URL = "https://api.veriton.ai/api/service1";
+const MODELING_API_BASE = "https://api.veriton.ai/api/service2";
  
 export const API_BASE = API_BASE_URL;
 export const MODELING_API = MODELING_API_BASE;
@@ -1362,7 +1362,7 @@ export interface FinalizeDashboardResponse {
 }
 
 export async function finalizeDashboardJson(threadId: string): Promise<any> {
-  const response = await fetch(`https://20.81.213.147/finalize-dashboard-json`, {
+  const response = await fetch(`https://api.veriton.ai/api/service2/finalize-dashboard-json`, {
     method: 'POST',
     headers: {
       'Accept': 'application/json',

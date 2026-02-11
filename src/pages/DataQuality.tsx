@@ -726,7 +726,7 @@ export default function DataQuality() {
       setLoadingFiles(true);
       try {
         const response = await fetch(
-          `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`,
+          `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${jobId}`,
           { headers: { accept: "application/json" } }
         );
 
@@ -778,7 +778,7 @@ export default function DataQuality() {
     };
 
     try {
-      const response = await fetch("https://20.81.213.147/set-job-options", {
+      const response = await fetch("https://api.veriton.ai/api/service2/set-job-options", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -829,7 +829,7 @@ export default function DataQuality() {
     console.log("Calling DQ Rules Generation API with:", payload);
 
     try {
-      const response = await fetch("https://20.81.213.147/run-dq-rules-generation", {
+      const response = await fetch("https://api.veriton.ai/api/service2/run-dq-rules-generation", {
         method: "POST",
         headers: {
           "Accept": "application/json",
@@ -893,7 +893,7 @@ export default function DataQuality() {
     };
 
     try {
-      const response = await fetch("https://20.81.213.147/run-dq-validation", {
+      const response = await fetch("https://api.veriton.ai/api/service2/run-dq-validation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -954,7 +954,7 @@ export default function DataQuality() {
     };
 
     try {
-      const response = await fetch("https://20.81.213.147/run-dq-fixing", {
+      const response = await fetch("https://api.veriton.ai/api/service2/run-dq-fixing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

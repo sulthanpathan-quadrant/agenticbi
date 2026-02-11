@@ -617,7 +617,7 @@ import {
 import { X, Plus, Settings, Clock, Filter, Database, GripVertical, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-const API_BASE = "https://20.81.213.147";
+const API_BASE = "https://api.veriton.ai/api/service2";
 
 interface JobStage {
   id: string;

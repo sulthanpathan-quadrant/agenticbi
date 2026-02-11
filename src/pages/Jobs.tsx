@@ -955,7 +955,7 @@ interface Job {
   };
 }
  
-const API_BASE = "https://20.81.213.147";
+const API_BASE = "https://api.veriton.ai/api/service2";
  
 const Jobs = () => {
   const navigate = useNavigate();
@@ -1014,9 +1014,10 @@ const Jobs = () => {
   }, []);
  
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("jobStatuses");
+    localStorage.clear();
+    // localStorage.removeItem("user");
+    // localStorage.removeItem("token");
+    // localStorage.removeItem("jobStatuses");
     toast.success("Logged out successfully", {
       action: closeToastButton,
     });
@@ -1035,7 +1036,7 @@ const Jobs = () => {
  
       try {
         setLoading(true);
-        const response = await fetch(`https://4.227.238.34/get-all-jobs?user_id=${userId}`);
+        const response = await fetch(`https://api.veriton.ai/api/service1/get-all-jobs?user_id=${userId}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch jobs: ${response.status}`);
         }
@@ -1275,6 +1276,15 @@ const Jobs = () => {
                 <GitBranch className="w-4 h-4" />
                 Pipelines
               </button>
+
+              <button
+                onClick={() => navigate("/datasets")}  // or any route you prefer
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <TableIcon className="w-4 h-4" />   {/* Perfect icon for datasets */}
+                Datasets
+              </button>
+
  
               <div className="flex items-center gap-3">
                 <ThemeToggle />
@@ -1282,7 +1292,9 @@ const Jobs = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleLogout}
+                  onClick={handleLogout
+                    
+                  }
                   className="hover:bg-primary rounded-full"
                   title="Logout"
                 >

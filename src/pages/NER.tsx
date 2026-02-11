@@ -512,7 +512,7 @@ export default function NER() {
     const fetchDatasets = async () => {
       setLoadingDatasets(true);
       try {
-        const url = `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`;
+        const url = `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${jobId}`;
 
         const res = await fetch(url, {
           headers: {
@@ -578,7 +578,7 @@ export default function NER() {
     };
 
     try {
-      const response = await fetch("https://20.81.213.147/set-job-options", {
+      const response = await fetch("https://api.veriton.ai/api/service2/set-job-options", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -632,7 +632,7 @@ export default function NER() {
     console.log("Running NER with blob path:", blobPath);
 
     try {
-      const res = await fetch("https://20.81.213.147/resolve_entities", {
+      const res = await fetch("https://api.veriton.ai/api/service2/resolve_entities", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -695,7 +695,7 @@ export default function NER() {
     const blobPath = getBlobPath(selectedFilename);
 
     try {
-      const res = await fetch("https://20.81.213.147/chooseapply", {
+      const res = await fetch("https://api.veriton.ai/api/service2/chooseapply", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

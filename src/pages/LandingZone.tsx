@@ -617,7 +617,7 @@ export default function LandingZone() {
     const fetchDocuments = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://4.227.238.34/view-documents/${userId}/${jobId}`);
+        const response = await fetch(`https://api.veriton.ai/api/service1/view-documents/${userId}/${jobId}`);
 
         if (!response.ok) throw new Error("Failed to fetch files");
 
@@ -671,7 +671,7 @@ export default function LandingZone() {
     try {
       const encodedFileName = encodeURIComponent(fileName);
       const response = await fetch(
-        `https://4.227.238.34/preview-file/${userId}/${jobId}/${encodedFileName}`
+        `https://api.veriton.ai/api/service1/preview-file/${userId}/${jobId}/${encodedFileName}`
       );
 
       if (response.ok) {
@@ -709,7 +709,7 @@ export default function LandingZone() {
     try {
       const encodedFileName = encodeURIComponent(fileToDelete);
       const response = await fetch(
-        `https://4.227.238.34/delete-file/${userId}/${jobId}/${encodedFileName}`,
+        `https://api.veriton.ai/api/service1/delete-file/${userId}/${jobId}/${encodedFileName}`,
         { method: "DELETE" }
       );
 
@@ -758,7 +758,7 @@ export default function LandingZone() {
       // toast.loading("Detecting fact & dimension tables...", { id: "modeling-progress" });
 
       const detectResponse = await fetch(
-        `https://4.227.238.34/detect-fact-dimension?user_id=${userId}&job_id=${jobId}`,
+        `https://api.veriton.ai/api/service1/detect-fact-dimension?user_id=${userId}&job_id=${jobId}`,
         {
           method: "POST",
           headers: { "Accept": "application/json" },
@@ -773,7 +773,7 @@ export default function LandingZone() {
       // toast.loading("Transferring data to OneLake...", { id: "modeling-progress" });
 
       const transferResponse = await fetch(
-        "https://4.227.238.34/transferfromblobtoonelake-relation",
+        "https://api.veriton.ai/api/service1/transferfromblobtoonelake-relation",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -550,7 +550,7 @@ export default function DataModeling() {
           : `${tableName}.csv`;
  
         const response = await fetch(
-          `https://20.81.213.147/api/debug/view-schema/${userId}/${jobId}/${fileNameWithExtension}`,
+          `https://api.veriton.ai/api/service2/api/debug/view-schema/${userId}/${jobId}/${fileNameWithExtension}`,
           {
             method: "GET",
             headers: { "Accept": "application/json" },
@@ -653,7 +653,7 @@ export default function DataModeling() {
         : `${selectedSchema}.csv`;
  
       const response = await fetch(
-        `https://20.81.213.147/api/schema/${userId}/${jobId}/${fileNameWithExtension}`,
+        `https://api.veriton.ai/api/service2/api/schema/${userId}/${jobId}/${fileNameWithExtension}`,
         {
           method: "PUT",
           headers: {
@@ -714,7 +714,7 @@ export default function DataModeling() {
     setIsProcessing(true);
  
     try {
-      const url = `https://20.81.213.147/fabric/run-spark-job?user_id=${userId}&job_id=${jobId}`;
+      const url = `https://api.veriton.ai/api/service2/fabric/run-spark-job?user_id=${userId}&job_id=${jobId}`;
  
       const response = await fetch(url, {
         method: "POST",

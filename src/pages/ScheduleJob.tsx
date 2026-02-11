@@ -16,7 +16,7 @@ import {
 import { ArrowLeft, Clock, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
  
-const API_BASE = "https://4.227.238.34";
+const API_BASE = "https://api.veriton.ai/api/service1";
  
 interface WorkflowSteps {
   dqRules: "skipped" | "executed";

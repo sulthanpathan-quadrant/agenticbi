@@ -716,7 +716,7 @@ export default function DataCreation() {
       setLoadingTables(true);
       try {
         const res = await fetch(
-          `https://20.81.213.147/onelake/get-all-job-tables?user_id=${userId}&job_id=${jobId}`
+          `https://api.veriton.ai/api/service2/onelake/get-all-job-tables?user_id=${userId}&job_id=${jobId}`
         );
         if (!res.ok) throw new Error(`Failed to load tables: ${res.status}`);
         const data = await res.json();
@@ -743,7 +743,7 @@ export default function DataCreation() {
     setLoadingHistory(true);
     try {
       const res = await fetch(
-        `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`
+        `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${jobId}`
       );
 
       if (!res.ok) {
@@ -889,7 +889,7 @@ export default function DataCreation() {
     };
 
     try {
-      const createResponse = await fetch("https://20.81.213.147/create-dataset", {
+      const createResponse = await fetch("https://api.veriton.ai/api/service2/create-dataset", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -914,7 +914,7 @@ export default function DataCreation() {
 
       try {
         const transferResponse = await fetch(
-          `https://20.81.213.147/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
+          `https://api.veriton.ai/api/service2/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
           {
             method: "POST",
             headers: {

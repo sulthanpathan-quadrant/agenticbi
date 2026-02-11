@@ -1,0 +1,32 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import AutoMLJobs from "./Jobs";
+import CreateJob from "./CreateJob";
+import ModalBuilding from "./ModalBuilding";
+import SelectDataset from "./SelectDataset";
+import BuildModelTab from "../../components/create-job/BuildModelTab"; // Import it
+import CompareTab from "@/components/create-job/CompareTab";
+
+
+ 
+const AutoMLRoutes = () => {
+  return (
+    <Routes>
+      {/* 🔥 DEFAULT: /workflow/automl */}
+      <Route index element={<AutoMLJobs />} />
+      {/* Other AutoML pages */}
+      <Route path="jobs" element={<AutoMLJobs />} />
+      <Route path="create-job" element={<CreateJob />} />
+      <Route path="modal-building/:id" element={<ModalBuilding />} />
+      <Route path="build-model" element={<BuildModelTab />} />
+      <Route path="select-dataset" element={<SelectDataset />} />
+       <Route
+    path="compare"
+    element={<CompareTab />}
+  />
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="." replace />} />
+    </Routes>
+  );
+};
+ 
+export default AutoMLRoutes;

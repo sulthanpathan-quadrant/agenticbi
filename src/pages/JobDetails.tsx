@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { X, Settings, Clock, Database, GitBranch, Moon, Sun, User, ArrowLeft, Play } from "lucide-react";
 import { toast } from "sonner";
  
-const API_BASE = "https://20.81.213.147";
+const API_BASE = "https://api.veriton.ai/api/service2";
  
 interface Job {
   id: string;
@@ -62,7 +62,7 @@ const JobDetails = () => {
  
       try {
         setLoading(true);
-       const response = await fetch(`https://4.227.238.34/get-all-jobs?user_id=${userId}`);
+       const response = await fetch(`https://api.veriton.ai/api/service1/get-all-jobs?user_id=${userId}`);
  
         if (!response.ok) {
           throw new Error(`Failed to fetch job details: ${response.status}`);
@@ -223,7 +223,7 @@ const JobDetails = () => {
  
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header
       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -267,7 +267,7 @@ const JobDetails = () => {
           </div>
         </div>
       </header>
- 
+  */}
       <main className="container mx-auto px-6 py-8 max-w-5xl">
         <Button variant="ghost" onClick={() => navigate("/jobs")} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />

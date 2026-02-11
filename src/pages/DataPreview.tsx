@@ -510,7 +510,7 @@ export default function DataPreview() {
       setLoadingTables(true);
       try {
         const res = await fetch(
-          `https://20.81.213.147/onelake/data-preview?user_id=${userId}&job_id=${jobId}`
+          `https://api.veriton.ai/api/service2/onelake/data-preview?user_id=${userId}&job_id=${jobId}`
         );
         if (!res.ok) throw new Error("Failed to load tables");
         const data = await res.json();
@@ -573,7 +573,7 @@ export default function DataPreview() {
       setPreview(null);
       try {
         const res = await fetch(
-          `https://20.81.213.147/onelake/select-table?user_id=${userId}&job_id=${jobId}&filename=${encodeURIComponent(selectedTable)}`
+          `https://api.veriton.ai/api/service2/onelake/select-table?user_id=${userId}&job_id=${jobId}&filename=${encodeURIComponent(selectedTable)}`
         );
         if (!res.ok) throw new Error("Failed to load preview");
         const data = await res.json();

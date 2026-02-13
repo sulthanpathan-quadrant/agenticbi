@@ -270,9 +270,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    */
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("aivolve_user");
-    localStorage.removeItem("user");
-    localStorage.removeItem("access_token");
+    localStorage.clear();
   };
 
   return (

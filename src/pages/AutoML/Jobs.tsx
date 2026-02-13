@@ -1009,15 +1009,25 @@ const AutoMLJobs = () => {
       <main className="pt-20 px-6 pb-12">
         <div className="max-w-7xl mx-auto">
             {/* ================= AutoML Intro ================= */}
-<div className="mb-10">
-  <h1 className="text-3xl font-bold text-foreground">
-    AutoML Workspace
-  </h1>
-  <p className="text-muted-foreground mt-2 max-w-2xl">
-    Build, compare, and test machine learning models automatically using your datasets.
-    Manage all trained models below.
-  </p>
+<div className="mb-10 flex items-start justify-between">
+  <div>
+    <h1 className="text-3xl font-bold text-foreground">
+      AutoML Workspace
+    </h1>
+    <p className="text-muted-foreground mt-2 max-w-2xl">
+      Build, compare, and test machine learning models automatically using your datasets.
+      Manage all trained models below.
+    </p>
+  </div>
+ 
+  <Button
+    variant="outline"
+    onClick={() => navigate("/workflow/path-selection")}
+  >
+    ← Back to Path Selection
+  </Button>
 </div>
+ 
  
 {/* ================= AutoML Actions ================= */}
 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">

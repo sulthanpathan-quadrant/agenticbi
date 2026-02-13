@@ -1417,10 +1417,23 @@ const Jobs = () => {
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Chart View
                 </Button> */}
-                <Button onClick={() => navigate("/workflow/data-ingestion")}>
+                {/* <Button onClick={() => navigate("/workflow/data-ingestion")}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Job
-                </Button>
+                </Button> */}
+                <Button 
+                onClick={() => {
+                  // Modern browsers support crypto.randomUUID()
+                  const newJobId = crypto.randomUUID().replace(/-/g, '');
+                  
+                  localStorage.setItem("current_job_id", newJobId);
+              
+                  navigate("/workflow/data-ingestion");
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Job
+              </Button>
               </div>
             </div>
  

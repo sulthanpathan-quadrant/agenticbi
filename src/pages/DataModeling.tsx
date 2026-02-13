@@ -29,6 +29,17 @@
 //     : null;
 //   const jobId = localStorage.getItem("current_job_id");
  
+//   // Reusable X close button for all toasts (Sonner style)
+//   const closeToastButton = (
+//     <button
+//       onClick={() => toast.dismiss()}
+//       className="absolute top-2 right-2 rounded-full p-1 hover:bg-muted/50 transition-colors"
+//       aria-label="Close toast"
+//     >
+//       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+//     </button>
+//   );
+ 
 //   // Load modeling data from localStorage
 //   useEffect(() => {
 //     const storedData = localStorage.getItem("modeling_data");
@@ -43,10 +54,16 @@
 //         }
 //       } catch (error) {
 //         console.error("Error parsing modeling data:", error);
-//         toast.error("Failed to load modeling data", { duration: 1000 });
+//         toast.error("Failed to load modeling data", {
+//           duration: 1000,
+//           action: closeToastButton
+//         });
 //       }
 //     } else {
-//       toast.warning("No modeling data found. Redirecting to landing zone...", { duration: 1000 });
+//       toast.warning("No modeling data found. Redirecting to landing zone...", {
+//         duration: 1000,
+//         action: closeToastButton
+//       });
 //       setTimeout(() => navigate("/workflow/landing-zone"), 2000);
 //     }
  
@@ -55,7 +72,10 @@
  
 //   const handleSchemaClick = async (tableName: string) => {
 //     if (!userId || !jobId) {
-//       toast.error("Missing user or job information", { duration: 1000 });
+//       toast.error("Missing user or job information", {
+//         duration: 1000,
+//         action: closeToastButton
+//       });
 //       return;
 //     }
  
@@ -82,7 +102,10 @@
 //         setOriginalSchemaData(formattedData); // backup
 //       } catch (error) {
 //         console.error("Error loading fact table:", error);
-//         toast.error("Failed to load fact table details", { duration: 1000 });
+//         toast.error("Failed to load fact table details", {
+//           duration: 1000,
+//           action: closeToastButton
+//         });
 //       } finally {
 //         setLoadingSchema(false);
 //       }
@@ -93,7 +116,7 @@
 //           : `${tableName}.csv`;
  
 //         const response = await fetch(
-//           `https://20.81.213.147/api/debug/view-schema/${userId}/${jobId}/${fileNameWithExtension}`,
+//           `https://api.veriton.ai/api/service2/api/debug/view-schema/${userId}/${jobId}/${fileNameWithExtension}`,
 //           {
 //             method: "GET",
 //             headers: { "Accept": "application/json" },
@@ -118,7 +141,10 @@
 //         setOriginalSchemaData(formattedData); // backup
 //       } catch (error: any) {
 //         console.error("Error fetching schema:", error);
-//         toast.error(error.message || "Failed to load schema details", { duration: 1000 });
+//         toast.error(error.message || "Failed to load schema details", {
+//           duration: 1000,
+//           action: closeToastButton
+//         });
  
 //         const fallbackTable = modelingData?.tables?.find(
 //           (t: any) => t.table_name === tableName
@@ -133,7 +159,10 @@
 //           }));
 //           setSchemaData(formattedData);
 //           setOriginalSchemaData(formattedData);
-//           toast.info("Showing cached schema data", { duration: 1000 });
+//           toast.info("Showing cached schema data", {
+//             duration: 1000,
+//             action: closeToastButton
+//           });
 //         } else {
 //           setSchemaData([]);
 //           setOriginalSchemaData([]);
@@ -160,12 +189,18 @@
 //   const handleCancel = () => {
 //     setSchemaData([...originalSchemaData]);
 //     setIsEditing(false);
-//     toast.info("Changes discarded", { duration: 1200 });
+//     toast.info("Changes discarded", {
+//       duration: 1200,
+//       action: closeToastButton
+//     });
 //   };
  
 //   const handleSave = async () => {
 //     if (!userId || !jobId || !selectedSchema) {
-//       toast.error("Missing required information", { duration: 1000 });
+//       toast.error("Missing required information", {
+//         duration: 1000,
+//         action: closeToastButton
+//       });
 //       return;
 //     }
  
@@ -184,7 +219,7 @@
 //         : `${selectedSchema}.csv`;
  
 //       const response = await fetch(
-//         `https://20.81.213.147/api/schema/${userId}/${jobId}/${fileNameWithExtension}`,
+//         `https://api.veriton.ai/api/service2/api/schema/${userId}/${jobId}/${fileNameWithExtension}`,
 //         {
 //           method: "PUT",
 //           headers: {
@@ -208,7 +243,10 @@
 //       }
  
 //       toast.dismiss("update-schema");
-//       toast.success(`Schema updated! ${result.columns_updated || 0} column(s) modified`, { duration: 2000 });
+//       toast.success(`Schema updated! ${result.columns_updated || 0} column(s) modified`, {
+//         duration: 2000,
+//         action: closeToastButton
+//       });
  
 //       setOriginalSchemaData([...schemaData]);
 //       setIsEditing(false);
@@ -217,7 +255,10 @@
 //     } catch (error: any) {
 //       toast.dismiss("update-schema");
 //       console.error("Error updating schema:", error);
-//       toast.error(error.message || "Failed to update schema", { duration: 3000 });
+//       toast.error(error.message || "Failed to update schema", {
+//         duration: 3000,
+//         action: closeToastButton
+//       });
 //     }
 //   };
  
@@ -229,14 +270,17 @@
  
 //   const handleNextToDataPreview = async () => {
 //     if (!userId || !jobId) {
-//       toast.error("Missing user or job information.", { duration: 1000 });
+//       toast.error("Missing user or job information.", {
+//         duration: 1000,
+//         action: closeToastButton
+//       });
 //       return;
 //     }
  
 //     setIsProcessing(true);
  
 //     try {
-//       const url = `https://20.81.213.147/fabric/run-spark-job?user_id=${userId}&job_id=${jobId}`;
+//       const url = `https://api.veriton.ai/api/service2/fabric/run-spark-job?user_id=${userId}&job_id=${jobId}`;
  
 //       const response = await fetch(url, {
 //         method: "POST",
@@ -251,7 +295,10 @@
 //       navigate("/workflow/data-preview");
 //     } catch (error: any) {
 //       console.error("Spark job error:", error);
-//       toast.error(error.message || "Failed to run Spark job for data preview", { duration: 1000 });
+//       toast.error(error.message || "Failed to run Spark job for data preview", {
+//         duration: 1000,
+//         action: closeToastButton
+//       });
 //     } finally {
 //       setIsProcessing(false);
 //     }
@@ -429,9 +476,6 @@
 //   );
 // }
  
-
-
- 
 import { useState, useEffect, useRef } from "react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
@@ -442,27 +486,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import StarSchemaDiagram from '@/components/StarSchemaDiagram';
- 
+
 export default function DataModeling() {
   const navigate = useNavigate();
- 
+
   const [selectedSchema, setSelectedSchema] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
- 
+
   const [modelingData, setModelingData] = useState<any>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [schemaData, setSchemaData] = useState<any[]>([]);
   const [originalSchemaData, setOriginalSchemaData] = useState<any[]>([]); // backup for cancel
   const [loadingSchema, setLoadingSchema] = useState(false);
- 
+
   const schemaSectionRef = useRef<HTMLDivElement>(null);
- 
+
   const userId = localStorage.getItem("user")
     ? JSON.parse(localStorage.getItem("user") || "{}").id
     : null;
   const jobId = localStorage.getItem("current_job_id");
- 
+
   // Reusable X close button for all toasts (Sonner style)
   const closeToastButton = (
     <button
@@ -473,16 +517,16 @@ export default function DataModeling() {
       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
     </button>
   );
- 
+
   // Load modeling data from localStorage
   useEffect(() => {
     const storedData = localStorage.getItem("modeling_data");
- 
+
     if (storedData) {
       try {
         const parsed = JSON.parse(storedData);
         setModelingData(parsed);
- 
+
         if (parsed.model?.fact_table) {
           setSelectedSchema(parsed.model.fact_table);
         }
@@ -500,10 +544,10 @@ export default function DataModeling() {
       });
       setTimeout(() => navigate("/workflow/landing-zone"), 2000);
     }
- 
+
     setLoadingData(false);
   }, [navigate]);
- 
+
   const handleSchemaClick = async (tableName: string) => {
     if (!userId || !jobId) {
       toast.error("Missing user or job information", {
@@ -512,17 +556,17 @@ export default function DataModeling() {
       });
       return;
     }
- 
+
     setSelectedSchema(tableName);
     setLoadingSchema(true);
     setSchemaData([]);
     setOriginalSchemaData([]); // clear backup
     setIsEditing(false); // reset edit mode when changing table
- 
+
     const isFactTable = modelingData?.tables?.find(
       (t: any) => t.table_name === tableName && t.table_type === "FACT"
     );
- 
+
     if (isFactTable && !tableName.includes('.csv')) {
       try {
         const formattedData = isFactTable.columns.map((col: any) => ({
@@ -531,7 +575,7 @@ export default function DataModeling() {
           example: "",
           key: col.is_primary_key ? "PK" : col.is_foreign_key ? "FK" : "",
         }));
- 
+
         setSchemaData(formattedData);
         setOriginalSchemaData(formattedData); // backup
       } catch (error) {
@@ -548,7 +592,7 @@ export default function DataModeling() {
         const fileNameWithExtension = tableName.endsWith('.csv')
           ? tableName
           : `${tableName}.csv`;
- 
+
         const response = await fetch(
           `https://api.veriton.ai/api/service2/api/debug/view-schema/${userId}/${jobId}/${fileNameWithExtension}`,
           {
@@ -556,21 +600,21 @@ export default function DataModeling() {
             headers: { "Accept": "application/json" },
           }
         );
- 
+
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`Failed to fetch schema: ${errorText}`);
         }
- 
+
         const schemaDetails = await response.json();
- 
+
         const formattedData = schemaDetails.columns.map((col: any) => ({
           columnName: col.column_name,
           dataType: col.data_type.toUpperCase(),
           example: col.example || "",
           key: col.is_potential_key ? "PK" : col.key.toUpperCase() || "",
         }));
- 
+
         setSchemaData(formattedData);
         setOriginalSchemaData(formattedData); // backup
       } catch (error: any) {
@@ -579,11 +623,11 @@ export default function DataModeling() {
           duration: 1000,
           action: closeToastButton
         });
- 
+
         const fallbackTable = modelingData?.tables?.find(
           (t: any) => t.table_name === tableName
         );
- 
+
         if (fallbackTable) {
           const formattedData = fallbackTable.columns.map((col: any) => ({
             columnName: col.name,
@@ -605,7 +649,7 @@ export default function DataModeling() {
         setLoadingSchema(false);
       }
     }
- 
+
     setTimeout(() => {
       if (schemaSectionRef.current) {
         schemaSectionRef.current.scrollIntoView({
@@ -615,11 +659,11 @@ export default function DataModeling() {
       }
     }, 150);
   };
- 
+
   const handleEdit = () => {
     setIsEditing(true);
   };
- 
+
   const handleCancel = () => {
     setSchemaData([...originalSchemaData]);
     setIsEditing(false);
@@ -628,7 +672,7 @@ export default function DataModeling() {
       action: closeToastButton
     });
   };
- 
+
   const handleSave = async () => {
     if (!userId || !jobId || !selectedSchema) {
       toast.error("Missing required information", {
@@ -637,21 +681,21 @@ export default function DataModeling() {
       });
       return;
     }
- 
+
     try {
       toast.loading("Updating schema...", { id: "update-schema" });
- 
+
       const payload = {
         columns: schemaData.map((row) => ({
           column_name: row.columnName,
           data_type: row.dataType.toLowerCase(),
         })),
       };
- 
+
       const fileNameWithExtension = selectedSchema.endsWith('.csv')
         ? selectedSchema
         : `${selectedSchema}.csv`;
- 
+
       const response = await fetch(
         `https://api.veriton.ai/api/service2/api/schema/${userId}/${jobId}/${fileNameWithExtension}`,
         {
@@ -663,28 +707,28 @@ export default function DataModeling() {
           body: JSON.stringify(payload),
         }
       );
- 
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to update schema: ${errorText}`);
       }
- 
+
       const result = await response.json();
- 
+
       if (result.data) {
         localStorage.setItem("modeling_data", JSON.stringify(result.data));
         setModelingData(result.data);
       }
- 
+
       toast.dismiss("update-schema");
       toast.success(`Schema updated! ${result.columns_updated || 0} column(s) modified`, {
         duration: 2000,
         action: closeToastButton
       });
- 
+
       setOriginalSchemaData([...schemaData]);
       setIsEditing(false);
- 
+
       await handleSchemaClick(selectedSchema);
     } catch (error: any) {
       toast.dismiss("update-schema");
@@ -695,53 +739,124 @@ export default function DataModeling() {
       });
     }
   };
- 
+
   const handleCellChange = (index: number, field: string, value: string) => {
     const newData = [...schemaData];
     newData[index] = { ...newData[index], [field]: value };
     setSchemaData(newData);
   };
- 
+
   const handleNextToDataPreview = async () => {
     if (!userId || !jobId) {
       toast.error("Missing user or job information.", {
         duration: 1000,
-        action: closeToastButton
+        action: closeToastButton,
       });
       return;
     }
- 
+
     setIsProcessing(true);
- 
+
+    let pollingInterval: NodeJS.Timeout | null = null;
+
     try {
-      const url = `https://api.veriton.ai/api/service2/fabric/run-spark-job?user_id=${userId}&job_id=${jobId}`;
- 
-      const response = await fetch(url, {
+      // 1. Submit Spark job
+      const submitUrl = `https://api.veriton.ai/api/service2/fabric/run-spark-job?user_id=${userId}&job_id=${jobId}`;
+
+      const submitResponse = await fetch(submitUrl, {
         method: "POST",
         headers: { "Accept": "application/json" },
       });
- 
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(`Spark job failed (${response.status}): ${errorText}`);
+
+      if (!submitResponse.ok) {
+        const errorText = await submitResponse.text().catch(() => "Unknown error");
+        throw new Error(`Failed to submit Spark job (${submitResponse.status}): ${errorText}`);
       }
- 
-      navigate("/workflow/data-preview");
+
+      const submitData = await submitResponse.json();
+
+      if (!submitData.job_instance_id) {
+        throw new Error("No job_instance_id returned from server");
+      }
+
+      const jobInstanceId = submitData.job_instance_id;
+
+      // toast.success("Spark job submitted", {
+      //   description: `Instance ID: ${jobInstanceId.slice(0, 8)}...`,
+      //   action: closeToastButton,
+      // });
+
+      // 2. Start polling status
+      const statusUrl = `https://api.veriton.ai/api/service2/fabric/run-spark-job/status?job_instance_id=${jobInstanceId}`;
+
+      pollingInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(statusUrl, {
+            method: "GET",
+            headers: { "Accept": "application/json" },
+          });
+
+          if (!statusResponse.ok) {
+            console.warn(`Status check failed (${statusResponse.status})`);
+            return; // continue polling
+          }
+
+          const statusData = await statusResponse.json();
+
+          // Handle both possible status locations
+          const jobStatus = statusData?.status || statusData?.details?.status;
+
+          if (jobStatus === "Completed") {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = null;
+
+            // toast.success("Data processing completed", {
+            //   description: "Ready for preview",
+            //   action: closeToastButton,
+            // });
+
+            navigate("/workflow/data-preview");
+          } else if (["Failed", "Error"].includes(jobStatus || "")) {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = null;
+
+            const reason = statusData?.details?.failureReason || "Unknown reason";
+            throw new Error(`Spark job failed: ${reason}`);
+          }
+          // else → still running / pending → keep polling
+        } catch (pollError) {
+          console.error("Polling error:", pollError);
+          // continue polling unless critical failure
+        }
+      }, 6000); // check every 3 seconds
+
     } catch (error: any) {
-      console.error("Spark job error:", error);
-      toast.error(error.message || "Failed to run Spark job for data preview", {
+      console.error("Spark job submission / processing error:", error);
+
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+
+      toast.error(error.message || "Failed to start or complete data processing", {
         duration: 1000,
-        action: closeToastButton
+        action: closeToastButton,
       });
-    } finally {
+
       setIsProcessing(false);
     }
+
+    // Cleanup polling on unmount
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
   };
- 
+
   const detailedSchema = modelingData?.tables?.find(
     (t: any) => t.table_name === selectedSchema
   );
- 
+
   return (
     <WorkflowLayout>
       <div className="p-8">
@@ -752,8 +867,8 @@ export default function DataModeling() {
             AI-generated star schema from your data sources
           </p>
         </div>
- 
-        {/* Star Schema View - now always visible (no toggle) */}
+
+        {/* Star Schema View */}
         {modelingData && (
           <div className="border border-border rounded-lg p-6 bg-card mb-6">
             <div className="flex items-center justify-between mb-4">
@@ -762,7 +877,7 @@ export default function DataModeling() {
                 Star Schema - {modelingData.model?.type || "STAR_SCHEMA"}
               </h2>
             </div>
- 
+
             {loadingData ? (
               <div className="flex items-center justify-center h-96">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -775,7 +890,7 @@ export default function DataModeling() {
             )}
           </div>
         )}
- 
+
         {/* Schema Details Section */}
         <div ref={schemaSectionRef} className="border border-border rounded-lg p-6 bg-card mb-6 scroll-mt-8">
           <div className="flex items-center justify-between mb-4">
@@ -783,7 +898,7 @@ export default function DataModeling() {
               <Database className="h-5 w-5" />
               {selectedSchema ? `${selectedSchema} - Schema Details` : "Schema Details"}
             </h3>
- 
+
             <div className="flex gap-2">
               {!isEditing ? (
                 <Button
@@ -809,7 +924,7 @@ export default function DataModeling() {
               )}
             </div>
           </div>
- 
+
           {loadingSchema ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -836,7 +951,7 @@ export default function DataModeling() {
                   </span>
                 </div>
               </div>
- 
+
               <div className="border border-border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -882,23 +997,23 @@ export default function DataModeling() {
             </p>
           )}
         </div>
- 
+
         {/* Bottom Actions */}
         <div className="flex justify-between items-center mt-8">
           <Button variant="outline" onClick={() => navigate("/workflow/landing-zone")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
- 
+
           <Button
             onClick={handleNextToDataPreview}
             disabled={isProcessing}
-            className="gap-2"
+            className="gap-2 min-w-[220px]"
           >
             {isProcessing ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Processing...
+                Processing Data...
               </>
             ) : (
               "Next to Data Preview"
@@ -909,4 +1024,3 @@ export default function DataModeling() {
     </WorkflowLayout>
   );
 }
- 

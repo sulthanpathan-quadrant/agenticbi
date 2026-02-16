@@ -557,6 +557,10 @@ import { format } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
  
 interface Dataset {
   id: string;
@@ -741,7 +745,7 @@ const DatasetTab = () => {
       <header className="border-b border-border backdrop-blur-md sticky top-0 z-20 bg-background/80">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            {/* <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Database className="w-5 h-5 text-primary" />
               </div>
@@ -750,9 +754,34 @@ const DatasetTab = () => {
                 <p className="text-sm text-muted-foreground">
                   Welcome, <span className="text-primary">{userName}</span>
                 </p>
-              </div>
+              </div> */}
+
+              <div className="flex items-center gap-3 md:gap-4">
+            {/* Logo */}
+            <a href="/" className="flex-shrink-0">
+              <img
+                src="/logo2.png"
+                alt="Veriton"
+                className="
+                  h-10               /* mobile base size */
+                  sm:h-10
+                  md:h-9 lg:h-10    /* larger on desktop */
+                  w-auto
+                  object-contain
+                  drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+                  transition-transform duration-200
+                  hover:scale-105
+                "
+              />
+            </a>
+
+            {/* Welcome text – side by side */}
+            <div className="flex flex-col">
+              <p className="text-sm md:text-base text-muted-foreground">
+                Welcome, <span className="text-primary font-medium">{userName || "User"}</span>
+              </p>
             </div>
- 
+          </div>
             <nav className="flex items-center gap-6">
               <button
                 onClick={() => navigate("/jobs")}
@@ -953,35 +982,110 @@ const DatasetTab = () => {
  
       {/* Preview Modal – unchanged from your version */}
       {previewDataset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-5xl relative bg-background border-border">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-4 z-10"
-              onClick={() => setPreviewDataset(null)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
- 
-            <div className="p-6 pt-14">
-              <h3 className="text-xl font-semibold mb-6">
-                Preview: {previewDataset.datasetName}
-              </h3>
- 
-              <div className="border border-border rounded-lg overflow-hidden max-h-[65vh] overflow-y-auto">
-                <div className="p-4 text-muted-foreground">
-                  Rows: {previewDataset.rows} • Columns: {previewDataset.columns}
-                  <br />
-                  Path: {previewDataset.filePath}
-                  <br />
-                  Scheduled: {previewDataset.isScheduled ? "Yes" : "No"}
-                </div>
-              </div>
-            </div>
-          </Card>
+  <Dialog 
+    open={!!previewDataset} 
+    onOpenChange={() => {
+      setPreviewDataset(null);
+      setPreviewData(null);
+      setPreviewError(null);
+    }}
+  >
+    <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
+      {/* Header area — very close to ETLOutput */}
+      <div className="mb-4 flex justify-between items-center px-6 pt-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Full Data Preview</h2>
+          <p className="text-muted-foreground mt-1">
+            Table: <span className="text-primary">{previewDataset.datasetName}</span> •{" "}
+            {previewData 
+              ? `${previewData.total_columns} columns × ${previewData.total_rows} rows` 
+              : previewLoading ? "loading..." : "—"}
+          </p>
         </div>
-      )}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => {
+            setPreviewDataset(null);
+            setPreviewData(null);
+            setPreviewError(null);
+          }}
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Main content area */}
+      <div className="flex-1 px-6 pb-6 overflow-hidden flex flex-col">
+        {previewLoading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        ) : previewError ? (
+          <div className="flex-1 flex items-center justify-center text-destructive text-center">
+            <div className="max-w-md">
+              <p className="font-medium text-lg mb-3">Failed to load preview</p>
+              <p className="text-sm">{previewError}</p>
+            </div>
+          </div>
+        ) : previewData ? (
+          <div className="flex-1 overflow-auto border border-border rounded-lg">
+            <table className="w-full min-w-max">
+              <thead className="sticky top-0 bg-primary text-white">
+                <tr>
+                  {previewData.columns.map((col) => (
+                    <th
+                      key={col}
+                      className="text-left p-4 text-sm font-medium whitespace-nowrap border-b border-primary/30"
+                    >
+                      <div>{col}</div>
+                      <div className="text-xs opacity-80 mt-0.5">
+                        {previewData.column_types[col] || "?"}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {previewData.preview_rows.map((row, rowIdx) => (
+                  <tr
+                    key={rowIdx}
+                    className="border-b border-border hover:bg-muted/50 transition-colors last:border-b-0"
+                  >
+                    {previewData.columns.map((col) => (
+                      <td
+                        key={col}
+                        className="p-4 text-sm text-foreground whitespace-nowrap"
+                      >
+                        {row[col] != null ? String(row[col]) : "-"}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+
+                {previewData.preview_rows.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={previewData.columns.length || 1}
+                      className="p-10 text-center text-muted-foreground"
+                    >
+                      No preview data available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            Waiting for data...
+          </div>
+        )}
+      </div>
+    </DialogContent>
+  </Dialog>
+)}
+
     </div>
   );
 };

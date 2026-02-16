@@ -36,14 +36,35 @@ const LandingHeader = () => {
         isScrolled ? "bg-background/95 backdrop-blur-md shadow-sm" : "bg-transparent"
       }`}
     >
-      <div className="container mx-auto px-4 py-4">
+      {/* <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-hero-from to-hero-to flex items-center justify-center">
               <span className="text-white font-bold text-lg">V</span>
             </div>
             <span className="text-xl font-bold text-foreground">Veritas AI</span>
-          </div>
+          </div> */}
+
+<div className="container mx-auto px-4 py-5">
+  <div className="flex items-center justify-between">
+    <a href="/" className="flex items-center shrink-0">
+      <img
+        src="/logo2.png"
+        alt="Veriton"
+        className="
+          h-12               /* mobile – start bigger */
+          sm:h-14
+          md:h-12 lg:h-18    /* desktop – clearly visible size */
+          w-auto
+          object-contain
+          drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+          transition-transform duration-200
+          hover:scale-105
+        "
+      />
+    </a>
+
+    
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">

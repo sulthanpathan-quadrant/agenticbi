@@ -1248,52 +1248,7 @@ export default function ETLOutput() {
           jobInfo={jobInfo}
           isETLFlow={true}
         /> 
-
-        {/* Full Preview Dialog */}
-        {/* <Dialog open={showFullPreview} onOpenChange={setShowFullPreview}>
-          <DialogContent className="max-w-6xl max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <DialogTitle className="text-2xl">Full Data Preview</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {builtDataset?.name} • {builtDataset?.columns.length || 0} columns × {fullPreviewData.length} rows
-                </p>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowFullPreview(false)}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="flex-1 overflow-auto border rounded-lg">
-              <table className="w-full min-w-max">
-                <thead className="sticky top-0 bg-muted z-10">
-                  <tr>
-                    {builtDataset?.columns.map((col) => (
-                      <th
-                        key={col.name}
-                        className="text-left px-4 py-3 text-sm font-medium border-b whitespace-nowrap"
-                      >
-                        {col.name}
-                        <div className="text-xs text-muted-foreground mt-0.5">({col.type})</div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {fullPreviewData.map((row, idx) => (
-                    <tr key={idx} className="border-b last:border-0 hover:bg-muted/30">
-                      {builtDataset?.columns.map((col) => (
-                        <td key={col.name} className="px-4 py-3 text-sm whitespace-nowrap">
-                          {String(row[col.name] ?? "—")}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </DialogContent>
-        </Dialog> */}
-
+        
         <Dialog open={showFullPreview} onOpenChange={setShowFullPreview}>
           <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="mb-4 flex justify-between items-center">
@@ -1398,7 +1353,7 @@ export default function ETLOutput() {
                         <SelectItem value="daily">Daily</SelectItem>
                         <SelectItem value="weekly">Weekly</SelectItem>
                         <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="hourly">Hourly</SelectItem>
+                        {/* <SelectItem value="hourly">Hourly</SelectItem> */}
                       </SelectContent>
                     </Select>
                   </div>

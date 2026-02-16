@@ -569,7 +569,7 @@ export default function PathSelection() {
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="hourly">Hourly</SelectItem>
+                      {/* <SelectItem value="hourly">Hourly</SelectItem> */}
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
@@ -593,7 +593,7 @@ export default function PathSelection() {
             )}
 
             {/* Buttons */}
-            <div className="reltive gap-4 pt-4">
+            {/* <div className="relative gap-4 pt-4">
              
 
               <Button
@@ -610,7 +610,23 @@ export default function PathSelection() {
                   "Schedule Job"
                 )}
               </Button>
-            </div>
+            </div> */}
+            <div className="relative flex justify-end gap-4 pt-4">
+            <Button
+              className="rounded-lg"
+              onClick={scheduleJob}
+              disabled={scheduling}
+            >
+              {scheduling ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Scheduling...
+                </>
+              ) : (
+                "Schedule Job"
+              )}
+            </Button>
+          </div>
           </div>
         </DialogContent>
       </Dialog>

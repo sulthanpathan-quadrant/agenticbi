@@ -14,7 +14,7 @@ export function WorkflowHeader() {
       <div className="h-full flex items-center justify-between px-6">
         
         {/* Left: Title */}
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Database className="w-5 h-5 text-primary" />
               </div>
@@ -24,7 +24,35 @@ export function WorkflowHeader() {
                   Welcome, <span className="text-primary">{userName}</span>
                 </p>
               </div>
+            </div> */}
+            
+            <div className="flex items-center gap-3 md:gap-4">
+            {/* Logo */}
+            <a href="/" className="flex-shrink-0">
+              <img
+                src="/logo2.png"
+                alt="Veriton"
+                className="
+                  h-10               /* mobile base size */
+                  sm:h-10
+                  md:h-9 lg:h-10    /* larger on desktop */
+                  w-auto
+                  object-contain
+                  drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+                  transition-transform duration-200
+                  hover:scale-105
+                "
+              />
+            </a>
+
+            {/* Welcome text – side by side */}
+            <div className="flex flex-col">
+              <p className="text-sm md:text-base text-muted-foreground">
+                Welcome, <span className="text-primary font-medium">{userName || "User"}</span>
+              </p>
             </div>
+          </div>
+            
 
         {/* Right: Actions */}
         <div className="flex items-center gap-4">

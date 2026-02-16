@@ -1069,7 +1069,7 @@ export default function DataIngestion() {
           console.error("Polling error:", pollErr);
           // continue polling
         }
-      }, 5000); // check every 4 seconds
+      }, 10000); // check every 4 seconds
 
     } catch (err: any) {
       console.error("Ingestion error:", err);

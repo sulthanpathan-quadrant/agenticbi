@@ -904,7 +904,7 @@ export default function BusinessLogic() {
                   <TableRow className="bg-muted/50 border-b border-border">
                     <TableHead className="w-12"></TableHead>
                     <TableHead className="font-medium">File Name</TableHead>
-                    <TableHead className="font-medium">Last Modified</TableHead>
+                    {/* <TableHead className="font-medium">Last Modified</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>

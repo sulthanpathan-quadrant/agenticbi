@@ -1080,7 +1080,7 @@ export default function DataQuality() {
                     <tr>
                       <th className="text-left p-4 text-sm font-medium text-muted-foreground w-12"></th>
                       <th className="text-left p-4 text-sm font-medium text-muted-foreground">File Name</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Last Modified</th>
+                      {/* <th className="text-left p-4 text-sm font-medium text-muted-foreground">Last Modified</th> */}
                     </tr>
                   </thead>
                   <tbody>

@@ -891,7 +891,7 @@ export default function ETLOutput() {
                         </div>
                         <div>
                           <h3 className="font-medium text-foreground">{table.name}</h3>
-                          <p className="text-sm text-muted-foreground mt-1">{table.createdAt}</p>
+                          {/* <p className="text-sm text-muted-foreground mt-1">{table.createdAt}</p> */}
                         </div>
                       </div>
                     </div>

@@ -293,6 +293,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X } from "lucide-react";
 import { DashBoardPreview1 } from '@/components/dashboard/DashBoardPreview1';
+// import { Workflowheader } from '@/components/Workflowheader1';
 import { Workflowheader } from '@/components/Workflowheader1';
  
 type ViewMode = 'analysis' | 'chatbot' | 'dashboard';

@@ -742,7 +742,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 // import { Workflowheader} from "@/components/Workflowheader1";
-import { Workflowheader } from "@/components/Workflowheader1";
+import { Workflowheader } from "@/components/WorkFlowHeader1";
 
 interface Column {
   name: string;

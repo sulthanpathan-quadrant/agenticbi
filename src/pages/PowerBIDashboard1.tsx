@@ -11,7 +11,7 @@ import { DashBoardPreview1 } from '@/components/dashboard/DashBoardPreview1';
 import { DataFile } from '@/components/types/dashboard'; // ← import DataFile type
 // import { WorkflowHeader } from '@/components/Workflowheader1'; 
 // import { Workflowheader } from '@/components/Workflowheader1';
-import { Workflowheader } from '@/components/Workflowheader1';
+import { Workflowheader } from '@/components/WorkFlowHeader1';
 
 type ViewMode = 'analysis' | 'chatbot' | 'dashboard';
  

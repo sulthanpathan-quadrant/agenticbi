@@ -61,7 +61,7 @@ import { Button } from "./ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function WorkflowHeader() {
+export function Workflowheader() {
   const navigate = useNavigate();
   const location = useLocation();
 

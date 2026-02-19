@@ -741,7 +741,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { WorkflowHeader } from "@/components/Workflowheader1";
+import { Workflowheader} from "@/components/Workflowheader1";
 
 interface Column {
   name: string;
@@ -1063,7 +1063,7 @@ export default function ETLOutput() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
-      <WorkflowHeader/>
+      <Workflowheader/>
       <div className="p-6 md:p-8">
         {/* Header + top-right buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">

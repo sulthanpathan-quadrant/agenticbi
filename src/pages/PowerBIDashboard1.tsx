@@ -12,6 +12,7 @@ import { DataFile } from '@/components/types/dashboard'; // ← import DataFile 
 // import { WorkflowHeader } from '@/components/Workflowheader1'; 
 // import { Workflowheader } from '@/components/Workflowheader1';
 import { Workflowheader } from '@/components/Workflowheader1';
+
 type ViewMode = 'analysis' | 'chatbot' | 'dashboard';
  
 const getDashboardContext = () => {

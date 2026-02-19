@@ -741,6 +741,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { WorkflowHeader } from "@/components/Workflowheader1";
 
 interface Column {
   name: string;
@@ -781,6 +782,7 @@ export default function ETLOutput() {
   const [loading, setLoading] = useState(false);
 
   const [workflowStep, setWorkflowStep] = useState<"preview" | "business-rules">("preview");
+ const [showFullPreviewInline, setShowFullPreviewInline] = useState(false);
 
   const closeToastButton = (
     <button
@@ -1055,8 +1057,13 @@ export default function ETLOutput() {
     setWorkflowStep("preview");
   };
 
+  const toggleFullPreview = () => {
+    setShowFullPreviewInline((prev) => !prev);
+  };
+
   return (
-    <WorkflowLayout>
+    <div className="min-h-screen bg-background flex flex-col overflow-hidden">
+      <WorkflowHeader/>
       <div className="p-6 md:p-8">
         {/* Header + top-right buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
@@ -1090,7 +1097,7 @@ export default function ETLOutput() {
         </div>
 
         {/* Preview step – info panel + full preview button */}
-        {workflowStep === "preview" && (
+        {/* {workflowStep === "preview" && (
           <div className="space-y-6">
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1134,7 +1141,121 @@ export default function ETLOutput() {
               </div>
             )}
           </div>
-        )}
+        )} */}
+
+      <div className="flex-1">
+          {/* Preview step */}
+          {workflowStep === "preview" && (
+            <div className="space-y-6">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <p className="text-lg">
+                      <span className="font-semibold">Dataset:</span>{" "}
+                      <span className="text-primary font-medium">
+                        {builtDataset?.name || "Not loaded"}
+                      </span>
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {builtDataset?.columns.length || 0} columns •{" "}
+                      {builtDataset?.sampleRows.length || 0} rows available
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={toggleFullPreview}
+                    disabled={isPreviewLoading || !builtDataset || fullPreviewData.length === 0}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    {showFullPreviewInline ? "Hide Preview" : "View Full Preview"}
+                  </Button>
+                </div>
+              </div>
+
+              {isPreviewLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                </div>
+              ) : !builtDataset ? (
+                <div className="text-center py-16 text-muted-foreground border border-dashed rounded-xl bg-card/50">
+                  Loading dataset information...
+                </div>
+              ) : (
+                <>
+                  {/* <div className="text-center py-10 text-muted-foreground border border-dashed rounded-xl bg-card/50">
+                    <p className="text-lg font-medium mb-2">Dataset is ready</p>
+                    <p className="text-sm">
+                      {showFullPreviewInline
+                        ? "Full preview is shown below"
+                        : "Click \"View Full Preview\" to inspect the data"}
+                    </p>
+                  </div> */}
+
+                  {/* Inline Full Preview Table */}
+                  {showFullPreviewInline && (
+                    <div className="border rounded-lg overflow-hidden">
+                      
+                      <div className="max-h-[60vh] overflow-auto">
+                        <table className="w-full text-sm">
+                          <thead className="sticky top-0 bg-primary">
+                            <tr>
+                              {builtDataset.columns.map((col) => (
+                                <th
+                                  key={col.name}
+                                  className="text-left p-3 font-medium border-b whitespace-nowrap"
+                                >
+                                  {col.name}
+                                  <div className="text-xs text-foreground">({col.type})</div>
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fullPreviewData.map((row, idx) => (
+                              <tr
+                                key={idx}
+                                className="border-b hover:bg-muted/40 transition-colors"
+                              >
+                                {builtDataset.columns.map((col) => (
+                                  <td
+                                    key={col.name}
+                                    className="p-3 whitespace-nowrap"
+                                  >
+                                    {String(row[col.name] ?? "—")}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                            {fullPreviewData.length === 0 && (
+                              <tr>
+                                <td
+                                  colSpan={builtDataset.columns.length}
+                                  className="p-12 text-center text-muted-foreground"
+                                >
+                                  No preview data available
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            <div className="mt-10 pt-6 ">
+          {/* <Button
+            variant="outline"
+            onClick={() => navigate("/PathSelection1")} // ← adjust route if needed
+            className="min-w-[220px]"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Path Selection
+          </Button> */}
+        </div>
+            </div>
+            
+          )}
 
         {/* Business Rules view */}
         {workflowStep === "business-rules" && (
@@ -1218,6 +1339,18 @@ export default function ETLOutput() {
             </div>
           </div>
         )}
+        </div>
+
+        {/* <div className="mt-10 pt-6 border-t">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/path-selection")} // ← adjust route if needed
+            className="min-w-[220px]"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Path Selection
+          </Button>
+        </div> */}
 
         {/* Dialogs */}
         <AddBusinessRuleDialog
@@ -1248,7 +1381,7 @@ export default function ETLOutput() {
           jobInfo={jobInfo}
           isETLFlow={true}
         /> 
-        
+
         <Dialog open={showFullPreview} onOpenChange={setShowFullPreview}>
           <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="mb-4 flex justify-between items-center">
@@ -1393,6 +1526,6 @@ export default function ETLOutput() {
           </DialogContent>
         </Dialog>
       </div>
-    </WorkflowLayout>
+   </div>
   );
 }

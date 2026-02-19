@@ -17,17 +17,17 @@ const features = [
   {
     icon: CheckCircle,
     title: "Data Quality Rules",
-    description: "Auto-generate DQ rules for null checks, types, ranges, and uniqueness. Editable rules with downloadable reports.",
+    description: "AI automatically creates smart validation rules and runs deep quality checks to guarantee accurate, complete, and consistent data.",
   },
   {
     icon: Users,
     title: "Named Entity Resolution",
-    description: "Automatic canonical naming, duplicate resolution, and exportable mapping tables for data standardization.",
+    description: "Advanced AI identifies, standardizes, and merges entity references across datasets to create clean, unified, duplicate-free profiles.",
   },
   {
     icon: Cog,
     title: "Business Logic Generation",
-    description: "AI-suggested aggregations, derived columns, and KPI formulas with preview and export capabilities.",
+    description: "Seamlessly implement custom business rules and domain-specific logic tailored to your unique processes and compliance needs.",
   },
   {
     icon: LineChart,

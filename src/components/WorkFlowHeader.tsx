@@ -1,6 +1,7 @@
 import { ArrowLeft, Bell, UserCircle ,Database} from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "./ThemeToggle";
 
 
 export function WorkflowHeader() {
@@ -25,7 +26,7 @@ export function WorkflowHeader() {
                 </p>
               </div>
             </div> */}
-            
+
             <div className="flex items-center gap-3 md:gap-4">
             {/* Logo */}
             <a href="/" className="flex-shrink-0">
@@ -52,11 +53,13 @@ export function WorkflowHeader() {
               </p>
             </div>
           </div>
-            
-
         {/* Right: Actions */}
         <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate("/jobs")}>
+            
+          <div className="flex items-center gap-3">
+                            <ThemeToggle />
+          </div>
+            <Button variant="outline" onClick={() => {localStorage.removeItem("modeling_data"); navigate("/jobs")}}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Jobs
           </Button>     

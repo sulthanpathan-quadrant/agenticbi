@@ -491,7 +491,7 @@ export default function PathSelection() {
         </div>
 
         {/* Bottom Navigation */}
-        <div className="flex items-center justify-between pt-8 border-t border-border">
+        <div className="flex items-center justify-between pt-8 ">
           <Button
             variant="outline"
             onClick={() => navigate("/workflow/business-logic")}

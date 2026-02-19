@@ -640,8 +640,8 @@ export default function LandingZone() {
         }
       } catch (error) {
         console.error("Error fetching documents:", error);
-        toast.error("Failed to load ingested files.", {
-          duration: 4000,
+        toast.error("Please ingest the data", {
+          duration: 1000,
           action: closeToastButton,
         });
         setData([]);
@@ -887,6 +887,8 @@ export default function LandingZone() {
               <SelectItem value="blob">Blob</SelectItem>
               <SelectItem value="snowflake">Snowflake</SelectItem>
               <SelectItem value="onelake">OneLake</SelectItem>
+              <SelectItem value="databricks">Databricks</SelectItem>
+              <SelectItem value="databases">SQL Server</SelectItem>
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>

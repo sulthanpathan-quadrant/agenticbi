@@ -512,7 +512,7 @@ export default function DataPreview() {
         const res = await fetch(
           `https://api.veriton.ai/api/service2/onelake/data-preview?user_id=${userId}&job_id=${jobId}`
         );
-        if (!res.ok) throw new Error("Failed to load tables");
+        if (!res.ok) throw new Error("Please ingest the data");
         const data = await res.json();
 
         const formatted: TableSummary[] = [];

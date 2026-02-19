@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { WorkflowHeader } from "@/components/Workflowheader1";
 
 interface Column {
   name: string;
@@ -762,7 +763,8 @@ export default function ETLOutput() {
   };
 
   return (
-    <WorkflowLayout>
+     <div className="min-h-screen  bg-background flex flex-col overflow-hidden">
+      <WorkflowHeader/>
       <div className="p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -831,12 +833,12 @@ export default function ETLOutput() {
                 Go to Create Dataset
               </Button>
             </div>
-            <div className="absolute bottom-6 left-16 xs:bottom-3 sm:bottom-6 sm:left-16">
+            {/* <div className="absolute bottom-6 left-16 xs:bottom-3 sm:bottom-6 sm:left-16">
               <Button variant="outline" onClick={() => navigate("/workflow/path-selection")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Path Selection
               </Button>
-            </div>
+            </div> */}
           </div>
         ) : (
           <>
@@ -898,10 +900,10 @@ export default function ETLOutput() {
                   ))}
                 </div>
                 <div className="flex justify-between pt-6">
-                  <Button variant="outline" onClick={() => navigate("/workflow/path-selection")}>
+                  {/* <Button variant="outline" onClick={() => navigate("/workflow/path-selection")}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Path Selection
-                  </Button>
+                  </Button> */}
 
                   {selectedTables.length > 0 && (
                     <Button onClick={handleCreateJob} size="lg">
@@ -1493,6 +1495,6 @@ export default function ETLOutput() {
           </DialogContent>
         </Dialog>
       </div>
-    </WorkflowLayout>
+    </div>
   );
 }

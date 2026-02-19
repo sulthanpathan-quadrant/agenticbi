@@ -36,7 +36,8 @@ All colors MUST be HSL.
 
 
 
-    --primary: 267 84% 65%;         /* your purple */
+    --primary: 267 84% 65%; 
+    --primary1: 267 84% 70%;      /* your purple */
 
     --primary-foreground: 0 0% 100%;
 
@@ -133,6 +134,7 @@ All colors MUST be HSL.
 
 
     --primary: 267 84% 65%;
+    --primary1: 267 84% 65%;
 
     --primary-foreground: 0 0% 100%;
 
@@ -400,3 +402,31 @@ All colors MUST be HSL.
 
 
 
+
+
+ 
+/* ReactFlow Controls Theme */
+.react-flow__controls {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: none !important;
+}
+ 
+.react-flow__controls-button {
+  background: hsl(var(--card)) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  fill: hsl(var(--foreground)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+ 
+.react-flow__controls-button:hover {
+  background: hsl(var(--muted)) !important;
+}
+ 
+.react-flow__controls-button svg {
+  fill: hsl(var(--foreground)) !important;
+}
+ 
+ 
+ 

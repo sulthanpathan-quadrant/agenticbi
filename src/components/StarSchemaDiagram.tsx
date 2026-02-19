@@ -505,12 +505,19 @@ export default function StarSchemaDiagram({
           proOptions={{ hideAttribution: true }}
         >
           <Background gap={24} size={1.5} /> {/* Default background dots/pattern */}
-          <Controls
-            showZoom
+          {/* <Controls
+            showZoom 
             showFitView
             showInteractive={false}
             position="bottom-left"
-          />
+          /> */}
+           <Controls
+            showZoom
+          showFitView
+          showInteractive={false}
+          position="bottom-left"
+          className="!rounded-lg overflow-hidden"
+        />
         </ReactFlow>
       </div>
     </ReactFlowProvider>

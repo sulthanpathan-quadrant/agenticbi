@@ -20,7 +20,7 @@ const LandingFooter = () => {
           {/* Brand */}
           <div className="md:col-span-1">
             <h3 className="text-2xl font-bold bg-gradient-to-r from-hero-from via-hero-to to-hero-accent bg-clip-text text-transparent mb-3">
-              Veritas AI
+              Veriton
             </h3>
             <p className="text-muted-foreground text-sm mb-4">
               Transform your data journey with AI-powered automation and intelligence.
@@ -138,7 +138,7 @@ const LandingFooter = () => {
         <div className="pt-8 border-t border-border/50">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2024 Veritas AI. All rights reserved.
+              © 2026 Veriton. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">

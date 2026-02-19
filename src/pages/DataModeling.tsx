@@ -538,11 +538,11 @@ export default function DataModeling() {
         });
       }
     } else {
-      toast.warning("No modeling data found. Redirecting to landing zone...", {
+      toast.warning("Please ingest the data", {
         duration: 1000,
         action: closeToastButton
       });
-      setTimeout(() => navigate("/workflow/landing-zone"), 2000);
+      // setTimeout(() => navigate("/workflow/landing-zone"), 2000);
     }
 
     setLoadingData(false);

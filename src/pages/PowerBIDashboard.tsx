@@ -293,6 +293,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X } from "lucide-react";
 import { DashBoardPreview1 } from '@/components/dashboard/DashBoardPreview1';
+import { WorkflowHeader } from '@/components/Workflowheader1';
  
 type ViewMode = 'analysis' | 'chatbot' | 'dashboard';
  
@@ -493,8 +494,10 @@ const PowerBIDashboard = () => {
   }
  
   return (
+    
     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
+      <WorkflowHeader/>
+      {/* <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
         <div className="px-6 py-4">
           <div className="flex justify-between items-center gap-4 animate-fade-in">
             <div className='flex gap-4'>
@@ -518,7 +521,7 @@ const PowerBIDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
  
       <div className="flex-1 flex overflow-hidden">
         <DatasetSidebar
@@ -559,6 +562,7 @@ const PowerBIDashboard = () => {
           </div>
         </div>
       )}
+ 
     </div>
   );
 };

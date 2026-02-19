@@ -90,7 +90,7 @@
 //       setLoadingTables(true);
 //       try {
 //         const res = await fetch(
-//           `https://20.81.213.147/onelake/get-all-job-tables?user_id=${userId}&job_id=${jobId}`
+//           `https://api.veriton.ai/api/service2/onelake/get-all-job-tables?user_id=${userId}&job_id=${jobId}`
 //         );
 //         if (!res.ok) throw new Error(`Failed to load tables: ${res.status}`);
 //         const data = await res.json();
@@ -117,7 +117,7 @@
 //     setLoadingHistory(true);
 //     try {
 //       const res = await fetch(
-//         `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`
+//         `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${jobId}`
 //       );
 
 //       if (!res.ok) {
@@ -208,6 +208,17 @@
 //   };
 
 //   const handleSaveCustomTable = async () => {
+//     // NEW VALIDATION: Prevent save if dataset name is empty
+//     if (!customTableName.trim()) {
+//       toast({
+//         title: "Dataset Name Required",
+//         description: "Please enter a name for your custom dataset",
+//         variant: "destructive",
+//         action: closeToastButton,
+//       });
+//       return;
+//     }
+
 //     if (customColumns.length === 0) {
 //       toast({
 //         title: "No Columns Selected",
@@ -252,7 +263,7 @@
 //     };
 
 //     try {
-//       const createResponse = await fetch("https://20.81.213.147/create-dataset", {
+//       const createResponse = await fetch("https://api.veriton.ai/api/service2/create-dataset", {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -277,7 +288,7 @@
 
 //       try {
 //         const transferResponse = await fetch(
-//           `https://20.81.213.147/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
+//           `https://api.veriton.ai/api/service2/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
 //           {
 //             method: "POST",
 //             headers: {
@@ -365,14 +376,14 @@
 //           >
 //             <History className="h-4 w-4" />
 //             History
-//             {totalKnownDatasets > 0 && (
+//             {/* {totalKnownDatasets > 0 && (
 //               <Badge
 //                 variant="secondary"
 //                 className="ml-1 bg-primary text-primary-foreground rounded-full h-5 w-5 p-0 flex items-center justify-center text-xs"
 //               >
 //                 {totalKnownDatasets}
 //               </Badge>
-//             )}
+//             )} */}
 //           </Button>
 //         </div>
 
@@ -391,7 +402,7 @@
 //                 </div>
 //               ) : availableTables.length === 0 ? (
 //                 <div className="text-center py-10 text-muted-foreground text-sm">
-//                   No tables available
+//                   Please ingest the data
 //                 </div>
 //               ) : (
 //                 availableTables.map((table) => (
@@ -620,10 +631,7 @@
 //   );
 // }
 
-
-
-
-
+ 
 import { useState, useEffect, useRef } from "react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
@@ -633,32 +641,32 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
+ 
 interface Column {
   name: string;
   type: string;
 }
-
+ 
 interface TableData {
   table_name: string;
   table_type: "FACT" | "DIM";
   columns: Column[];
 }
-
+ 
 interface CustomTable {
   name: string;
   columns: { name: string; table: string; type: string }[];
   createdAt: string;
 }
-
+ 
 interface BackendDataset {
   filename: string;
   date_modified: string;
 }
-
+ 
 export default function DataCreation() {
   const navigate = useNavigate();
-
+ 
   const [availableTables, setAvailableTables] = useState<TableData[]>([]);
   const [customTableName, setCustomTableName] = useState("");
   const [customColumns, setCustomColumns] = useState<{ name: string; table: string; type: string }[]>([]);
@@ -672,14 +680,14 @@ export default function DataCreation() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
   const totalKnownDatasets = backendDatasets.length || localSavedTables.length;
-
+ 
   const historySectionRef = useRef<HTMLDivElement>(null);
-
+ 
   const userId = localStorage.getItem("user")
     ? JSON.parse(localStorage.getItem("user") || "{}").id
     : null;
   const jobId = localStorage.getItem("current_job_id");
-
+ 
   // Reusable close button for all toasts
   const closeToastButton = (
     <Button
@@ -692,14 +700,14 @@ export default function DataCreation() {
       <span className="sr-only">Close</span>
     </Button>
   );
-
+ 
   useEffect(() => {
     const stored = localStorage.getItem("customCreatedTables");
     if (stored) {
       setLocalSavedTables(JSON.parse(stored));
     }
   }, []);
-
+ 
   useEffect(() => {
     if (!userId || !jobId) {
       toast({
@@ -711,14 +719,16 @@ export default function DataCreation() {
       setLoadingTables(false);
       return;
     }
-
+ 
     const fetchTables = async () => {
       setLoadingTables(true);
       try {
         const res = await fetch(
           `https://api.veriton.ai/api/service2/onelake/get-all-job-tables?user_id=${userId}&job_id=${jobId}`
         );
-        if (!res.ok) throw new Error(`Failed to load tables: ${res.status}`);
+// add tost message here
+ 
+        if (!res.ok) throw new Error(`please do: ${res.status}`);
         const data = await res.json();
         setAvailableTables(data.tables || []);
       } catch (err: any) {
@@ -733,23 +743,23 @@ export default function DataCreation() {
         setLoadingTables(false);
       }
     };
-
+ 
     fetchTables();
   }, [userId, jobId]);
-
+ 
   const fetchBackendDatasets = async () => {
     if (!userId || !jobId) return;
-
+ 
     setLoadingHistory(true);
     try {
       const res = await fetch(
         `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${jobId}`
       );
-
+ 
       if (!res.ok) {
         throw new Error(`Failed to fetch datasets: ${res.status}`);
       }
-
+ 
       const data = await res.json();
       setBackendDatasets(data.datasets || []);
     } catch (err: any) {
@@ -764,14 +774,14 @@ export default function DataCreation() {
       setLoadingHistory(false);
     }
   };
-
+ 
   const toggleHistory = () => {
     const willShow = !showHistory;
     setShowHistory(willShow);
-
+ 
     if (willShow) {
       fetchBackendDatasets();
-
+ 
       setTimeout(() => {
         if (historySectionRef.current) {
           historySectionRef.current.scrollIntoView({
@@ -782,15 +792,15 @@ export default function DataCreation() {
       }, 100);
     }
   };
-
+ 
   const handleDragStart = (column: Column, tableName: string) => {
     setDraggedColumn({ name: column.name, type: column.type, table: tableName });
   };
-
+ 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
-
+ 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedColumn) {
@@ -802,17 +812,18 @@ export default function DataCreation() {
         toast({
           title: "Column Added",
           description: `${draggedColumn.name} from ${draggedColumn.table}`,
+          duration:1000,
           action: closeToastButton,
         });
       }
     }
     setDraggedColumn(null);
   };
-
+ 
   const handleRemoveColumn = (index: number) => {
     setCustomColumns(customColumns.filter((_, i) => i !== index));
   };
-
+ 
   const handleAddColumn = (column: Column, tableName: string) => {
     const newCol = { name: column.name, type: column.type, table: tableName };
     const exists = customColumns.some((col) => col.name === newCol.name && col.table === newCol.table);
@@ -821,18 +832,19 @@ export default function DataCreation() {
       toast({
         title: "Column Added",
         description: `${newCol.name} from ${newCol.table}`,
+        duration:1000,
         action: closeToastButton,
       });
     }
   };
-
+ 
   const toggleTableCollapse = (tableName: string) => {
     setCollapsedTables((prev) => ({
       ...prev,
       [tableName]: !prev[tableName],
     }));
   };
-
+ 
   const handleSaveCustomTable = async () => {
     // NEW VALIDATION: Prevent save if dataset name is empty
     if (!customTableName.trim()) {
@@ -844,7 +856,7 @@ export default function DataCreation() {
       });
       return;
     }
-
+ 
     if (customColumns.length === 0) {
       toast({
         title: "No Columns Selected",
@@ -854,7 +866,7 @@ export default function DataCreation() {
       });
       return;
     }
-
+ 
     if (!userId || !jobId) {
       toast({
         title: "Missing user or job information",
@@ -864,9 +876,9 @@ export default function DataCreation() {
       });
       return;
     }
-
+ 
     setIsSaving(true);
-
+ 
     const columnMappingsByTable = customColumns.reduce((acc: Record<string, string[]>, col) => {
       if (!acc[col.table]) {
         acc[col.table] = [];
@@ -874,20 +886,20 @@ export default function DataCreation() {
       acc[col.table].push(col.name);
       return acc;
     }, {});
-
+ 
     const column_mappings = Object.entries(columnMappingsByTable).map(([originalTableName, columns]) => ({
       table_name: `${userId}_${jobId}_${originalTableName}`,
       columns,
       fmt: "parquet"
     }));
-
+ 
     const payload = {
       user_id: userId,
       job_id: jobId,
       custom_table_name: customTableName.trim(),
       column_mappings
     };
-
+ 
     try {
       const createResponse = await fetch("https://api.veriton.ai/api/service2/create-dataset", {
         method: "POST",
@@ -897,21 +909,21 @@ export default function DataCreation() {
         },
         body: JSON.stringify(payload),
       });
-
+ 
       if (!createResponse.ok) {
         const errorData = await createResponse.json().catch(() => ({}));
         throw new Error(errorData.detail || errorData.message || `Failed (${createResponse.status})`);
       }
-
+ 
       const createResult = await createResponse.json();
-
+ 
       toast({
         title: "Dataset Created",
-        description: `Custom table "${customTableName}" created successfully`,
-        duration: 2500,
+        description: `"${customTableName}" created successfully`,
+        duration: 1000,
         action: closeToastButton,
       });
-
+ 
       try {
         const transferResponse = await fetch(
           `https://api.veriton.ai/api/service2/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
@@ -922,57 +934,57 @@ export default function DataCreation() {
             },
           }
         );
-
+ 
         if (!transferResponse.ok) {
           console.warn("Transfer API failed, but dataset was created");
-          toast({
-            title: "Transfer Started (Background)",
-            description: "Dataset created, but transfer to blob storage may be processing in background.",
-            duration: 4000,
-            action: closeToastButton,
-          });
+          // toast({
+          //   title: "Transfer Started (Background)",
+          //   description: "Dataset created, but transfer to blob storage may be processing in background.",
+          //   duration: 4000,
+          //   action: closeToastButton,
+          // });
         } else {
-          toast({
-            title: "Transfer Started",
-            description: "Data is being transferred to blob storage...",
-            duration: 4000,
-            action: closeToastButton,
-          });
+          // toast({
+          //   title: "Transfer Started",
+          //   description: "Data is being transferred to blob storage...",
+          //   duration: 4000,
+          //   action: closeToastButton,
+          // });
         }
       } catch (transferErr) {
         console.error("Transfer API error (non-blocking):", transferErr);
       }
-
+ 
       setShowHistory(true);
       fetchBackendDatasets();
-
+ 
       const newTable: CustomTable = {
         name: customTableName,
         columns: customColumns,
         createdAt: new Date().toLocaleString(),
       };
-
+ 
       const updatedTables = [...localSavedTables, newTable];
       setLocalSavedTables(updatedTables);
       localStorage.setItem("customCreatedTables", JSON.stringify(updatedTables));
-
+ 
       setCustomTableName("");
       setCustomColumns([]);
-
+ 
     } catch (error: any) {
       console.error("Create dataset error:", error);
       toast({
         title: "Failed to create dataset",
         description: error.message || "Server error occurred. Please try again.",
         variant: "destructive",
-        duration: 4000,
+        duration: 1500,
         action: closeToastButton,
       });
     } finally {
       setIsSaving(false);
     }
   };
-
+ 
   const handleDeleteLocalTable = (index: number) => {
     const updated = localSavedTables.filter((_, i) => i !== index);
     setLocalSavedTables(updated);
@@ -983,7 +995,7 @@ export default function DataCreation() {
       action: closeToastButton,
     });
   };
-
+ 
   return (
     <WorkflowLayout>
       <div className="pt-6 sm:p-6 lg:p-8 flex flex-col">
@@ -1012,23 +1024,23 @@ export default function DataCreation() {
             )} */}
           </Button>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[350px,1fr] gap-4 sm:gap-6 flex-1 min-h-0 overflow-hidden">
+ 
+        <div className="grid grid-cols-1 lg:grid-cols-[350px,1fr] gap-4 sm:gap-6 flex-1 min-h-0 ">
           {/* Left - Available Tables */}
-          <div className="space-y-4 w-full">
-            <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+          <div className="space-y-4 flex flex-col overflow-y-auto max-h-[calc(100vh-160px)] ">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2 shrink-0">
               <TableIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               Available Tables
             </h2>
-
-            <ScrollArea className="h-full pr-2">
+ 
+            <div className="overflow-y-auto pr-2 flex-1">
               {loadingTables ? (
                 <div className="flex justify-center py-10">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : availableTables.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground text-sm">
-                  No tables available
+                   Please do data ingetion.
                 </div>
               ) : (
                 availableTables.map((table) => (
@@ -1056,7 +1068,7 @@ export default function DataCreation() {
                         {table.table_type}
                       </Badge>
                     </div>
-
+ 
                     {!collapsedTables[table.table_name] && (
                       <div>
                         {table.columns.map((col) => (
@@ -1090,16 +1102,16 @@ export default function DataCreation() {
                   </div>
                 ))
               )}
-            </ScrollArea>
+            </div>
           </div>
-
+ 
           {/* Right - Custom Dataset Builder */}
           <div className="space-y-4 w-full flex flex-col min-h-0">
             <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
               <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
               Your Custom Dataset
             </h2>
-
+ 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Dataset Name</label>
               <Input
@@ -1109,14 +1121,14 @@ export default function DataCreation() {
                 className="bg-card border-border w-full"
               />
             </div>
-
+ 
             <div
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              className="border border-dashed border-border rounded-lg bg-card/50 flex flex-col w-full flex-1 min-h-0"
+              className="border border-dashed border-border  overflow-y-auto max-h-[calc(100vh-300px)]  rounded-lg bg-card/50 flex flex-col w-full flex-1 min-h-0"
             >
               {customColumns.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 sm:p-8">
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 sm:p-8 ">
                   <LayoutGrid className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground/50 mb-4" />
                   <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
                     Drop columns here
@@ -1156,7 +1168,7 @@ export default function DataCreation() {
                 </ScrollArea>
               )}
             </div>
-
+ 
             <Button
               className="w-full bg-primary hover:bg-primary/90 shrink-0"
               onClick={handleSaveCustomTable}
@@ -1176,7 +1188,7 @@ export default function DataCreation() {
             </Button>
           </div>
         </div>
-
+ 
         {/* History Section */}
         {showHistory && (
           <div className="mt-20 sm:mt-8 pt-4 sm:pt-6 border-t border-border w-full shrink-0">
@@ -1184,7 +1196,7 @@ export default function DataCreation() {
               <History className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
               <h3 className="text-lg sm:text-xl font-semibold text-foreground">Saved Datasets History</h3>
             </div>
-
+ 
             {loadingHistory ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -1223,7 +1235,7 @@ export default function DataCreation() {
             )}
           </div>
         )}
-
+ 
         {/* Bottom Navigation */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border w-full shrink-0">
           <Button
@@ -1234,7 +1246,7 @@ export default function DataCreation() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Data Preview
           </Button>
-
+ 
           <Button
             onClick={() => navigate("/workflow/data-quality")}
             className="bg-primary hover:bg-primary/90 w-full sm:w-auto order-1 sm:order-2"
@@ -1256,3 +1268,4 @@ export default function DataCreation() {
     </WorkflowLayout>
   );
 }
+ 

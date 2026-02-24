@@ -942,7 +942,7 @@ export default function ETLOutput() {
                       <div className="space-y-3 p-4">
                         {getSelectedTablesData().map((table) => (
                           <div
-                            key={table.name}
+                            key={table.name} 
                             className="border border-border rounded-lg bg-background overflow-hidden shadow-sm"
                           >
                             <div

@@ -31,6 +31,8 @@
 //   SelectTrigger,
 //   SelectValue,
 // } from "@/components/ui/select";
+// // import { Workflowheader} from "@/components/Workflowheader1";
+// import { Workflowheader } from "@/components/WorkFlowHeader1";
 
 // interface Column {
 //   name: string;
@@ -71,6 +73,7 @@
 //   const [loading, setLoading] = useState(false);
 
 //   const [workflowStep, setWorkflowStep] = useState<"preview" | "business-rules">("preview");
+//  const [showFullPreviewInline, setShowFullPreviewInline] = useState(false);
 
 //   const closeToastButton = (
 //     <button
@@ -82,7 +85,7 @@
 //     </button>
 //   );
 
-//   // Fetch dataset on mount
+//   // Fetch dataset columns + preview rows (only used for full preview)
 //   useEffect(() => {
 //     const userId = localStorage.getItem("selected_user_id");
 //     const jobId = localStorage.getItem("selected_job_id");
@@ -103,7 +106,7 @@
 //       try {
 //         // Columns
 //         const columnsRes = await fetch(
-//           `https://20.81.213.147/dataset-list-columns?user_id=${userId}&job_id=${jobId}&filename=${datasetName}`,
+//           `https://api.veriton.ai/api/service2/dataset-list-columns?user_id=${userId}&job_id=${jobId}&filename=${datasetName}`,
 //           { headers: { accept: "application/json" } }
 //         );
 //         if (!columnsRes.ok) throw new Error("Columns fetch failed");
@@ -114,26 +117,28 @@
 //           table: datasetName,
 //         })) ?? [];
 
-//         // Preview
+//         // Preview rows (for full preview dialog)
 //         const previewRes = await fetch(
-//           `https://20.81.213.147/preview-dataset?user_id=${userId}&job_id=${jobId}&datasetname=${encodeURIComponent(datasetName)}`,
+//           `https://api.veriton.ai/api/service2/preview-dataset?user_id=${userId}&job_id=${jobId}&datasetname=${encodeURIComponent(datasetName)}`,
 //           { headers: { accept: "application/json" } }
 //         );
 //         if (!previewRes.ok) throw new Error("Preview fetch failed");
 //         const previewJson = await previewRes.json();
 //         const rows = previewJson.preview_rows ?? previewJson.rows ?? previewJson ?? [];
 
+//         const sampleRows = Array.isArray(rows) ? rows : [];
+
 //         setBuiltDataset({
 //           name: datasetName,
 //           columns,
-//           sampleRows: Array.isArray(rows) ? rows : [],
+//           sampleRows,
 //         });
-//         setFullPreviewData(Array.isArray(rows) ? rows : []);
+//         setFullPreviewData(sampleRows);
 //       } catch (err: any) {
 //         console.error(err);
 //         toast({
 //           title: "Load Error",
-//           description: err.message || "Failed to load dataset",
+//           description: err.message || "Failed to load dataset information",
 //           variant: "destructive",
 //           action: closeToastButton,
 //         });
@@ -144,12 +149,6 @@
 
 //     fetchData();
 //   }, []);
-
-//   useEffect(() => {
-//     if (showFullPreview && builtDataset) {
-//       setFullPreviewData(builtDataset.sampleRows);
-//     }
-//   }, [showFullPreview, builtDataset]);
 
 //   // Job name from localStorage
 //   useEffect(() => {
@@ -195,7 +194,7 @@
 //     };
 
 //     try {
-//       const url = `https://4.227.238.34/schedule-job?user_id=${userId}`;
+//       const url = `https://api.veriton.ai/api/service1/schedule-job?user_id=${userId}`;
 //       const res = await fetch(url, {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
@@ -215,8 +214,6 @@
 //           description: "Job scheduled successfully",
 //           action: closeToastButton,
 //         });
-
-//         // Optional: save to local jobs list (your original logic can be pasted here)
 
 //         localStorage.removeItem("currentJobName");
 //         localStorage.removeItem("etlTableName");
@@ -307,7 +304,7 @@
 //     setJobInfo(null);
 
 //     try {
-//       const res = await fetch("https://20.81.213.147/api/v1/business-rules/process", {
+//       const res = await fetch("https://api.veriton.ai/api/service2/api/v1/business-rules/process", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json", Accept: "application/json" },
 //         body: JSON.stringify(payload),
@@ -349,18 +346,22 @@
 
 //   const handleBack = () => {
 //     setWorkflowStep("preview");
-//     // Optionally clear rules if desired: setRules([]);
+//   };
+
+//   const toggleFullPreview = () => {
+//     setShowFullPreviewInline((prev) => !prev);
 //   };
 
 //   return (
-//     <WorkflowLayout>
+//     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
+//       <Workflowheader/>
 //       <div className="p-6 md:p-8">
 //         {/* Header + top-right buttons */}
 //         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
 //           <div>
 //             <h1 className="text-3xl md:text-4xl font-bold">ETL Pipeline</h1>
 //             <p className="text-muted-foreground mt-1">
-//               {workflowStep === "preview" && "Preview your dataset"}
+//               {workflowStep === "preview" && "Review your dataset"}
 //               {workflowStep === "business-rules" && "Apply business logic rules"}
 //             </p>
 //           </div>
@@ -374,20 +375,20 @@
 //                 <Settings2 className="mr-2 h-4 w-4" />
 //                 Apply Business Logic
 //               </Button>
-//               <Button
+//               {/* <Button
 //                 variant="outline"
 //                 onClick={() => setShowScheduleDialog(true)}
 //                 className="min-w-[150px]"
 //               >
 //                 <Calendar className="mr-2 h-4 w-4" />
 //                 Schedule Job
-//               </Button>
+//               </Button> */}
 //             </div>
 //           )}
 //         </div>
 
-//         {/* Preview view */}
-//         {workflowStep === "preview" && (
+//         {/* Preview step – info panel + full preview button */}
+//         {/* {workflowStep === "preview" && (
 //           <div className="space-y-6">
 //             <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
 //               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -400,12 +401,16 @@
 //                   </p>
 //                   <p className="text-sm text-muted-foreground mt-1">
 //                     {builtDataset?.columns.length || 0} columns •{" "}
-//                     {builtDataset?.sampleRows.length || 0} preview rows
+//                     {builtDataset?.sampleRows.length || 0} rows available
 //                   </p>
 //                 </div>
-//                 <Button variant="outline" onClick={() => setShowFullPreview(true)}>
+//                 <Button
+//                   variant="outline"
+//                   onClick={() => setShowFullPreview(true)}
+//                   disabled={isPreviewLoading || !builtDataset || fullPreviewData.length === 0}
+//                 >
 //                   <Eye className="mr-2 h-4 w-4" />
-//                   Full Preview
+//                   View Full Preview
 //                 </Button>
 //               </div>
 //             </div>
@@ -414,50 +419,134 @@
 //               <div className="flex justify-center py-20">
 //                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
 //               </div>
-//             ) : !builtDataset || builtDataset.sampleRows.length === 0 ? (
-//               <div className="text-center py-16 text-muted-foreground border border-dashed rounded-xl">
-//                 No preview data available
+//             ) : !builtDataset ? (
+//               <div className="text-center py-16 text-muted-foreground border border-dashed rounded-xl bg-card/50">
+//                 Loading dataset information...
 //               </div>
 //             ) : (
-//               <div className="border rounded-xl overflow-hidden">
-//                 <div className="overflow-x-auto max-h-[520px]">
-//                   <table className="w-full min-w-max">
-//                     <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
-//                       <tr>
-//                         {builtDataset.columns.map((col) => (
-//                           <th
-//                             key={col.name}
-//                             className="text-left px-5 py-3 text-sm font-medium border-b whitespace-nowrap"
-//                           >
-//                             {col.name}
-//                             <div className="text-xs text-muted-foreground mt-0.5">({col.type})</div>
-//                           </th>
-//                         ))}
-//                       </tr>
-//                     </thead>
-//                     <tbody>
-//                       {builtDataset.sampleRows.map((row, idx) => (
-//                         <tr
-//                           key={idx}
-//                           className="border-b last:border-0 hover:bg-muted/40 transition-colors"
-//                         >
-//                           {builtDataset.columns.map((col) => (
-//                             <td
-//                               key={col.name}
-//                               className="px-5 py-3 text-sm whitespace-nowrap"
-//                             >
-//                               {String(row[col.name] ?? "—")}
-//                             </td>
-//                           ))}
-//                         </tr>
-//                       ))}
-//                     </tbody>
-//                   </table>
-//                 </div>
+//               <div className="text-center py-16 text-muted-foreground border border-dashed rounded-xl bg-card/50">
+//                 <p className="text-lg font-medium mb-2">Dataset is ready</p>
+//                 <p className="text-sm mb-6">
+//                   Use "View Full Preview" to inspect the data before applying rules or scheduling.
+//                 </p>
 //               </div>
 //             )}
 //           </div>
-//         )}
+//         )} */}
+
+//       <div className="flex-1">
+//           {/* Preview step */}
+//           {workflowStep === "preview" && (
+//             <div className="space-y-6">
+//               <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
+//                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+//                   <div>
+//                     <p className="text-lg">
+//                       <span className="font-semibold">Dataset:</span>{" "}
+//                       <span className="text-primary font-medium">
+//                         {builtDataset?.name || "Not loaded"}
+//                       </span>
+//                     </p>
+//                     <p className="text-sm text-muted-foreground mt-1">
+//                       {builtDataset?.columns.length || 0} columns •{" "}
+//                       {builtDataset?.sampleRows.length || 0} rows available
+//                     </p>
+//                   </div>
+//                   <Button
+//                     variant="outline"
+//                     onClick={toggleFullPreview}
+//                     disabled={isPreviewLoading || !builtDataset || fullPreviewData.length === 0}
+//                   >
+//                     <Eye className="mr-2 h-4 w-4" />
+//                     {showFullPreviewInline ? "Hide Preview" : "View Full Preview"}
+//                   </Button>
+//                 </div>
+//               </div>
+
+//               {isPreviewLoading ? (
+//                 <div className="flex justify-center py-20">
+//                   <Loader2 className="h-10 w-10 animate-spin text-primary" />
+//                 </div>
+//               ) : !builtDataset ? (
+//                 <div className="text-center py-16 text-muted-foreground border border-dashed rounded-xl bg-card/50">
+//                   Loading dataset information...
+//                 </div>
+//               ) : (
+//                 <>
+//                   {/* <div className="text-center py-10 text-muted-foreground border border-dashed rounded-xl bg-card/50">
+//                     <p className="text-lg font-medium mb-2">Dataset is ready</p>
+//                     <p className="text-sm">
+//                       {showFullPreviewInline
+//                         ? "Full preview is shown below"
+//                         : "Click \"View Full Preview\" to inspect the data"}
+//                     </p>
+//                   </div> */}
+
+//                   {/* Inline Full Preview Table */}
+//                   {showFullPreviewInline && (
+//                     <div className="border rounded-lg overflow-hidden">
+                      
+//                       <div className="max-h-[60vh] overflow-auto">
+//                         <table className="w-full text-sm">
+//                           <thead className="sticky top-0 bg-primary">
+//                             <tr>
+//                               {builtDataset.columns.map((col) => (
+//                                 <th
+//                                   key={col.name}
+//                                   className="text-left p-3 font-medium border-b whitespace-nowrap"
+//                                 >
+//                                   {col.name}
+//                                   <div className="text-xs text-foreground">({col.type})</div>
+//                                 </th>
+//                               ))}
+//                             </tr>
+//                           </thead>
+//                           <tbody>
+//                             {fullPreviewData.map((row, idx) => (
+//                               <tr
+//                                 key={idx}
+//                                 className="border-b hover:bg-muted/40 transition-colors"
+//                               >
+//                                 {builtDataset.columns.map((col) => (
+//                                   <td
+//                                     key={col.name}
+//                                     className="p-3 whitespace-nowrap"
+//                                   >
+//                                     {String(row[col.name] ?? "—")}
+//                                   </td>
+//                                 ))}
+//                               </tr>
+//                             ))}
+//                             {fullPreviewData.length === 0 && (
+//                               <tr>
+//                                 <td
+//                                   colSpan={builtDataset.columns.length}
+//                                   className="p-12 text-center text-muted-foreground"
+//                                 >
+//                                   No preview data available
+//                                 </td>
+//                               </tr>
+//                             )}
+//                           </tbody>
+//                         </table>
+//                       </div>
+//                     </div>
+//                   )}
+//                 </>
+//               )}
+//             <div className="mt-10 pt-6 ">
+//           {/* <Button
+//             variant="outline"
+//             onClick={() => navigate("/PathSelection1")} // ← adjust route if needed
+//             className="min-w-[220px]"
+//           >
+//             <ArrowLeft className="mr-2 h-4 w-4" />
+//             Back to Path Selection
+//           </Button> */}
+//         </div>
+//             </div>
+            
+//           )}
 
 //         {/* Business Rules view */}
 //         {workflowStep === "business-rules" && (
@@ -541,8 +630,20 @@
 //             </div>
 //           </div>
 //         )}
+//         </div>
 
-//         {/* ─── Dialogs ─── */}
+//         {/* <div className="mt-10 pt-6 border-t">
+//           <Button
+//             variant="outline"
+//             onClick={() => navigate("/path-selection")} // ← adjust route if needed
+//             className="min-w-[220px]"
+//           >
+//             <ArrowLeft className="mr-2 h-4 w-4" />
+//             Back to Path Selection
+//           </Button>
+//         </div> */}
+
+//         {/* Dialogs */}
 //         <AddBusinessRuleDialog
 //           open={showAddRuleDialog}
 //           onOpenChange={(open) => {
@@ -570,48 +671,60 @@
 //           }}
 //           jobInfo={jobInfo}
 //           isETLFlow={true}
-//         />
+//         /> 
 
-//         {/* Full Preview Dialog */}
 //         <Dialog open={showFullPreview} onOpenChange={setShowFullPreview}>
-//           <DialogContent className="max-w-6xl max-h-[85vh] flex flex-col">
-//             <div className="flex items-center justify-between mb-4">
+//           <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
+//             <div className="mb-4 flex justify-between items-center">
 //               <div>
-//                 <DialogTitle className="text-2xl">Full Data Preview</DialogTitle>
-//                 <p className="text-sm text-muted-foreground mt-1">
-//                   {builtDataset?.name} • {builtDataset?.columns.length || 0} columns ×{" "}
-//                   {fullPreviewData.length} rows
+//                 <h2 className="text-2xl font-bold text-foreground">Full Data Preview</h2>
+//                 <p className="text-muted-foreground mt-1">
+//                   Table: <span className="text-primary">{builtDataset?.name}</span> •{" "}
+//                   {builtDataset?.columns.length} columns × {fullPreviewData.length} rows
 //                 </p>
 //               </div>
 //               <Button variant="ghost" size="icon" onClick={() => setShowFullPreview(false)}>
 //                 <X className="h-5 w-5" />
 //               </Button>
 //             </div>
-//             <div className="flex-1 overflow-auto border rounded-lg">
+//             <div className="flex-1 overflow-auto border border-border rounded-lg">
 //               <table className="w-full">
-//                 <thead className="sticky top-0 bg-muted z-10">
+//                 <thead className="sticky top-0 bg-primary/100 text-white">
 //                   <tr>
 //                     {builtDataset?.columns.map((col) => (
 //                       <th
-//                         key={col.name}
-//                         className="text-left px-4 py-3 text-sm font-medium border-b whitespace-nowrap"
+//                         key={`preview-${col.name}`}
+//                         className="text-left p-4 text-sm font-medium whitespace-nowrap border-b border-border"
 //                       >
-//                         {col.name}
-//                         <div className="text-xs text-muted-foreground">({col.table})</div>
+//                         <div>{col.name}</div>
+//                         <div className="text-xs opacity-80">({col.table})</div>
 //                       </th>
 //                     ))}
 //                   </tr>
 //                 </thead>
 //                 <tbody>
 //                   {fullPreviewData.map((row, idx) => (
-//                     <tr key={idx} className="border-b last:border-0 hover:bg-muted/30">
+//                     <tr
+//                       key={`preview-row-${idx}`}
+//                       className="border-b border-border last:border-0 hover:bg-muted/50"
+//                     >
 //                       {builtDataset?.columns.map((col) => (
-//                         <td key={col.name} className="px-4 py-3 text-sm whitespace-nowrap">
-//                           {String(row[col.name] ?? "—")}
+//                         <td
+//                           key={`preview-${col.name}-${idx}`}
+//                           className="p-4 text-sm text-foreground whitespace-nowrap"
+//                         >
+//                           {String(row[col.name] ?? "-")}
 //                         </td>
 //                       ))}
 //                     </tr>
 //                   ))}
+//                   {fullPreviewData.length === 0 && (
+//                     <tr>
+//                       <td colSpan={builtDataset?.columns.length ?? 1} className="p-8 text-center text-muted-foreground">
+//                         No data available for preview
+//                       </td>
+//                     </tr>
+//                   )}
 //                 </tbody>
 //               </table>
 //             </div>
@@ -664,7 +777,7 @@
 //                         <SelectItem value="daily">Daily</SelectItem>
 //                         <SelectItem value="weekly">Weekly</SelectItem>
 //                         <SelectItem value="monthly">Monthly</SelectItem>
-//                         <SelectItem value="hourly">Hourly</SelectItem>
+//                         {/* <SelectItem value="hourly">Hourly</SelectItem> */}
 //                       </SelectContent>
 //                     </Select>
 //                   </div>
@@ -704,7 +817,7 @@
 //           </DialogContent>
 //         </Dialog>
 //       </div>
-//     </WorkflowLayout>
+//    </div>
 //   );
 // }
 
@@ -1085,14 +1198,14 @@ export default function ETLOutput() {
                 <Settings2 className="mr-2 h-4 w-4" />
                 Apply Business Logic
               </Button>
-              <Button
+              {/* <Button
                 variant="outline"
                 onClick={() => setShowScheduleDialog(true)}
                 className="min-w-[150px]"
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 Schedule Job
-              </Button>
+              </Button> */}
             </div>
           )}
         </div>
@@ -1442,90 +1555,7 @@ export default function ETLOutput() {
         </Dialog>
 
         {/* Schedule Job Dialog */}
-        <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-          <DialogContent className="sm:max-w-xl">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl">Schedule Job</DialogTitle>
-              <p className="text-muted-foreground mt-1">Configure when and how this job should run.</p>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label>Job Name</Label>
-                <Input
-                  value={jobName}
-                  onChange={(e) => setJobName(e.target.value)}
-                  placeholder="My ETL Job"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label>Trigger Type</Label>
-                <RadioGroup
-                  value={triggerType}
-                  onValueChange={(v) => setTriggerType(v as "schedule" | "file")}
-                  className="grid gap-3"
-                >
-                  <div className="flex items-center space-x-3 border p-3 rounded-lg">
-                    <RadioGroupItem value="schedule" id="schedule" />
-                    <Label htmlFor="schedule" className="cursor-pointer flex items-center gap-2">
-                      <Clock className="h-4 w-4" /> Time-based Schedule
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {triggerType === "schedule" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Frequency</Label>
-                    <Select value={frequency} onValueChange={setFrequency}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        {/* <SelectItem value="hourly">Hourly</SelectItem> */}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Time</Label>
-                    <Input
-                      type="time"
-                      value={time}
-                      onChange={(e) => setTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-4 pt-4">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowScheduleDialog(false)}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                <Button className="flex-1" onClick={scheduleJob} disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Scheduling...
-                    </>
-                  ) : (
-                    "Schedule Job"
-                  )}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+       
       </div>
    </div>
   );

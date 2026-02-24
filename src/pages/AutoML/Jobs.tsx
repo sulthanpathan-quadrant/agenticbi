@@ -29,9 +29,9 @@
 // import { Job } from "@/components/types/jobs";
 // import JobViewModal from "@/components/modals/JobViewModal";
 // import JobEditModal from "@/components/modals/JobEditModal";
+// import { prepareDataset } from "@/components/utils/preparedDataset";
 // import { toast } from "sonner";
 // import { cn } from "@/lib/utils";
-// import { prepareDataset } from "@/components/utils/preparedDataset";
  
 // // ─── Add these new interfaces ───
 // interface GlobalDataset {
@@ -147,12 +147,17 @@
 //   const itemsPerPage = 10;
 //   const totalPages = Math.ceil(totalCount / itemsPerPage);
  
-//   //   useEffect(() => {
-//   //      console.log('🔍 Auth Check:', { isAuthenticated, user })
-//   //     if (!isAuthenticated) {
-//   //       navigate('/auth');
-//   //     }
-//   //   }, [isAuthenticated, navigate]);
+//   // Replace or add this useEffect (make sure it's separate from the dataset loading one)
+//   // (status filtering is done client-side on the loaded jobs — no need to send status to backend yet)
+//   useEffect(() => {
+//     fetchJobs(currentPage);
+//   }, [currentPage]); // ← add fetchJobs to deps if it's from context
+ 
+//   useEffect(() => {
+//     if (statusFilter !== "all") {
+//       setCurrentPage(1);
+//     }
+//   }, [statusFilter]);
  
 //   // Add this complete useEffect block
 //   useEffect(() => {
@@ -234,10 +239,20 @@
 //   }, []);
  
 //   const filteredJobs = useMemo(() => {
-//     return jobs.filter((job) => {
-//       return statusFilter === "all" || job.status === statusFilter;
-//     });
+//     if (statusFilter === "all") return jobs;
+ 
+//     return jobs.filter(
+//       (job) => job.status.toLowerCase() === statusFilter.toLowerCase(),
+//     );
 //   }, [jobs, statusFilter]);
+ 
+//   const paginatedJobs = useMemo(() => {
+//     const start = (currentPage - 1) * itemsPerPage;
+ 
+//     const end = start + itemsPerPage;
+ 
+//     return filteredJobs.slice(start, end);
+//   }, [filteredJobs, currentPage]);
  
 //   const formatDate = (date: Date | null) => {
 //     if (!date) return "—";
@@ -319,7 +334,7 @@
 //         setRunningMessage("Loading dataset features...");
  
 //         const blobPath = `${userId}/${agentName}/${job.datasetName}`;
-//         const previewUrl = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/data_preview?blob_path=${encodeURIComponent(blobPath)}&user_email=${encodeURIComponent(userEmail)}`;
+//         const previewUrl = `https://api.veriton.ai/api/service3/data_preview?blob_path=${encodeURIComponent(blobPath)}&user_email=${encodeURIComponent(userEmail)}`;
  
 //         const previewResponse = await fetch(previewUrl, {
 //           method: "GET",
@@ -353,7 +368,7 @@
 //       // Step 1: Download file from blob storage
 //       setRunningMessage("Downloading dataset...");
 //       const blobPath = `${userId}/${agentName}/${job.datasetName}`;
-//       const downloadUrl = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/download_predictions?blob_path=${encodeURIComponent(blobPath)}&user_email=${encodeURIComponent(userEmail)}`;
+//       const downloadUrl = `https://api.veriton.ai/api/service3/download_predictions?blob_path=${encodeURIComponent(blobPath)}&user_email=${encodeURIComponent(userEmail)}`;
  
 //       const downloadResponse = await fetch(downloadUrl, {
 //         method: "GET",
@@ -395,7 +410,7 @@
  
 //       // Step 3: Call build_ml_model API
 //       const buildResponse = await fetch(
-//         "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/build_ml_model",
+//         "https://api.veriton.ai/api/service3/build_ml_model",
 //         {
 //           method: "POST",
 //           body: formData,
@@ -584,513 +599,521 @@
 //   //   if (!isAuthenticated) return null;
  
 //   return (
-//     <div className="min-h-screen bg-muted/30">
+//     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
 //       <Header />
-//       <main className="pt-20 px-6 pb-12">
-//         <div className="max-w-7xl mx-auto">
-//           {/* ================= AutoML Intro ================= */}
-//           <div className="mb-10 flex items-start justify-between">
-//             <div>
-//               <h1 className="text-3xl font-bold text-foreground">
-//                 AutoML Workspace
-//               </h1>
-//               <p className="text-muted-foreground mt-2 max-w-2xl">
-//                 Build, compare, and test machine learning models automatically
-//                 using your datasets. Manage all trained models below.
-//               </p>
-//             </div>
  
-//             <div className="flex items-center gap-3">
-//               <Button
-//                 variant="outline"
-//                 onClick={() =>
-//                   navigate("/workflow/automl/create-job", {
-//                     state: { initialTab: "test" },
-//                   })
-//                 } // ← your test flow path
-//               >
-//                 Test Model
-//               </Button>
-//               {/* <Button
-//                 variant="outline"
-//                 onClick={() => navigate("/workflow/path-selection")}
-//               >
-//                 ← Back to Path Selection
-//               </Button> */}
-//             </div>
-//           </div>
-//           {/* ─── NEW: Dataset Selection Section ─── */}
-//           <div className="bg-card border rounded-xl p-6 mb-10 shadow-sm">
-//             <div className="flex items-center justify-between mb-6">
-//               <h2 className="text-2xl font-semibold flex items-center gap-3">
-//                 <Database className="w-6 h-6 text-primary" />
-//                 Select Dataset to Begin
-//               </h2>
-//             </div>
+//       <div className="flex-1 flex flex-col overflow-auto">
+//         <main className="px-6 py-6">
+//           <div className="max-w-7xl mx-auto w-full">
+//             {/* ================= AutoML Intro ================= */}
  
-//             {dsLoading ? (
-//               <div className="py-12 text-center flex items-center justify-center gap-3 text-muted-foreground">
-//                 <Loader2 className="w-5 h-5 animate-spin" />
-//                 Loading available datasets...
-//               </div>
-//             ) : globalDatasets.length === 0 && jobDatasets.length === 0 ? (
-//               <div className="py-12 text-center text-muted-foreground">
-//                 No datasets found. Please upload or process data first.
-//               </div>
-//             ) : (
-//               <>
-//                 <div className="flex border-b mb-6">
-//                   <button
-//                     className={cn(
-//                       "px-5 py-3 font-medium transition-all",
-//                       activeDsTab === "global"
-//                         ? "border-b-2 border-primary text-primary"
-//                         : "text-muted-foreground hover:text-foreground",
-//                     )}
-//                     onClick={() => setActiveDsTab("global")}
-//                   >
-//                     All Datasets
-//                   </button>
-//                   <button
-//                     className={cn(
-//                       "px-5 py-3 font-medium transition-all",
-//                       activeDsTab === "job"
-//                         ? "border-b-2 border-primary text-primary"
-//                         : "text-muted-foreground hover:text-foreground",
-//                     )}
-//                     onClick={() => setActiveDsTab("job")}
-//                     disabled={jobDatasets.length === 0}
-//                   >
-//                     Current Job Files
-//                     {jobDatasets.length > 0 && (
-//                       <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">
-//                         {jobDatasets.length}
-//                       </span>
-//                     )}
-//                   </button>
-//                 </div>
- 
-//                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-//                   {(activeDsTab === "global"
-//                     ? globalDatasets
-//                     : jobDatasets
-//                   ).map((ds) => {
-//                     const name =
-//                       "datasetName" in ds ? ds.datasetName : ds.filename;
-//                     const isSelected =
-//                       selectedDataset &&
-//                       ("datasetName" in selectedDataset
-//                         ? selectedDataset.datasetName
-//                         : selectedDataset.filename) === name;
- 
-//                     return (
-//                       <button
-//                         key={name}
-//                         onClick={() => handleSelectDataset(ds)}
-//                         className={cn(
-//                           "p-5 border rounded-lg text-left transition-all hover:border-primary/60",
-//                           isSelected
-//                             ? "border-primary bg-primary/5 shadow-sm"
-//                             : "border-border hover:bg-muted/50",
-//                         )}
-//                       >
-//                         <div className="font-medium">{name}</div>
-//                         {"rows" in ds ? (
-//                           <div className="text-sm text-muted-foreground mt-1">
-//                             {ds.rows} rows • {ds.columns} cols • {ds.lastRun}
-//                           </div>
-//                         ) : (
-//                           <div className="text-sm text-muted-foreground mt-1">
-//                             Modified: {ds.date_modified}
-//                           </div>
-//                         )}
-//                       </button>
-//                     );
-//                   })}
-//                 </div>
- 
-//                 {selectedDataset && (
-//                   <div className="border rounded-lg bg-muted/30 overflow-hidden">
-//                     <div className="p-5 border-b flex items-center justify-between">
-//                       <h3 className="font-semibold text-lg">
-//                         Preview:{" "}
-//                         {"datasetName" in selectedDataset
-//                           ? selectedDataset.datasetName
-//                           : selectedDataset.filename}
-//                       </h3>
-//                       <div className="flex gap-3">
-//                         <Button
-//                           size="sm"
-//                           onClick={() => startWorkflow("build")}
-//                           disabled={previewLoading || !previewData}
-//                         >
-//                           Build Model
-//                         </Button>
-//                         <Button
-//                           variant="outline"
-//                           size="sm"
-//                           onClick={() => startWorkflow("compare")}
-//                           disabled={previewLoading || !previewData}
-//                         >
-//                           Compare Models
-//                         </Button>
-//                       </div>
-//                     </div>
- 
-//                     {previewLoading ? (
-//                       <div className="p-10 flex flex-col items-center justify-center text-muted-foreground">
-//                         <Loader2 className="w-8 h-8 animate-spin mb-3" />
-//                         Loading preview...
-//                       </div>
-//                     ) : previewData ? (
-//                       <div className="overflow-x-auto max-h-80">
-//                         <table className="w-full text-sm">
-//                           <thead className="bg-muted sticky top-0 z-10">
-//                             <tr>
-//                               {previewData.columns.map((col) => (
-//                                 <th
-//                                   key={col}
-//                                   className="px-4 py-3 text-left font-medium border-b"
-//                                 >
-//                                   {col}
-//                                 </th>
-//                               ))}
-//                             </tr>
-//                           </thead>
-//                           <tbody className="divide-y">
-//                             {previewData.preview_rows.map((row, i) => (
-//                               <tr key={i} className="hover:bg-muted/50">
-//                                 {previewData.columns.map((col) => (
-//                                   <td
-//                                     key={col}
-//                                     className="px-4 py-3 border-r last:border-r-0"
-//                                   >
-//                                     {row[col] ?? "—"}
-//                                   </td>
-//                                 ))}
-//                               </tr>
-//                             ))}
-//                           </tbody>
-//                         </table>
-//                       </div>
-//                     ) : (
-//                       <div className="p-10 text-center text-muted-foreground">
-//                         Preview could not be loaded
-//                       </div>
-//                     )}
-//                   </div>
-//                 )}
-//               </>
-//             )}
-//           </div>
- 
-//           {/* Header */}
-//           <div className="flex items-start justify-between mb-8">
-//             <div>
-//               <h1 className="text-3xl font-bold text-foreground mb-1">
-//                 Trained Models
-//               </h1>
-//               {/* <p className="text-muted-foreground">All machine learning models created using AutoML.</p> */}
-//             </div>
-//             <div className="flex items-center gap-3">
-//             </div>
-//           </div>
- 
-//           {/* Error Display */}
-//           {error && (
-//             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
-//               <p className="text-red-700 text-sm">{error}</p>
-//               <Button variant="outline" size="sm" onClick={handleRefresh}>
-//                 Try Again
-//               </Button>
-//             </div>
-//           )}
- 
-//           {/* Running Job Status */}
-//           {runningJobId && (
-//             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
-//               <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+//             <div className="mb-10 flex items-start justify-between">
 //               <div>
-//                 <p className="text-blue-800 font-medium text-sm">
-//                   Training in progress...
+//                 <h1 className="text-3xl font-bold text-foreground">
+//                   AutoML Workspace
+//                 </h1>
+ 
+//                 <p className="text-muted-foreground mt-2 max-w-2xl">
+//                   Build, compare, and test machine learning models automatically
+//                   using your datasets. Manage all trained models below.
 //                 </p>
-//                 <p className="text-blue-600 text-xs mt-0.5">{runningMessage}</p>
+//               </div>
+ 
+//               <div className="flex items-center gap-3">
+//                 <Button
+//                   variant="outline"
+//                   onClick={() =>
+//                     navigate("/workflow/automl/test", {
+//                       state: { initialTab: "test" },
+//                     })
+//                   } // ← your test flow path
+//                 >
+//                   Test Model
+//                 </Button>
 //               </div>
 //             </div>
-//           )}
+//             {/* ─── NEW: Dataset Selection Section ─── */}
+//             {/* ================= DATASET SECTION ================= */}
  
-//           {/* Filters Row */}
-//           <div className="flex items-center justify-between mb-6">
-//             <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
-//               {["all", "completed", "running", "failed"].map((status) => (
-//                 <button
-//                   key={status}
-//                   onClick={() => setStatusFilter(status)}
-//                   className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-//                     statusFilter === status
-//                       ? "bg-primary text-primary-foreground"
-//                       : "text-muted-foreground hover:text-foreground"
-//                   }`}
-//                 >
-//                   {status === "all"
-//                     ? "All"
-//                     : status.charAt(0).toUpperCase() + status.slice(1)}
-//                 </button>
-//               ))}
-//             </div>
-//           </div>
+//             <div className="bg-card border border-border rounded-xl shadow-sm mb-10 overflow-hidden">
+//               {/* Header */}
+//               <div className="px-6 py-4 border-b">
+//                 <h2 className="text-lg font-semibold">Select Dataset</h2>
+//               </div>
  
-//           {/* Jobs Table */}
-//           <motion.div
-//             initial={{ opacity: 0, y: 20 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             className="bg-card rounded-xl border border-border overflow-hidden"
-//           >
-//             <div className="overflow-x-auto">
-//               <table className="w-full">
-//                 <thead>
-//                   <tr className="border-b border-border">
-//                     <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                       Job
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                       Category
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                       Model
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                       Created At
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                       Last Run
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                       Status
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-sm font-medium text-primary">
-//                       Actions
-//                     </th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {loading ? (
-//                     <tr>
-//                       <td colSpan={7} className="px-6 py-12 text-center">
-//                         <div className="flex items-center justify-center gap-2">
-//                           <RefreshCw className="w-5 h-5 animate-spin text-primary" />
-//                           <span className="text-muted-foreground">
-//                             Loading jobs...
-//                           </span>
-//                         </div>
-//                       </td>
-//                     </tr>
-//                   ) : filteredJobs.length === 0 ? (
-//                     <tr>
-//                       <td colSpan={7} className="px-6 py-16 text-center">
-//                         <h3 className="text-lg font-semibold mb-2">
-//                           No models created yet
-//                         </h3>
-//                         <p className="text-sm text-muted-foreground mb-4">
-//                           Start by building your first AutoML model.
-//                         </p>
-//                         <Button
-//                           onClick={() =>
-//                             navigate("/workflow/automl/select-dataset")
-//                           }
-//                         >
-//                           Build Your First Model
-//                         </Button>
-//                       </td>
-//                     </tr>
+//               <div className="flex h-[480px]">
+//                 {/* ================= Sidebar – all datasets in one list ================= */}
+//                 <div className="w-[300px] border-r bg-muted/20 overflow-y-auto">
+//                   {dsLoading ? (
+//                     <div className="p-6 text-sm text-muted-foreground">
+//                       Loading datasets...
+//                     </div>
+//                   ) : globalDatasets.length === 0 &&
+//                     jobDatasets.length === 0 ? (
+//                     <div className="p-6 text-sm text-muted-foreground">
+//                       No datasets available
+//                     </div>
 //                   ) : (
-//                     filteredJobs.map((job, index) => {
-//                       const jobNumber =
-//                         (currentPage - 1) * itemsPerPage + index + 1;
+//                     // ─── Flat combined list: global + job-specific ───
+//                     [...globalDatasets, ...jobDatasets].map((ds) => {
+//                       const isGlobal = "datasetName" in ds;
+//                       const name = isGlobal ? ds.datasetName : ds.filename;
+ 
+//                       const rows = isGlobal ? ds.rows : null;
+//                       const columns = isGlobal ? ds.columns : null;
+//                       const dateInfo = isGlobal ? ds.lastRun : ds.date_modified;
+ 
+//                       const isSelected =
+//                         selectedDataset &&
+//                         ((isGlobal &&
+//                           "datasetName" in selectedDataset &&
+//                           selectedDataset.datasetName === name) ||
+//                           (!isGlobal &&
+//                             "filename" in selectedDataset &&
+//                             selectedDataset.filename === name));
+ 
 //                       return (
-//                         <motion.tr
-//                           key={job.id}
-//                           initial={{ opacity: 0 }}
-//                           animate={{ opacity: 1 }}
-//                           transition={{ delay: index * 0.03 }}
-//                           className="border-b border-border/50 hover:bg-muted/20"
+//                         <button
+//                           key={`${isGlobal ? "g" : "j"}-${name}`}
+//                           onClick={() => handleSelectDataset(ds)}
+//                           className={cn(
+//                             "w-full text-left px-5 py-4 border-l-2 transition-all duration-200",
+//                             isSelected
+//                               ? "border-primary bg-background"
+//                               : "border-transparent hover:bg-background",
+//                           )}
 //                         >
-//                           <td className="px-6 py-4 font-medium text-foreground">
-//                             Job_{jobNumber}
-//                           </td>
-//                           <td className="px-6 py-4 text-primary">
-//                             {job.category || "Unknown"}
-//                           </td>
-//                           <td className="px-6 py-4 text-muted-foreground">
-//                             {job.model}
-//                           </td>
-//                           <td className="px-6 py-4 text-muted-foreground">
-//                             {formatDate(job.createdAt)}
-//                           </td>
-//                           <td className="px-6 py-4 text-muted-foreground">
-//                             {formatDate(job.lastRun)}
-//                           </td>
-//                           <td className="px-6 py-4">
-//                             {getStatusBadge(job.status)}
-//                           </td>
-//                           <td className="px-6 py-4">
-//                             <div className="flex items-center gap-3">
-//                               <button
-//                                 onClick={() => handleRun(job)}
-//                                 disabled={runningJobId === job.id}
-//                                 className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-//                                 title="Run job"
-//                               >
-//                                 {runningJobId === job.id ? (
-//                                   <Loader2 className="w-5 h-5 animate-spin" />
-//                                 ) : (
-//                                   <Play className="w-5 h-5" />
-//                                 )}
-//                               </button>
-//                               <button
-//                                 onClick={() => handleView(job)}
-//                                 className="text-muted-foreground hover:text-foreground transition-colors"
-//                                 title="View details"
-//                               >
-//                                 <Eye className="w-5 h-5" />
-//                               </button>
-//                               <button
-//                                 onClick={() => handleEdit(job)}
-//                                 className="text-muted-foreground hover:text-foreground transition-colors"
-//                                 title="Edit job"
-//                               >
-//                                 <Edit className="w-5 h-5" />
-//                               </button>
-//                             </div>
-//                           </td>
-//                         </motion.tr>
+//                           <div className="font-medium text-sm truncate">
+//                             {name}
+//                           </div>
+ 
+//                           <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2">
+//                             {rows != null && (
+//                               <>
+//                                 {rows} rows<span className="mx-1">•</span>
+//                               </>
+//                             )}
+//                             {columns != null && (
+//                               <>
+//                                 {columns} columns<span className="mx-1">•</span>
+//                               </>
+//                             )}
+//                             {dateInfo && (
+//                               <span>
+//                                 {isGlobal ? "Last run: " : "Modified: "}
+//                                 {dateInfo}
+//                               </span>
+//                             )}
+//                           </div>
+//                         </button>
 //                       );
 //                     })
 //                   )}
-//                 </tbody>
-//               </table>
-//             </div>
-//           </motion.div>
+//                 </div>
  
-//           {/* Pagination */}
-//           {totalPages > 1 && (
-//             <div className="flex items-center justify-center gap-2 mt-6">
-//               <button
-//                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-//                 disabled={currentPage === 1}
-//                 className="p-2 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
-//               >
-//                 ‹
-//               </button>
-//               {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
-//                 const page = i + 1;
-//                 if (
-//                   totalPages <= 10 ||
-//                   page <= 3 ||
-//                   page > totalPages - 2 ||
-//                   Math.abs(page - currentPage) <= 1
-//                 ) {
-//                   return (
-//                     <button
-//                       key={page}
-//                       onClick={() => setCurrentPage(page)}
-//                       className={`w-10 h-10 rounded-full text-sm font-medium transition-colors ${
-//                         currentPage === page
-//                           ? "bg-primary text-primary-foreground"
-//                           : "text-muted-foreground hover:text-foreground"
-//                       }`}
-//                     >
-//                       {page}
-//                     </button>
-//                   );
-//                 } else if (page === 4 && currentPage > 5) {
-//                   return (
-//                     <span key="dots1" className="text-muted-foreground">
-//                       ...
-//                     </span>
-//                   );
-//                 } else if (
-//                   page === totalPages - 2 &&
-//                   currentPage < totalPages - 4
-//                 ) {
-//                   return (
-//                     <span key="dots2" className="text-muted-foreground">
-//                       ...
-//                     </span>
-//                   );
-//                 }
-//                 return null;
-//               })}
-//               <button
-//                 onClick={() =>
-//                   setCurrentPage((p) => Math.min(totalPages, p + 1))
-//                 }
-//                 disabled={currentPage === totalPages}
-//                 className="p-2 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
-//               >
-//                 ›
-//               </button>
-//             </div>
-//           )}
-//         </div>
-//       </main>
+//                 {/* ================= Preview Panel ================= */}
  
-//       {/* Create Job Modal */}
-//       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-//         <DialogContent className="sm:max-w-md">
-//           <DialogHeader>
-//             <DialogTitle>Create New Job</DialogTitle>
-//           </DialogHeader>
-//           <div className="space-y-4 py-4">
-//             <div className="space-y-2">
-//               <Label htmlFor="job-name">Job Name</Label>
-//               <Input
-//                 id="job-name"
-//                 placeholder="Enter job name..."
-//                 value={jobName}
-//                 onChange={(e) => setJobName(e.target.value)}
-//                 onKeyDown={(e) => {
-//                   if (e.key === "Enter") handleCreateJob();
-//                 }}
-//                 autoFocus
-//               />
+//                 <div className="flex-1 flex flex-col bg-background">
+//                   {selectedDataset ? (
+//                     <>
+//                       {/* Preview Header */}
+ 
+//                       <div className="px-6 py-4 border-b flex items-center justify-between">
+//                         <div>
+//                           <h3 className="font-semibold">
+//                             {"datasetName" in selectedDataset &&
+//                               selectedDataset.datasetName}
+//                           </h3>
+ 
+//                           <p className="text-xs text-muted-foreground">
+//                             Dataset Preview
+//                           </p>
+//                         </div>
+ 
+//                         <div className="flex gap-2">
+//                           <Button
+//                             size="sm"
+//                             onClick={() => startWorkflow("build")}
+//                             disabled={!previewData}
+//                           >
+//                             Build Model
+//                           </Button>
+ 
+//                           <Button
+//                             size="sm"
+//                             variant="outline"
+//                             onClick={() => startWorkflow("compare")}
+//                             disabled={!previewData}
+//                           >
+//                             Compare
+//                           </Button>
+//                         </div>
+//                       </div>
+ 
+//                       {/* Preview Table */}
+ 
+//                       <div className="flex-1 overflow-auto">
+//                         {previewLoading ? (
+//                           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+//                             Loading preview...
+//                           </div>
+//                         ) : previewData ? (
+//                           <table className="w-full text-sm">
+//                             <thead className="bg-muted sticky top-0">
+//                               <tr>
+//                                 {previewData.columns.map((col) => (
+//                                   <th
+//                                     key={col}
+//                                     className="px-4 py-3 text-left border-b"
+//                                   >
+//                                     {col}
+//                                   </th>
+//                                 ))}
+//                               </tr>
+//                             </thead>
+ 
+//                             <tbody>
+//                               {previewData.preview_rows.map((row, i) => (
+//                                 <tr key={i} className="hover:bg-muted/30">
+//                                   {previewData.columns.map((col) => (
+//                                     <td
+//                                       key={col}
+//                                       className="px-4 py-2 border-b"
+//                                     >
+//                                       {row[col] ?? "—"}
+//                                     </td>
+//                                   ))}
+//                                 </tr>
+//                               ))}
+//                             </tbody>
+//                           </table>
+//                         ) : (
+//                           <div className="flex items-center justify-center h-full text-muted-foreground">
+//                             Preview not available
+//                           </div>
+//                         )}
+//                       </div>
+//                     </>
+//                   ) : (
+//                     <div className="flex items-center justify-center h-full text-muted-foreground">
+//                       Select a dataset to preview
+//                     </div>
+//                   )}
+//                 </div>
+//               </div>
 //             </div>
-//           </div>
-//           <DialogFooter>
-//             <Button
-//               variant="outline"
-//               onClick={() => setIsCreateModalOpen(false)}
+ 
+//             {/* Header */}
+//             <div className="flex items-start justify-between mb-8">
+//               <div>
+//                 <h1 className="text-3xl font-bold text-foreground mb-1">
+//                   Trained Models
+//                 </h1>
+//                 {/* <p className="text-muted-foreground">All machine learning models created using AutoML.</p> */}
+//               </div>
+//               <div className="flex items-center gap-3"></div>
+//             </div>
+ 
+//             {/* Error Display */}
+//             {error && (
+//               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+//                 <p className="text-red-700 text-sm">{error}</p>
+//                 <Button variant="outline" size="sm" onClick={handleRefresh}>
+//                   Try Again
+//                 </Button>
+//               </div>
+//             )}
+ 
+//             {/* Running Job Status */}
+//             {runningJobId && (
+//               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+//                 <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+//                 <div>
+//                   <p className="text-blue-800 font-medium text-sm">
+//                     Training in progress...
+//                   </p>
+//                   <p className="text-blue-600 text-xs mt-0.5">
+//                     {runningMessage}
+//                   </p>
+//                 </div>
+//               </div>
+//             )}
+ 
+//             {/* Filters Row */}
+//             <div className="flex items-center justify-between mb-6">
+//               <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
+//                 {["all", "completed", "running", "failed"].map((status) => (
+//                   <button
+//                     key={status}
+//                     onClick={() => setStatusFilter(status)}
+//                     className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+//                       statusFilter === status
+//                         ? "bg-primary text-primary-foreground"
+//                         : "text-muted-foreground hover:text-foreground"
+//                     }`}
+//                   >
+//                     {status === "all"
+//                       ? "All"
+//                       : status.charAt(0).toUpperCase() + status.slice(1)}
+//                   </button>
+//                 ))}
+//               </div>
+//             </div>
+ 
+//             {/* Jobs Table */}
+//             <motion.div
+//               initial={{ opacity: 0, y: 20 }}
+//               animate={{ opacity: 1, y: 0 }}
+//               className="bg-card rounded-xl border border-border overflow-hidden"
 //             >
-//               Cancel
-//             </Button>
-//             <Button onClick={handleCreateJob} disabled={!jobName.trim()}>
-//               Next: Select Datasource
-//             </Button>
-//           </DialogFooter>
-//         </DialogContent>
-//       </Dialog>
+//               <div className="overflow-x-auto">
+//                 <table className="w-full">
+//                   <thead>
+//                     <tr className="border-b border-border">
+//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+//                         Job
+//                       </th>
+//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+//                         Category
+//                       </th>
+//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+//                         Model
+//                       </th>
+//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+//                         Created At
+//                       </th>
+//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+//                         Last Run
+//                       </th>
+//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+//                         Status
+//                       </th>
+//                       <th className="px-6 py-4 text-left text-sm font-medium text-primary">
+//                         Actions
+//                       </th>
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {loading ? (
+//                       <tr>
+//                         <td colSpan={7} className="px-6 py-12 text-center">
+//                           <div className="flex items-center justify-center gap-2">
+//                             <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+//                             <span className="text-muted-foreground">
+//                               Loading jobs...
+//                             </span>
+//                           </div>
+//                         </td>
+//                       </tr>
+//                     ) : filteredJobs.length === 0 ? (
+//                       <tr>
+//                         <td colSpan={7} className="px-6 py-16 text-center">
+//                           <h3 className="text-lg font-semibold mb-2">
+//                             No models created yet
+//                           </h3>
+//                           <p className="text-sm text-muted-foreground mb-4">
+//                             Start by building your first AutoML model.
+//                           </p>
+//                           <Button
+//                             onClick={() =>
+//                               navigate("/workflow/automl/select-dataset")
+//                             }
+//                           >
+//                             Build Your First Model
+//                           </Button>
+//                         </td>
+//                       </tr>
+//                     ) : (
+//                       filteredJobs.map((job, index) => {
+//                         const jobNumber =
+//                           (currentPage - 1) * itemsPerPage + index + 1;
+//                         return (
+//                           <motion.tr
+//                             key={job.id}
+//                             initial={{ opacity: 0 }}
+//                             animate={{ opacity: 1 }}
+//                             transition={{ delay: index * 0.03 }}
+//                             className="border-b border-border/50 hover:bg-muted/20"
+//                           >
+//                             <td className="px-6 py-4 font-medium text-foreground">
+//                               Job_{jobNumber}
+//                             </td>
+//                             <td className="px-6 py-4 text-primary">
+//                               {job.category || "Unknown"}
+//                             </td>
+//                             <td className="px-6 py-4 text-muted-foreground">
+//                               {job.model}
+//                             </td>
+//                             <td className="px-6 py-4 text-muted-foreground">
+//                               {formatDate(job.createdAt)}
+//                             </td>
+//                             <td className="px-6 py-4 text-muted-foreground">
+//                               {formatDate(job.lastRun)}
+//                             </td>
+//                             <td className="px-6 py-4">
+//                               {getStatusBadge(job.status)}
+//                             </td>
+//                             <td className="px-6 py-4">
+//                               <div className="flex items-center gap-3">
+//                                 <button
+//                                   onClick={() => handleRun(job)}
+//                                   disabled={runningJobId === job.id}
+//                                   className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+//                                   title="Run job"
+//                                 >
+//                                   {runningJobId === job.id ? (
+//                                     <Loader2 className="w-5 h-5 animate-spin" />
+//                                   ) : (
+//                                     <Play className="w-5 h-5" />
+//                                   )}
+//                                 </button>
+//                                 <button
+//                                   onClick={() => handleView(job)}
+//                                   className="text-muted-foreground hover:text-foreground transition-colors"
+//                                   title="View details"
+//                                 >
+//                                   <Eye className="w-5 h-5" />
+//                                 </button>
+//                                 <button
+//                                   onClick={() => handleEdit(job)}
+//                                   className="text-muted-foreground hover:text-foreground transition-colors"
+//                                   title="Edit job"
+//                                 >
+//                                   <Edit className="w-5 h-5" />
+//                                 </button>
+//                               </div>
+//                             </td>
+//                           </motion.tr>
+//                         );
+//                       })
+//                     )}
+//                   </tbody>
+//                 </table>
+//               </div>
+//             </motion.div>
  
-//       {/* Modals */}
-//       <JobViewModal
-//         isOpen={isViewModalOpen}
-//         onClose={() => setIsViewModalOpen(false)}
-//         job={selectedJob}
-//       />
+//             {/* Pagination */}
+//             {totalPages > 1 && (
+//               <div className="flex items-center justify-center gap-2 mt-6">
+//                 <button
+//                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+//                   disabled={currentPage === 1}
+//                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
+//                 >
+//                   ‹
+//                 </button>
+//                 {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
+//                   const page = i + 1;
+//                   if (
+//                     totalPages <= 10 ||
+//                     page <= 3 ||
+//                     page > totalPages - 2 ||
+//                     Math.abs(page - currentPage) <= 1
+//                   ) {
+//                     return (
+//                       <button
+//                         key={page}
+//                         onClick={() => setCurrentPage(page)}
+//                         className={`w-10 h-10 rounded-full text-sm font-medium transition-colors ${
+//                           currentPage === page
+//                             ? "bg-primary text-primary-foreground"
+//                             : "text-muted-foreground hover:text-foreground"
+//                         }`}
+//                       >
+//                         {page}
+//                       </button>
+//                     );
+//                   } else if (page === 4 && currentPage > 5) {
+//                     return (
+//                       <span key="dots1" className="text-muted-foreground">
+//                         ...
+//                       </span>
+//                     );
+//                   } else if (
+//                     page === totalPages - 2 &&
+//                     currentPage < totalPages - 4
+//                   ) {
+//                     return (
+//                       <span key="dots2" className="text-muted-foreground">
+//                         ...
+//                       </span>
+//                     );
+//                   }
+//                   return null;
+//                 })}
+//                 <button
+//                   onClick={() =>
+//                     setCurrentPage((p) => Math.min(totalPages, p + 1))
+//                   }
+//                   disabled={currentPage === totalPages}
+//                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
+//                 >
+//                   ›
+//                 </button>
+//               </div>
+//             )}
+//           </div>
+//         </main>
  
-//       <JobEditModal
-//         isOpen={isEditModalOpen}
-//         onClose={() => setIsEditModalOpen(false)}
-//         job={selectedJob}
-//       />
+//         {/* Create Job Modal */}
+//         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+//           <DialogContent className="sm:max-w-md">
+//             <DialogHeader>
+//               <DialogTitle>Create New Job</DialogTitle>
+//             </DialogHeader>
+//             <div className="space-y-4 py-4">
+//               <div className="space-y-2">
+//                 <Label htmlFor="job-name">Job Name</Label>
+//                 <Input
+//                   id="job-name"
+//                   placeholder="Enter job name..."
+//                   value={jobName}
+//                   onChange={(e) => setJobName(e.target.value)}
+//                   onKeyDown={(e) => {
+//                     if (e.key === "Enter") handleCreateJob();
+//                   }}
+//                   autoFocus
+//                 />
+//               </div>
+//             </div>
+//             <DialogFooter>
+//               <Button
+//                 variant="outline"
+//                 onClick={() => setIsCreateModalOpen(false)}
+//               >
+//                 Cancel
+//               </Button>
+//               <Button onClick={handleCreateJob} disabled={!jobName.trim()}>
+//                 Next: Select Datasource
+//               </Button>
+//             </DialogFooter>
+//           </DialogContent>
+//         </Dialog>
  
-//       {/* Chatbot */}
-//       <Chatbot />
+//         {/* Modals */}
+//         <JobViewModal
+//           isOpen={isViewModalOpen}
+//           onClose={() => setIsViewModalOpen(false)}
+//           job={selectedJob}
+//         />
+ 
+//         <JobEditModal
+//           isOpen={isEditModalOpen}
+//           onClose={() => setIsEditModalOpen(false)}
+//           job={selectedJob}
+//         />
+ 
+//         {/* Chatbot */}
+//         <Chatbot />
+//       </div>
 //     </div>
 //   );
 // };
  
 // export default AutoMLJobs;
  
+ 
+
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -1236,6 +1259,7 @@ const AutoMLJobs = () => {
   const [dsLoading, setDsLoading] = useState(true);
   const [activeDsTab, setActiveDsTab] = useState<"global" | "job">("global");
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [selectedFilePath, setSelectedFilePath] = useState<string>('')
  
   const itemsPerPage = 10;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -1268,10 +1292,15 @@ const AutoMLJobs = () => {
       const userId = userData.user_id || userData.id;
  
       if (!userId) {
-        toast.error("User ID not found");
-        setDsLoading(false);
-        return;
-      }
+  toast.error("User ID not found")
+  setDsLoading(false)
+  return
+}
+
+let fetchedGlobal: GlobalDataset[] = []
+let fetchedJob: JobSpecificDataset[] = []
+
+// A. Global datasets
  
       // A. Global datasets
       try {
@@ -1294,7 +1323,8 @@ const AutoMLJobs = () => {
             isScheduled: item.is_scheduled || false,
             job_id: item.job_id,
           }));
-          setGlobalDatasets(mapped);
+          fetchedGlobal = mapped
+setGlobalDatasets(mapped)
         }
       } catch (err) {
         console.error("Global datasets fetch failed", err);
@@ -1309,23 +1339,21 @@ const AutoMLJobs = () => {
           );
           if (res.ok) {
             const data = await res.json();
-            setJobDatasets(data.datasets || []);
+           fetchedJob = data.datasets || []
+setJobDatasets(fetchedJob)
           }
         } catch (err) {
           console.error("Job-specific datasets fetch failed", err);
         }
       }
  
-      setDsLoading(false);
- 
-      // Auto-select if coming from DatasetTab
-      const preName = localStorage.getItem("selected_dataset_name");
-      if (preName) {
-        const found =
-          jobDatasets.find((d) => d.filename === preName) ||
-          globalDatasets.find((d) => d.datasetName === preName);
-        if (found) handleSelectDataset(found);
-      }
+setDsLoading(false)
+
+// Auto-select first dataset directly from fetched local variables
+const allFetched = [...fetchedJob, ...fetchedGlobal]
+if (allFetched.length > 0) {
+  handleSelectDataset(allFetched[0])
+}
     };
  
     loadDatasets();
@@ -1614,6 +1642,8 @@ const AutoMLJobs = () => {
  
       const data = await res.json();
       setPreviewData(data);
+      const filePath = `Files/Datasets/${data.user_id}/${data.job_id}/${data.dataset}.csv`
+      setSelectedFilePath(filePath)
     } catch (err: any) {
       console.error("Preview error:", err);
       toast.error(err.message || "Failed to load dataset preview");
@@ -1646,20 +1676,18 @@ const AutoMLJobs = () => {
     }
  
     try {
-      const prepared = await prepareDataset(userId, jobId, filename);
-      if (prepared) {
-        navigate(
-          mode === "compare"
-            ? "/workflow/automl/compare"
-            : "/workflow/automl/build-model",
-          {
-            state: {
-              dataset: prepared,
-              mode: mode === "compare" ? "compare" : undefined,
-            },
-          },
-        );
-      }
+      navigate(
+  mode === "compare"
+    ? "/workflow/automl/compare"
+    : "/workflow/automl/build-model",
+  {
+    state: {
+      filePath: selectedFilePath,
+      datasetName: filename,
+      mode: mode === "compare" ? "compare" : undefined,
+    },
+  },
+)
     } catch (err: any) {
       toast.error(`Preparation failed for "${filename}": ${err.message}`);
     }
@@ -1748,7 +1776,7 @@ const AutoMLJobs = () => {
                     </div>
                   ) : (
                     // ─── Flat combined list: global + job-specific ───
-                    [...globalDatasets, ...jobDatasets].map((ds) => {
+                    [...jobDatasets, ...globalDatasets].map((ds) => {
                       const isGlobal = "datasetName" in ds;
                       const name = isGlobal ? ds.datasetName : ds.filename;
  
@@ -2204,5 +2232,3 @@ const AutoMLJobs = () => {
 };
  
 export default AutoMLJobs;
- 
- 

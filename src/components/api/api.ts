@@ -1,5 +1,5 @@
-// const API_BASE_URL = "https://4.227.238.34";
-// const MODELING_API_BASE = "https://20.81.213.147";
+// const API_BASE_URL = "https://api.veriton.ai/api/service1";
+// const MODELING_API_BASE = "https://api.veriton.ai/api/service2";
  
 // export const API_BASE = API_BASE_URL;
 // export const MODELING_API = MODELING_API_BASE;
@@ -673,7 +673,33 @@
 //   if (!res.ok) throw new Error(result.detail || "Failed to delete files from agent");
 //   return result;
 // };
+// // ---------------- FINALIZE DASHBOARD JSON (MODELING_API) ----------------
+// export interface FinalizeDashboardRequest {
+//   thread_id: string;
+// }
 
+// export interface FinalizeDashboardResponse {
+//   // The response structure depends on what JSON the API returns
+//   // Adjust this based on the actual successful response
+//   [key: string]: any;
+// }
+
+// export async function finalizeDashboardJson(threadId: string): Promise<any> {
+//   const response = await fetch(`https://api.veriton.ai/api/service2/finalize-dashboard-json`, {
+//     method: 'POST',
+//     headers: {
+//       'Accept': 'application/json',
+//       'Content-Type': 'application/json',
+//     },
+//     body: JSON.stringify({ thread_id: threadId })
+//   });
+
+//   if (!response.ok) {
+//     throw new Error(`Failed to finalize dashboard: ${response.statusText}`);
+//   }
+
+//   return response.json();
+// }
 
 const API_BASE_URL = "https://api.veriton.ai/api/service1";
 const MODELING_API_BASE = "https://api.veriton.ai/api/service2";
@@ -1362,7 +1388,7 @@ export interface FinalizeDashboardResponse {
 }
 
 export async function finalizeDashboardJson(threadId: string): Promise<any> {
-  const response = await fetch(`https://api.veriton.ai/api/service2/finalize-dashboard-json`, {
+  const response = await fetch(`${MODELING_API}/finalize-dashboard-json`, {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
@@ -1377,3 +1403,179 @@ export async function finalizeDashboardJson(threadId: string): Promise<any> {
 
   return response.json();
 }
+
+// ---------------- MODELING DATA ----------------
+
+export const getModelingData = async (
+  userId: string,
+  jobId: string
+): Promise<any> => {
+  const res = await fetch(`${MODELING_API}/api/status/${userId}/${jobId}`, {
+    method: "GET",
+    headers: { "Accept": "application/json", ...getAuthHeaders() }
+  });
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch modeling data");
+  // /api/status returns { status, data } — we want the data object
+  return result.data ?? result;
+};
+
+// ---------------- ENTITIES ----------------
+
+export const getEntities = async (
+  userId: string,
+  jobId: string
+): Promise<any> => {
+  const res = await fetch(`${MODELING_API}/api/entities/${userId}/${jobId}`, {
+    method: "GET",
+    headers: { "Accept": "application/json", ...getAuthHeaders() }
+  });
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch entities");
+  return result;
+};
+
+export interface EntityPatchPayload {
+  primary_keys?: string[];
+  columns?: Array<{
+    name: string;
+    is_primary_key?: boolean;
+    is_foreign_key?: boolean;
+    data_type?: string;
+    references?: string;
+  }>;
+}
+
+export const patchEntity = async (
+  userId: string,
+  jobId: string,
+  entityName: string,
+  payload: EntityPatchPayload
+): Promise<any> => {
+  const res = await fetch(
+    `${MODELING_API}/api/entities/${userId}/${jobId}/${encodeURIComponent(entityName)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to update entity");
+  return result;
+};
+
+// ---------------- RELATIONSHIPS ----------------
+
+export interface RelationshipPayload {
+  from_table: string;
+  from_column: string;
+  to_table: string;
+  to_column: string;
+  relationship_type: string;
+  description?: string;
+}
+
+export const addRelationship = async (
+  userId: string,
+  jobId: string,
+  payload: RelationshipPayload
+): Promise<any> => {
+  const res = await fetch(
+    `${MODELING_API}/api/relationships/${userId}/${jobId}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to add relationship");
+  return result;
+};
+
+export const deleteRelationship = async (
+  userId: string,
+  jobId: string,
+  relationshipId: string
+): Promise<any> => {
+  const res = await fetch(
+    `${MODELING_API}/api/relationships/${userId}/${jobId}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify({ relationship_id: relationshipId })
+    }
+  );
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to delete relationship");
+  return result;
+};
+
+// ---------------- MATERIALIZE ----------------
+
+export interface MaterializeResponse {
+  message: string;
+  job_instance_id: string;
+  user_id: string;
+  job_id: string;
+  status_url: string;
+}
+
+export interface MaterializeStatusResponse {
+  job_instance_id: string;
+  fabric_status: string;
+  materialized_tables: string[];
+  failed_tables: string[];
+  table_prefix: string;
+  ready_for_preview: boolean;
+  start_time: string | null;
+  end_time: string | null;
+  error: any | null;
+}
+
+export const submitMaterializeJob = async (
+  userId: string,
+  jobId: string,
+  containerName: string = "userdata"
+): Promise<MaterializeResponse> => {
+  const res = await fetch(
+    `${MODELING_API}/api/materialize?user_id=${encodeURIComponent(userId)}&job_id=${encodeURIComponent(jobId)}&container_name=${encodeURIComponent(containerName)}`,
+    {
+      method: "POST",
+      headers: { "Accept": "application/json", ...getAuthHeaders() }
+    }
+  );
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || result.message || "Failed to submit materialize job");
+  return result;
+};
+
+export const getMaterializeStatus = async (
+  jobInstanceId: string,
+  userId: string,
+  jobId: string
+): Promise<MaterializeStatusResponse> => {
+  const res = await fetch(
+    `${MODELING_API}/api/materialize/status?job_instance_id=${encodeURIComponent(jobInstanceId)}&user_id=${encodeURIComponent(userId)}&job_id=${encodeURIComponent(jobId)}`,
+    {
+      method: "GET",
+      headers: { "Accept": "application/json", ...getAuthHeaders() }
+    }
+  );
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || result.message || "Failed to fetch materialize status");
+  return result;
+};

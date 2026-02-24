@@ -8,11 +8,14 @@
 //   FileText,
 //   AlertCircle,
 //   Download,
+//   Loader2,
 // } from "lucide-react";
 // import { Button } from "@/components/ui/button";
 // import {
 //   Dialog,
 //   DialogContent,
+//   DialogDescription,
+//   DialogFooter,
 //   DialogHeader,
 //   DialogTitle,
 // } from "@/components/ui/dialog";
@@ -27,21 +30,19 @@
 // import { toast } from "@/hooks/use-toast";
 // import { motion } from "framer-motion";
 // import { OneLakeConnector } from "./OneLakeConnector";
+// import Header from "../layout/Header";
+// import { cn } from "@/lib/utils";
 
 // // get user email from localStorage
 // const getUserFromLocalStorage = () => {
 //   try {
-//     const raw = localStorage.getItem("aivolve_user");
+//     const raw = localStorage.getItem("user");
 //     if (!raw) return null;
 //     return JSON.parse(raw) as { email?: string; [k: string]: any };
 //   } catch (e) {
 //     return null;
 //   }
 // };
-
-// interface TestTabProps {
-//   onBackToJobs: () => void;
-// }
 
 // interface TrainedModel {
 //   id: string;
@@ -116,46 +117,29 @@
 //   };
 // }
 
-// const normalizeOneLakePath = (path: string) => {
-//   const tablesIndex = path.indexOf("Tables/");
-//   const filesIndex = path.indexOf("Files/");
+// // Add these interfaces if not already present
+// interface DatasetOption {
+//   id: string;
+//   name: string; // datasetName or filename
+//   job_id?: string;
+//   user_id?: string;
+//   rows?: number;
+//   columns?: number;
+//   last_modified?: string;
+//   type: "global" | "job-specific";
+// }
 
-//   if (tablesIndex !== -1) {
-//     return path.substring(tablesIndex);
-//   }
+// interface PreviewData {
+//   columns: string[];
+//   preview_rows: Record<string, any>[];
+//   total_rows: number;
+//   preview_row_count: number;
+// }
 
-//   if (filesIndex !== -1) {
-//     return path.substring(filesIndex);
-//   }
-
-//   return path; // fallback (should not happen)
-// };
-
-// const jsonToCsv = (rows: any[]): string => {
-//   if (!rows || rows.length === 0) return "";
-
-//   const headers = Object.keys(rows[0]);
-
-//   const csvLines = [
-//     headers.join(","), // header row
-//     ...rows.map((row) =>
-//       headers
-//         .map((h) => JSON.stringify(row[h] ?? "")) // safe stringify
-//         .join(",")
-//     ),
-//   ];
-
-//   return csvLines.join("\n");
-// };
-
-// const JOBS_API =
-//   "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/user_models_summary";
-
-// const ONELAKE_BASE_URL =
-//   "https://automl-onelake-webapp-eedahsgvbug3apc6.eastus-01.azurewebsites.net";
+// const JOBS_API = "https://api.veriton.ai/api/service3/user_models_summary";
 
 // const MODEL_TEST_HISTORY_API =
-//   "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/model_test_history";
+//   "https://api.veriton.ai/api/service3/model_test_history";
 
 // type UploadSource =
 //   | "choose"
@@ -165,48 +149,25 @@
 //   | "local"
 //   | "preview";
 
-// const TestTab = ({ onBackToJobs }: TestTabProps) => {
+// const TestTab = () => {
 //   const navigate = useNavigate();
 //   const [trainedModels, setTrainedModels] = useState<TrainedModel[]>([]);
 //   const [uploadModalOpen, setUploadModalOpen] = useState(false);
 //   const [uploadWizardStep, setUploadWizardStep] = useState<
 //     UploadSource | "preview"
 //   >("choose");
+//   // Add this inside the TestTab component function
+//   const mapMetrics = (obj: any): TestMetric[] | undefined => {
+//     if (!obj) return undefined;
+//     return Object.entries(obj).map(([name, value]) => ({
+//       name: String(name),
+//       testing: Number(value), // convert to number – very important for display
+//     }));
+//   };
 
 //   // upload-source specific states
 //   const [selectedUploadSource, setSelectedUploadSource] =
 //     useState<UploadSource | null>(null);
-
-//   // ADLS fields
-//   const [adlsStorageAccount, setAdlsStorageAccount] = useState("");
-//   const [adlsFileSystem, setAdlsFileSystem] = useState("");
-//   const [adlsFilePath, setAdlsFilePath] = useState("");
-//   const [adlsAccessKey, setAdlsAccessKey] = useState("");
-
-//   // Delta fields
-//   const [deltaWorkspaceUrl, setDeltaWorkspaceUrl] = useState("");
-//   const [deltaCatalogName, setDeltaCatalogName] = useState("");
-//   const [deltaSchemaName, setDeltaSchemaName] = useState("");
-//   const [deltaTableName, setDeltaTableName] = useState("");
-//   const [deltaToken, setDeltaToken] = useState("");
-
-//   // OneLake fields & options
-//   const [oneLakeWorkspace, setOneLakeWorkspace] = useState("");
-//   const [oneLakeLakehouse, setOneLakeLakehouse] = useState("");
-//   const [oneLakePath, setOneLakePath] = useState(""); // final selected full_path or path
-//   const [oneLakeMode, setOneLakeMode] = useState<"files" | "tables" | "">("");
-//   const [oneLakeFolders, setOneLakeFolders] = useState<string[]>([]);
-//   const [oneLakeFiles, setOneLakeFiles] = useState<any[]>([]); // items from API (name, full_path, last_modified)
-//   const [oneLakeTables, setOneLakeTables] = useState<string[]>([]); // table folder names when mode=tables
-//   const [oneLakeLoading, setOneLakeLoading] = useState(false);
-//   const [oneLakeError, setOneLakeError] = useState("");
-//   const [selectedOneLakeFolder, setSelectedOneLakeFolder] = useState("");
-//   const [selectedOneLakeFile, setSelectedOneLakeFile] = useState("");
-//   const [selectedOneLakeTable, setSelectedOneLakeTable] = useState("");
-//   const [oneLakeCurrentPath, setOneLakeCurrentPath] = useState(""); // e.g. Files or Tables/<table>
-
-//   // Local file
-//   const [localFile, setLocalFile] = useState<File | null>(null);
 
 //   // Reuse existing test UI state
 //   const [viewResultsModalOpen, setViewResultsModalOpen] = useState(false);
@@ -219,6 +180,19 @@
 
 //   const [page, setPage] = useState(0); // current page index
 //   const [hasNextPage, setHasNextPage] = useState(true);
+//   const [datasetSelectionOpen, setDatasetSelectionOpen] = useState(false);
+//   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+
+//   const [datasetModalOpen, setDatasetModalOpen] = useState(false);
+//   const [datasets, setDatasets] = useState<DatasetOption[]>([]);
+//   const [selectedTestDataset, setSelectedTestDataset] =
+//     useState<DatasetOption | null>(null);
+//   const [datasetPreview, setDatasetPreview] = useState<PreviewData | null>(
+//     null,
+//   ); // reuse type from Jobs.tsx or define similar
+//   const [previewLoading, setPreviewLoading] = useState(false);
+//   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+//   const [datasetsLoading, setDatasetsLoading] = useState(false);
 
 //   // Fetch jobs on mount
 //   useEffect(() => {
@@ -301,13 +275,6 @@
 //             .replace(/\.csv$/i, "")
 //             .replace(/\.parquet$/i, "");
 
-//           // ✅ Remove long parquet file prefixes (part-00000-...)
-//           // if (dataset.startsWith('part-') && dataset.includes('-')) {
-//           //   // This is a raw parquet filename, extract just the base name
-//           //   // For now, show a shortened version
-//           //   dataset = 'parquet_file'
-//           // }
-
 //           const func = item.task_type || item.function || item.task || "—";
 
 //           const modelName =
@@ -351,33 +318,120 @@
 //     // eslint-disable-next-line react-hooks/exhaustive-deps
 //   }, [page]);
 
+//   const loadAvailableDatasets = async () => {
+//     setDatasetsLoading(true);
+//     const user = getUserFromLocalStorage();
+//     const userId = user?.user_id || user?.id; // Adjust based on your localStorage key
+//     const userEmail = user?.email;
+
+//     if (!userId || !userEmail) {
+//       toast({
+//         title: "Error",
+//         description: "Missing user info",
+//         variant: "destructive",
+//       });
+//       setDatasetsLoading(false);
+//       return;
+//     }
+
+//     const allDatasets: DatasetOption[] = [];
+
+//     try {
+//       // Global datasets (/datasets API)
+//       const globalRes = await fetch(
+//         `https://api.veriton.ai/api/service2/datasets?user_id=${userId}`,
+//       );
+//       if (globalRes.ok) {
+//         const data = await globalRes.json();
+//         allDatasets.push(
+//           ...data.map((item: any, idx: number) => ({
+//             id: `global-${idx}`,
+//             name: item.dataset_name || "Unnamed",
+//             job_id: item.job_id,
+//             user_id: userId,
+//             rows: item.rows,
+//             columns: item.columns_count,
+//             last_modified: item.completed_at,
+//             type: "global" as const,
+//           })),
+//         );
+//       } else {
+//         console.error("Global datasets failed:", globalRes.status);
+//       }
+
+//       // Job-specific datasets (/list-datasets API)
+//       const currentJobId = localStorage.getItem("current_job_id"); // Or fetch if needed
+//       if (currentJobId) {
+//         const jobRes = await fetch(
+//           `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${currentJobId}`,
+//         );
+//         if (jobRes.ok) {
+//           const data = await jobRes.json();
+//           allDatasets.push(
+//             ...(data.datasets || []).map((d: any, idx: number) => ({
+//               id: `job-${idx}`,
+//               name: d.filename,
+//               job_id: currentJobId,
+//               user_id: userId,
+//               last_modified: d.date_modified,
+//               type: "job-specific" as const,
+//             })),
+//           );
+//         } else {
+//           console.error("Job datasets failed:", jobRes.status);
+//         }
+//       }
+
+//       setDatasets(allDatasets);
+//     } catch (err) {
+//       console.error("Datasets fetch error:", err);
+//       toast({ title: "Failed to load datasets", variant: "destructive" });
+//     } finally {
+//       setDatasetsLoading(false);
+//     }
+//   };
+
+//   const handleSelectTestDataset = async (ds: DatasetOption) => {
+//     setSelectedTestDataset(ds);
+//     setPreviewLoading(true);
+//     setDatasetPreview(null);
+
+//     if (!ds.job_id || !ds.user_id) {
+//       toast({
+//         title: "Error",
+//         description: "Missing job/user ID for preview",
+//         variant: "destructive",
+//       });
+//       setPreviewLoading(false);
+//       return;
+//     }
+
+//     try {
+//       const url = `https://api.veriton.ai/api/service2/preview-dataset?user_id=${ds.user_id}&job_id=${ds.job_id}&datasetname=${encodeURIComponent(ds.name)}`;
+//       const res = await fetch(url);
+//       if (!res.ok) {
+//         const errText = await res.text().catch(() => "");
+//         throw new Error(`Preview failed: ${res.status} - ${errText}`);
+//       }
+//       const data = await res.json();
+//       setDatasetPreview(data);
+//       setSelectedJobId(ds.job_id); // Store for payload
+//     } catch (err) {
+//       console.error("Preview error:", err);
+//       toast({ title: "Failed to load preview", variant: "destructive" });
+//     } finally {
+//       setPreviewLoading(false);
+//     }
+//   };
+
 //   // ======= Upload modal flow =======
 //   const openUploadWizard = () => {
-//     setUploadWizardStep("choose");
-//     setSelectedUploadSource(null);
-//     // clear fields
-//     setAdlsStorageAccount("");
-//     setAdlsFileSystem("");
-//     setAdlsFilePath("");
-//     setAdlsAccessKey("");
-//     setDeltaWorkspaceUrl("");
-//     setDeltaCatalogName("");
-//     setDeltaSchemaName("");
-//     setDeltaTableName("");
-//     setDeltaToken("");
-//     setOneLakeWorkspace("");
-//     setOneLakeLakehouse("");
-//     setOneLakePath("");
-//     setOneLakeMode("");
-//     setOneLakeFolders([]);
-//     setOneLakeFiles([]);
-//     setOneLakeTables([]);
-//     setSelectedOneLakeFolder("");
-//     setSelectedOneLakeFile("");
-//     setSelectedOneLakeTable("");
-//     setOneLakeCurrentPath("");
-//     setLocalFile(null);
 //     setUploadModalOpen(true);
+//     setSelectedTestDataset(null);
+//     setDatasetPreview(null);
+//     setSelectedJobId(null);
+//     loadAvailableDatasets(); // Fetch datasets on open
+//     setDatasetSelectionOpen(true);
 //   };
 
 //   const selectUploadSource = (src: UploadSource) => {
@@ -390,381 +444,12 @@
 //     setSelectedUploadSource(null);
 //   };
 
-//   const validateUploadParams = (): boolean => {
-//     if (!selectedUploadSource) {
-//       toast({ title: "Select source", description: "Please choose a source." });
-//       return false;
-//     }
-//     if (selectedUploadSource === "adls") {
-//       if (!adlsStorageAccount || !adlsFileSystem || !adlsFilePath) {
-//         toast({
-//           title: "Missing fields",
-//           description: "Please fill all ADLS fields.",
-//         });
-//         return false;
-//       }
-//     }
-//     if (selectedUploadSource === "delta") {
-//       if (
-//         !deltaWorkspaceUrl ||
-//         !deltaCatalogName ||
-//         !deltaSchemaName ||
-//         !deltaTableName
-//       ) {
-//         toast({
-//           title: "Missing fields",
-//           description: "Please fill all Delta fields.",
-//         });
-//         return false;
-//       }
-//     }
-//     if (selectedUploadSource === "onelake") {
-//       // require workspace & lakehouse and oneLakePath to be selected
-//       if (!oneLakeWorkspace || !oneLakeLakehouse) {
-//         toast({
-//           title: "Missing fields",
-//           description: "Please fill workspace & lakehouse.",
-//         });
-//         return false;
-//       }
-//       if (!oneLakeMode) {
-//         toast({
-//           title: "Missing fields",
-//           description: "Please choose Files or Tables.",
-//         });
-//         return false;
-//       }
-//       if (!oneLakePath) {
-//         toast({
-//           title: "Missing fields",
-//           description: "Please select a file/table path.",
-//         });
-//         return false;
-//       }
-//     }
-//     if (selectedUploadSource === "local") {
-//       if (!localFile) {
-//         toast({
-//           title: "No file",
-//           description: "Please choose a local CSV file.",
-//         });
-//         return false;
-//       }
-//       if (!localFile.name.toLowerCase().endsWith(".csv")) {
-//         toast({
-//           title: "Invalid file",
-//           description: "Only CSV files are allowed.",
-//         });
-//         return false;
-//       }
-//     }
-//     return true;
-//   };
-
-//   const fetchOneLakeContents = async (
-//     workspace: string,
-//     lakehouse: string,
-//     path: string
-//   ) => {
-//     setOneLakeLoading(true);
-//     setOneLakeError("");
-//     // DO NOT blindly clear everything
-//     // Only clear files/folders/tables if we're at the root of Files or Tables
-//     const isRootFiles = path === "Files";
-//     const isRootTables = path === "Tables";
-//     const isTableFolder = path.startsWith("Tables/") && path !== "Tables";
-
-//     if (isRootFiles || isRootTables || isTableFolder) {
-//       setOneLakeFiles([]); // always clear files when navigating
-//       setSelectedOneLakeFile("");
-//       if (isTableFolder) {
-//         // We're inside a table → do NOT clear the table list!
-//       } else {
-//         // We're at root → safe to clear folders/tables
-//         setOneLakeFolders([]);
-//         setOneLakeTables([]);
-//         setSelectedOneLakeFolder("");
-//         setSelectedOneLakeTable("");
-//       }
-//     }
-
-//     setOneLakeCurrentPath(path || "");
-
-//     try {
-//       if (!workspace || !lakehouse) {
-//         setOneLakeError("Workspace and lakehouse are required");
-//         setOneLakeLoading(false);
-//         return null;
-//       }
-
-//       const encodedWorkspace = encodeURIComponent(workspace);
-//       const encodedLakehouse = encodeURIComponent(lakehouse);
-//       const encodedPath = encodeURIComponent(path);
-//       const url = `${ONELAKE_BASE_URL}/workspaces/${encodedWorkspace}/lakehouses/${encodedLakehouse}/contents?path=${encodedPath}`;
-
-//       const res = await fetch(url, {
-//         method: "GET",
-//         headers: { accept: "application/json" },
-//       });
-//       if (!res.ok) {
-//         const txt = await res.text().catch(() => "");
-//         console.error("OneLake contents error", res.status, txt);
-//         setOneLakeError(`Failed to fetch contents: ${res.status}`);
-//         setOneLakeLoading(false);
-//         return null;
-//       }
-
-//       const data = await res.json();
-//       console.log("api response", data);
-
-//       // Only populate tables when at root Tables
-//       if (
-//         isRootTables &&
-//         Array.isArray(data.folders) &&
-//         data.folders.length > 0
-//       ) {
-//         const folderNames = data.folders
-//           .map((f: any) => (typeof f === "string" ? f : f?.name ?? ""))
-//           .filter(Boolean);
-//         setOneLakeTables(folderNames);
-//       }
-
-//       // Populate folders (for Files mode or subfolders)
-//       if (
-//         !isTableFolder &&
-//         Array.isArray(data.folders) &&
-//         data.folders.length > 0
-//       ) {
-//         const folderNames = data.folders
-//           .map((f: any) => (typeof f === "string" ? f : f?.name ?? ""))
-//           .filter(Boolean);
-//         setOneLakeFolders(folderNames);
-//       }
-
-//       // Always handle files
-//       if (Array.isArray(data.files) && data.files.length > 0) {
-//         const files = data.files.map((f: any) => ({
-//           name: f.name,
-//           full_path: f.full_path,
-//           size_bytes: f.size_bytes,
-//           last_modified: f.last_modified,
-//           relative_path: f.relative_path,
-//         }));
-//         setOneLakeFiles(files);
-//       }
-
-//       // Fallback for items array
-//       if (
-//         Array.isArray((data as any).items) &&
-//         (data as any).items.length > 0
-//       ) {
-//         const items = (data as any).items;
-//         const foldersFromItems = items
-//           .filter((i: any) => i.type === "folder" || i.is_folder)
-//           .map((i: any) => i.name || i.path || "");
-//         const filesFromItems = items
-//           .filter((i: any) => !i.type || i.type === "file")
-//           .map((i: any) => ({
-//             name: i.name || i.path,
-//             full_path: i.full_path || i.path || i.name,
-//             size_bytes: i.size_bytes,
-//             last_modified: i.last_modified,
-//             relative_path: i.relative_path || i.path,
-//           }));
-//         if (!isTableFolder && foldersFromItems.length) {
-//           setOneLakeFolders((prev) => [...prev, ...foldersFromItems]);
-//         }
-//         if (filesFromItems.length)
-//           setOneLakeFiles((prev) => [...prev, ...filesFromItems]);
-//       }
-
-//       if (
-//         (!Array.isArray(data.folders) || data.folders.length === 0) &&
-//         (!Array.isArray(data.files) || data.files.length === 0) &&
-//         (!Array.isArray((data as any).items) ||
-//           (data as any).items.length === 0)
-//       ) {
-//         if (!isTableFolder) {
-//           setOneLakeError("No folders or files found at this path");
-//         }
-//       }
-
-//       setOneLakeLoading(false);
-//       return data;
-//     } catch (err) {
-//       console.error("fetchOneLakeContents error", err);
-//       setOneLakeError(
-//         "Failed to fetch OneLake contents — check names or CORS."
-//       );
-//       setOneLakeLoading(false);
-//       return null;
-//     }
-//   };
-
-//   // Drill into a folder (Files mode)
-//   const drillOneLakeFolder = async (folderName: string) => {
-//     if (!folderName) return;
-//     const root = oneLakeMode === "files" ? "Files" : "Tables";
-//     const newPath = `${root}/${folderName}`;
-//     await fetchOneLakeContents(oneLakeWorkspace, oneLakeLakehouse, newPath);
-//   };
-
-//   // When user selects a table from Tables root, call contents for Tables/<table> to list files
-//   const handleOneLakeTableSelect = async (tableName: string) => {
-//     if (!tableName) return;
-//     setSelectedOneLakeTable(tableName);
-//     const path = `Tables/${tableName}`;
-//     const data = await fetchOneLakeContents(
-//       oneLakeWorkspace,
-//       oneLakeLakehouse,
-//       path
-//     );
-//     // don't auto-preview (per your instruction). We still set oneLakePath optionally to a file's full_path if you want.
-//     // If there are files in the folder, set oneLakePath to first file full_path (so Connect will use it)
-//     if (data && Array.isArray(data.files) && data.files.length > 0) {
-//       const sorted = data.files
-//         .map((f: any) => ({
-//           ...f,
-//           ts: f.last_modified ? new Date(f.last_modified).getTime() : 0,
-//         }))
-//         .sort((a: any, b: any) => (b.ts || 0) - (a.ts || 0));
-//       const latestFullPath = sorted[0]?.full_path || sorted[0]?.path || "";
-//       setOneLakePath(latestFullPath || path);
-//       setSelectedOneLakeFile(sorted[0]?.name || "");
-//     } else {
-//       // if no files, set path to the folder path (so user can still connect if they want)
-//       setOneLakePath(path);
-//     }
-//   };
-
-//   const handleOneLakeFileSelect = (fileName: string) => {
-//     setSelectedOneLakeFile(fileName);
-//     const match = oneLakeFiles.find(
-//       (f) => f.name === fileName || f.full_path === fileName
-//     );
-//     const chosenPath = match
-//       ? match.full_path
-//       : oneLakeCurrentPath
-//       ? `${oneLakeCurrentPath}/${fileName}`
-//       : fileName;
-//     setOneLakePath(chosenPath);
-//   };
-
-//   // When user connects & uploads, prepare uploadedFile (for local use the selected file;
-//   // for remote sources create a placeholder File that downstream upload API can process)
-//   const handleConnectAndUpload = async () => {
-//     if (!validateUploadParams()) return;
-
-//     // For local, use the actual file
-//     if (selectedUploadSource === "local" && localFile) {
-//       setUploadedFile(localFile);
-//       toast({
-//         title: "File ready",
-//         description: `Local file ${localFile.name} selected.`,
-//       });
-//       setUploadWizardStep("preview");
-//       return;
-//     }
-
-//     // For remote sources we create a placeholder File with dataset name to pass downstream.
-//     let datasetName = "remote_dataset.csv";
-//     if (selectedUploadSource === "adls") {
-//       datasetName = adlsFilePath.split("/").pop() || datasetName;
-//     } else if (selectedUploadSource === "delta") {
-//       datasetName = `${deltaTableName}.csv`;
-//     } else if (selectedUploadSource === "onelake") {
-//       try {
-//         if (!oneLakePath) {
-//           toast({
-//             title: "No table selected",
-//             description: "Please select a OneLake table first.",
-//           });
-//           return;
-//         }
-
-//         // Get the relative_path from the selected file
-//         const selectedFileObj = oneLakeFiles.find(
-//           (f) => f.full_path === oneLakePath || f.name === selectedOneLakeFile
-//         );
-
-//         if (!selectedFileObj || !selectedFileObj.relative_path) {
-//           throw new Error("Could not find relative path for selected file");
-//         }
-
-//         const relativePath = selectedFileObj.relative_path;
-
-//         // Download the parquet file directly
-//         const downloadUrl =
-//           `${ONELAKE_BASE_URL}/workspaces/${encodeURIComponent(
-//             oneLakeWorkspace
-//           )}` +
-//           `/lakehouses/${encodeURIComponent(oneLakeLakehouse)}` +
-//           `/download?path=${encodeURIComponent(relativePath)}`;
-
-//         const res = await fetch(downloadUrl, {
-//           headers: { accept: "application/octet-stream" },
-//         });
-
-//         if (!res.ok) {
-//           throw new Error("Failed to download OneLake file");
-//         }
-
-//         // Get the blob (parquet file)
-//         const blob = await res.blob();
-
-//         // ✅ Extract clean table name from path
-//         let displayName = "onelake_data";
-
-//         if (selectedOneLakeTable) {
-//           // If we have a selected table name, use it
-//           displayName = selectedOneLakeTable;
-//         } else if (relativePath.includes("Tables/")) {
-//           // Extract table name from path like "Tables/iris/part-00000-..."
-//           const parts = relativePath.split("/");
-//           const tableIndex = parts.indexOf("Tables");
-//           if (tableIndex !== -1 && parts.length > tableIndex + 1) {
-//             displayName = parts[tableIndex + 1];
-//           }
-//         }
-
-//         // Create File object with clean table name
-//         const parquetFile = new File([blob], `${displayName}.parquet`, {
-//           type: "application/octet-stream",
-//         });
-
-//         setUploadedFile(parquetFile);
-
-//         // toast({
-//         //   title: "File Ready",
-//         //   description: `Downloaded ${displayName} from OneLake`,
-//         // });
-//       } catch (err) {
-//         console.error("OneLake download error:", err);
-//         toast({
-//           title: "OneLake Error",
-//           description: "Could not download file from OneLake.",
-//           variant: "destructive",
-//         });
-//       }
-
-//       setUploadWizardStep("preview");
-//       return;
-//     }
-//   };
-//   // Local file input handler (for Upload wizard)
-//   const handleLocalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = e.target.files?.[0];
-//     if (!file) return;
-//     setLocalFile(file);
-//   };
-
 //   // ======= End upload modal flow =======
 
 //   const handleUploadClick = (model: TrainedModel) => {
 //     setSelectedModel(model);
-//     setUploadedFile(null);
 //     setTestResults(null);
-//     openUploadWizard();
+//     openUploadWizard(); // This now triggers dataset load
 //   };
 
 //   const handleViewResults = async (model: TrainedModel) => {
@@ -781,18 +466,9 @@
 //       return;
 //     }
 
-//     const mapMetrics = (obj: any): TestMetric[] | undefined => {
-//       if (!obj) return undefined;
-
-//       return Object.entries(obj).map(([name, value]) => ({
-//         name,
-//         testing: Number(value), // <-- force value to number
-//       }));
-//     };
-
 //     try {
 //       const url = `${MODEL_TEST_HISTORY_API}/${encodeURIComponent(
-//         model.id
+//         model.id,
 //       )}?user_email=${encodeURIComponent(userEmail)}`;
 //       const res = await fetch(url, { method: "GET" });
 //       const data = await res.json();
@@ -841,21 +517,6 @@
 //     }
 //   };
 
-//   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = e.target.files?.[0];
-//     if (file) {
-//       if (!file.name.toLowerCase().endsWith(".csv")) {
-//         toast({
-//           title: "Invalid File Type",
-//           description: "Please upload a CSV file only.",
-//           variant: "destructive",
-//         });
-//         return;
-//       }
-//       setUploadedFile(file);
-//     }
-//   };
-
 //   const fetchDriftReport = async (modelId: string, testResultId: string) => {
 //     const userEmail = getUserFromLocalStorage()?.email;
 //     if (!userEmail) return null;
@@ -868,7 +529,7 @@
 //     });
 
 //     const res = await fetch(
-//       "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/drift/report",
+//       "https://api.veriton.ai/api/service3/drift/report",
 //       {
 //         method: "POST",
 //         headers: {
@@ -876,7 +537,7 @@
 //           accept: "application/json",
 //         },
 //         body,
-//       }
+//       },
 //     );
 
 //     if (!res.ok) {
@@ -889,20 +550,22 @@
 //   };
 
 //   const handleRunTest = async () => {
-//     if (!uploadedFile || !selectedModel) {
+//     if (!selectedModel || !selectedTestDataset || !selectedJobId) {
 //       toast({
-//         title: "No file or model",
-//         description: "Please select a model and upload a test dataset.",
+//         title: "Missing selection",
+//         description: "Select a model and dataset first.",
 //       });
 //       return;
 //     }
 
 //     const user = getUserFromLocalStorage();
 //     const userEmail = user?.email;
-//     if (!userEmail) {
+//     const userId = user?.user_id || user?.id; // Adjust as needed
+
+//     if (!userEmail || !userId) {
 //       toast({
-//         title: "Authentication error",
-//         description: "User email not found. Please log in again.",
+//         title: "Auth error",
+//         description: "User email/ID not found.",
 //         variant: "destructive",
 //       });
 //       return;
@@ -911,16 +574,28 @@
 //     setIsRunningTest(true);
 
 //     try {
-//       const formData = new FormData();
-//       formData.append("test_file", uploadedFile);
-//       formData.append("model_id", selectedModel.id);
-//       formData.append("user_email", userEmail);
-//       formData.append("return_predictions", "true");
-//       formData.append("save_predictions", "true");
+//       const filePath = `Files/Datasets/${userId}/${selectedJobId}/${selectedTestDataset.name}.csv`;
+
+//       const payload = {
+//         file_path: filePath,
+//         model_id: selectedModel.id,
+//         user_email: userEmail,
+//       };
+//       const params = new URLSearchParams();
+//       params.append("file_path", filePath);
+//       params.append("model_id", selectedModel.id);
+//       params.append("user_email", userEmail);
 
 //       const response = await fetch(
-//         "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/test_model",
-//         { method: "POST", body: formData }
+//         "https://api.veriton.ai/api/service3/test_model_v",
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/x-www-form-urlencoded",
+//             Accept: "application/json",
+//           },
+//           body: params.toString(),
+//         },
 //       );
 
 //       if (!response.ok) {
@@ -929,90 +604,43 @@
 //         toast({
 //           title: "Test Failed",
 //           description:
-//             "Failed to run test on model. Check file format or server logs.",
+//             "Failed to run test on model. Check file path or server logs.",
 //           variant: "destructive",
 //         });
-//         setIsRunningTest(false);
 //         return;
 //       }
 
 //       const data = await response.json();
-//       const fetchDriftReport = async (
-//         modelId: string,
-//         testResultId: string
-//       ) => {
-//         const userEmail = getUserFromLocalStorage()?.email;
-//         if (!userEmail) return null;
 
-//         const body = new URLSearchParams({
-//           mode: "test",
-//           user_email: userEmail,
-//           model_id: modelId,
-//           test_result_id: testResultId,
-//         });
-
-//         const res = await fetch(
-//           "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/drift/report",
-//           {
-//             method: "POST",
-//             headers: {
-//               "Content-Type": "application/x-www-form-urlencoded",
-//               accept: "application/json",
-//             },
-//             body,
-//           }
-//         );
-
-//         if (!res.ok) {
-//           console.error("Failed to fetch drift report");
-//           return null;
-//         }
-
-//         const json = await res.json();
-//         return json.drift_report;
-//       };
-
+//       // Assuming response structure is similar; adapt as needed (e.g., data.status, data.test_metrics, etc.)
 //       if (data.status !== "success") {
 //         toast({
 //           title: "Error",
 //           description: data.message || "Test failed",
 //           variant: "destructive",
 //         });
-//         setIsRunningTest(false);
 //         return;
 //       }
+
+//       // Fetch drift report (keep as-is, or adapt if endpoint changes)
 //       const driftReport = await fetchDriftReport(
-//         data.model_info.model_id,
-//         data.test_result_id
+//         selectedModel.id,
+//         data.test_result_id,
 //       );
 
-//       // -------------------------------
-//       // 🔥 Dynamic metric parser (NO training metrics)
-//       // -------------------------------
-//       const mapMetrics = (obj: any) => {
-//         if (!obj) return undefined;
-//         return Object.entries(obj).map(([name, value]) => ({
-//           name,
-//           testing: Number(value),
-//         }));
-//       };
-
+//       // Map metrics (keep your existing mapMetrics function)
 //       const metricsList = mapMetrics(data.test_metrics);
 
-//       // -------------------------------
-//       // 🔥 Add fresh test into history
-//       // -------------------------------
+//       // History entry (adapt fields if response differs)
 //       const historyEntry = {
 //         testResultId: data.test_result_id,
-//         testFileName: data.test_file,
+//         testFileName: selectedTestDataset.name, // Use dataset name instead of file name
 //         groundTruthAvailable: data.has_ground_truth,
 //         metrics: metricsList,
 //         blobPath: data.predictions_file?.blob_path,
 //       };
 
-//       // -------------------------------
-//       // 🔥 FINAL test results object
-//       // -------------------------------
+//       // Final TestResults (adapt as needed)
 //       const mappedResults: TestResults = {
 //         modelId: data.model_info.model_id,
 //         modelName: data.model_info.model_name,
@@ -1031,16 +659,14 @@
 //             })) || [],
 //         blobPath: data.predictions_file?.blob_path,
 //         testResultId: data.test_result_id,
-//         testHistory: [historyEntry], // <-- ESSENTIAL for modal display
+//         testHistory: [historyEntry],
 //       };
 
 //       setTestResults(mappedResults);
-
-//       // Update on grid so eye modal also uses new data
 //       setTrainedModels((prev) =>
 //         prev.map((m) =>
-//           m.id === selectedModel.id ? { ...m, testResults: mappedResults } : m
-//         )
+//           m.id === selectedModel.id ? { ...m, testResults: mappedResults } : m,
+//         ),
 //       );
 
 //       toast({
@@ -1048,8 +674,7 @@
 //         description: data.message || "Model tested successfully.",
 //       });
 
-//       // 🔥 Auto-open test results modal
-//       setViewResultsModalOpen(true);
+//       setViewResultsModalOpen(true); // Auto-open results
 //     } catch (err) {
 //       console.error("Exception during test:", err);
 //       toast({
@@ -1074,513 +699,332 @@
 //   };
 
 //   return (
-//     <div className="p-8">
-//       <div className="max-w-6xl mx-auto">
-//         <div className="mb-8 flex items-center justify-between">
-//           <div>
-//             <h1 className="text-2xl font-semibold text-foreground">
-//               Test Results
-//             </h1>
-//             <p className="text-muted-foreground mt-1">
-//               View and test your trained models with new data
-//             </p>
-//           </div>
-//         </div>
-
-//         {/* Models Grid */}
-//         <div className="bg-card border border-border rounded-xl overflow-hidden">
-//           <Table>
-//             <TableHeader>
-//               <TableRow className="bg-muted/50">
-//                 <TableHead className="font-semibold">Dataset</TableHead>
-//                 <TableHead className="font-semibold">Function</TableHead>
-//                 <TableHead className="font-semibold">Model Name</TableHead>
-//                 <TableHead className="font-semibold text-right">
-//                   Actions
-//                 </TableHead>
-//               </TableRow>
-//             </TableHeader>
-//             <TableBody>
-//               {isLoading && (
-//                 <TableRow>
-//                   <TableCell
-//                     colSpan={4}
-//                     className="py-6 text-center text-muted-foreground"
-//                   >
-//                     Loading jobs…
-//                   </TableCell>
-//                 </TableRow>
-//               )}
-
-//               {!isLoading && trainedModels.length === 0 && (
-//                 <TableRow>
-//                   <TableCell
-//                     colSpan={4}
-//                     className="py-6 text-center text-muted-foreground"
-//                   >
-//                     No trained models found.
-//                   </TableCell>
-//                 </TableRow>
-//               )}
-
-//               {!isLoading &&
-//                 trainedModels.map((model) => (
-//                   <TableRow key={model.id} className="hover:bg-muted/30">
-//                     <TableCell className="font-medium">
-//                       {model.dataset}
-//                     </TableCell>
-//                     <TableCell>{model.function}</TableCell>
-//                     <TableCell>{model.modelName}</TableCell>
-//                     <TableCell className="text-right">
-//                       <div className="flex items-center justify-end gap-2">
-//                         <Button
-//                           variant="outline"
-//                           size="sm"
-//                           onClick={() => handleUploadClick(model)}
-//                           className="gap-2"
-//                         >
-//                           <Upload className="w-4 h-4" />
-//                           Upload
-//                         </Button>
-//                         <Button
-//                           variant="ghost"
-//                           size="sm"
-//                           onClick={() => handleViewResults(model)}
-//                           className="gap-2"
-//                         >
-//                           <Eye className="w-4 h-4" />
-//                         </Button>
-//                       </div>
-//                     </TableCell>
-//                   </TableRow>
-//                 ))}
-//             </TableBody>
-//           </Table>
-//         </div>
-//         {/* Pagination */}
-//         {/* Pagination */}
-//         {(page > 0 || hasNextPage) && (
-//           <div className="flex justify-center mt-6">
-//             <div className="flex items-center gap-4">
-//               {/* Previous → only if not first page */}
-//               {page > 0 && (
+//     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
+//       <Header />
+//       <div className="flex-1 flex flex-col overflow-auto">
+//         <main className="px-6 py-6">
+//           <div className="max-w-7xl mx-auto w-full">
+//             <div className="mb-8 flex items-start justify-between">
+//               <div>
+//                 <h1 className="text-2xl font-semibold text-foreground">
+//                   Test Results
+//                 </h1>
+//                 <p className="text-muted-foreground mt-1">
+//                   View and test your trained models with new data
+//                 </p>
+//               </div>
+//               <div className="flex items-center gap-3">
 //                 <Button
 //                   variant="outline"
-//                   size="sm"
-//                   onClick={() => setPage((p) => p - 1)}
+//                   onClick={() => navigate("/workflow/automl")}
 //                 >
-//                   Previous
+//                   Back to Jobs
 //                 </Button>
-//               )}
-
-//               <span className="text-sm text-muted-foreground">
-//                 Page {page + 1}
-//               </span>
-
-//               {/* Next → ONLY if backend confirms more jobs */}
-//               {hasNextPage && (
-//                 <Button
-//                   variant="outline"
-//                   size="sm"
-//                   onClick={() => setPage((p) => p + 1)}
-//                 >
-//                   Next
-//                 </Button>
-//               )}
+//               </div>
 //             </div>
-//           </div>
-//         )}
 
-//         {trainedModels.length === 0 && !isLoading && (
-//           <div className="bg-card border border-border rounded-xl p-12 text-center mt-4">
-//             <TestTube2 className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-//             <h3 className="text-lg font-semibold text-foreground mb-2">
-//               No Trained Models
-//             </h3>
-//             <p className="text-muted-foreground max-w-md mx-auto">
-//               Build a model first to test it with new data.
-//             </p>
+//             {/* Models Grid */}
+//             <div className="bg-card border border-border rounded-xl overflow-hidden">
+//               <Table>
+//                 <TableHeader>
+//                   <TableRow className="bg-muted/50">
+//                     <TableHead className="font-semibold">Dataset</TableHead>
+//                     <TableHead className="font-semibold">Function</TableHead>
+//                     <TableHead className="font-semibold">Model Name</TableHead>
+//                     <TableHead className="font-semibold text-right">
+//                       Actions
+//                     </TableHead>
+//                   </TableRow>
+//                 </TableHeader>
+//                 <TableBody>
+//                   {isLoading && (
+//                     <TableRow>
+//                       <TableCell
+//                         colSpan={4}
+//                         className="py-6 text-center text-muted-foreground"
+//                       >
+//                         Loading jobs…
+//                       </TableCell>
+//                     </TableRow>
+//                   )}
+
+//                   {!isLoading && trainedModels.length === 0 && (
+//                     <TableRow>
+//                       <TableCell
+//                         colSpan={4}
+//                         className="py-6 text-center text-muted-foreground"
+//                       >
+//                         No trained models found.
+//                       </TableCell>
+//                     </TableRow>
+//                   )}
+
+//                   {!isLoading &&
+//                     trainedModels.map((model) => (
+//                       <TableRow key={model.id} className="hover:bg-muted/30">
+//                         <TableCell className="font-medium">
+//                           {model.dataset}
+//                         </TableCell>
+//                         <TableCell>{model.function}</TableCell>
+//                         <TableCell>{model.modelName}</TableCell>
+//                         <TableCell className="text-right">
+//                           <div className="flex items-center justify-end gap-2">
+//                             <Button
+//                               variant="outline"
+//                               size="sm"
+//                               onClick={() => handleUploadClick(model)}
+//                               className="gap-2"
+//                             >
+//                               <Upload className="w-4 h-4" />
+//                               Upload
+//                             </Button>
+//                             <Button
+//                               variant="ghost"
+//                               size="sm"
+//                               onClick={() => handleViewResults(model)}
+//                               className="gap-2"
+//                             >
+//                               <Eye className="w-4 h-4" />
+//                             </Button>
+//                           </div>
+//                         </TableCell>
+//                       </TableRow>
+//                     ))}
+//                 </TableBody>
+//               </Table>
+//             </div>
+//             {/* Pagination */}
+//             {/* Pagination */}
+//             {(page > 0 || hasNextPage) && (
+//               <div className="flex justify-center mt-6">
+//                 <div className="flex items-center gap-4">
+//                   {/* Previous → only if not first page */}
+//                   {page > 0 && (
+//                     <Button
+//                       variant="outline"
+//                       size="sm"
+//                       onClick={() => setPage((p) => p - 1)}
+//                     >
+//                       Previous
+//                     </Button>
+//                   )}
+
+//                   <span className="text-sm text-muted-foreground">
+//                     Page {page + 1}
+//                   </span>
+
+//                   {/* Next → ONLY if backend confirms more jobs */}
+//                   {hasNextPage && (
+//                     <Button
+//                       variant="outline"
+//                       size="sm"
+//                       onClick={() => setPage((p) => p + 1)}
+//                     >
+//                       Next
+//                     </Button>
+//                   )}
+//                 </div>
+//               </div>
+//             )}
+
+//             {trainedModels.length === 0 && !isLoading && (
+//               <div className="bg-card border border-border rounded-xl p-12 text-center mt-4">
+//                 <TestTube2 className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+//                 <h3 className="text-lg font-semibold text-foreground mb-2">
+//                   No Trained Models
+//                 </h3>
+//                 <p className="text-muted-foreground max-w-md mx-auto">
+//                   Build a model first to test it with new data.
+//                 </p>
+//               </div>
+//             )}
 //           </div>
-//         )}
+//         </main>
 //       </div>
 
 //       {/* Upload Wizard Modal */}
-//       <Dialog open={uploadModalOpen} onOpenChange={setUploadModalOpen}>
-//         <DialogContent
-//           className={
-//             uploadWizardStep === "preview"
-//               ? "max-w-md p-8"
-//               : "max-w-2xl max-h-[90vh] overflow-y-auto"
-//           }
-//         >
+//       <Dialog
+//         open={datasetSelectionOpen}
+//         onOpenChange={setDatasetSelectionOpen}
+//       >
+//         <DialogContent className="max-w-2xl max-h-[85vh]">
 //           <DialogHeader>
-//             <DialogTitle className="text-xl font-semibold">
-//               {uploadWizardStep === "choose"
-//                 ? "Choose upload source"
-//                 : uploadWizardStep === "preview"
-//                 ? "Ready to Test Model"
-//                 : `Connect: ${selectedUploadSource?.toUpperCase()}`}
+//             <DialogTitle>Select Dataset to Test</DialogTitle>
+//             <DialogDescription>
+//               Choose a dataset to run predictions with model:{" "}
+//               <strong>{selectedModel?.modelName}</strong>
+//             </DialogDescription>
+//           </DialogHeader>
+
+//           <div className="mt-4 max-h-[55vh] overflow-y-auto pr-2">
+//             {datasetsLoading ? (
+//               <div className="py-12 text-center text-muted-foreground">
+//                 Loading datasets...
+//               </div>
+//             ) : datasets.length === 0 ? (
+//               <div className="py-12 text-center text-muted-foreground">
+//                 No datasets available
+//               </div>
+//             ) : (
+//               <div className="space-y-1.5">
+//                 {datasets.map((ds) => (
+//                   <button
+//                     key={ds.id}
+//                     onClick={() => {
+//                       handleSelectTestDataset(ds); // ← this already sets selected + fetches preview
+//                       setPreviewDialogOpen(true); // ← open preview dialog
+//                       // Do NOT close selection dialog yet — keep it open behind
+//                     }}
+//                     className={cn(
+//                       "w-full text-left p-3.5 rounded-lg border transition",
+//                       selectedTestDataset?.id === ds.id
+//                         ? "border-primary bg-primary/5"
+//                         : "border-border hover:border-primary/40 hover:bg-muted/50",
+//                     )}
+//                   >
+//                     <div className="font-medium truncate">{ds.name}</div>
+//                     <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+//                       <span>{ds.type}</span>
+//                       {ds.rows && (
+//                         <span>• {ds.rows.toLocaleString()} rows</span>
+//                       )}
+//                       {ds.columns && <span>• {ds.columns} cols</span>}
+//                       {ds.last_modified && <span>• {ds.last_modified}</span>}
+//                     </div>
+//                   </button>
+//                 ))}
+//               </div>
+//             )}
+//           </div>
+
+//           <DialogFooter className="mt-6">
+//             <Button
+//               variant="outline"
+//               onClick={() => setDatasetSelectionOpen(false)}
+//             >
+//               Cancel
+//             </Button>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+//       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+//         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+//           <DialogHeader>
+//             <DialogTitle className="flex items-center justify-between">
+//               <span>Dataset Preview: {selectedTestDataset?.name}</span>
+//               <Button
+//                 variant="ghost"
+//                 size="sm"
+//                 className="h-8 px-2"
+//                 onClick={() => {
+//                   setPreviewDialogOpen(false);
+//                   // selection dialog stays open behind
+//                 }}
+//               >
+//                 Back to datasets
+//               </Button>
 //             </DialogTitle>
 //           </DialogHeader>
 
-//           <div className="space-y-4 py-4">
-//             {uploadWizardStep === "choose" && (
-//               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                 <button
-//                   onClick={() => selectUploadSource("adls")}
-//                   className="datasource-card text-left"
-//                 >
-//                   <div className="flex items-center gap-3">
-//                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-//                       AD
-//                     </div>
-//                     <div>
-//                       <p className="font-semibold">ADLS Gen2</p>
-//                       <p className="text-xs text-muted-foreground">
-//                         Connect to Azure Data Lake Storage Gen2
-//                       </p>
-//                     </div>
-//                   </div>
-//                 </button>
-
-//                 <button
-//                   onClick={() => selectUploadSource("delta")}
-//                   className="datasource-card text-left"
-//                 >
-//                   <div className="flex items-center gap-3">
-//                     <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-//                       DT
-//                     </div>
-//                     <div>
-//                       <p className="font-semibold">Delta Tables</p>
-//                       <p className="text-xs text-muted-foreground">
-//                         Fetch tables from your Delta catalog
-//                       </p>
-//                     </div>
-//                   </div>
-//                 </button>
-
-//                 <button
-//                   onClick={() => selectUploadSource("onelake")}
-//                   className="datasource-card text-left"
-//                 >
-//                   <div className="flex items-center gap-3">
-//                     <div className="w-10 h-10 rounded-lg bg-warm/10 flex items-center justify-center">
-//                       OL
-//                     </div>
-//                     <div>
-//                       <p className="font-semibold">OneLake</p>
-//                       <p className="text-xs text-muted-foreground">
-//                         Select files / tables from OneLake
-//                       </p>
-//                     </div>
-//                   </div>
-//                 </button>
-
-//                 <button
-//                   onClick={() => selectUploadSource("local")}
-//                   className="datasource-card text-left"
-//                 >
-//                   <div className="flex items-center gap-3">
-//                     <div className="w-10 h-10 rounded-lg bg-muted/10 flex items-center justify-center">
-//                       LF
-//                     </div>
-//                     <div>
-//                       <p className="font-semibold">Local File</p>
-//                       <p className="text-xs text-muted-foreground">
-//                         Upload a CSV from your machine
-//                       </p>
-//                     </div>
-//                   </div>
-//                 </button>
+//           <div className="flex-1 overflow-hidden flex flex-col">
+//             {previewLoading ? (
+//               <div className="flex-1 flex items-center justify-center text-muted-foreground">
+//                 Loading preview...
 //               </div>
-//             )}
-
-//             {uploadWizardStep === "adls" && (
-//               <div className="space-y-3">
-//                 <div>
-//                   <label className="text-sm block mb-1">
-//                     Storage Account *
-//                   </label>
-//                   <input
-//                     className="input-colored w-full"
-//                     value={adlsStorageAccount}
-//                     onChange={(e) => setAdlsStorageAccount(e.target.value)}
-//                     placeholder="mystorageacct"
-//                   />
-//                 </div>
-//                 <div>
-//                   <label className="text-sm block mb-1">
-//                     File System (container) *
-//                   </label>
-//                   <input
-//                     className="input-colored w-full"
-//                     value={adlsFileSystem}
-//                     onChange={(e) => setAdlsFileSystem(e.target.value)}
-//                     placeholder="container"
-//                   />
-//                 </div>
-//                 <div>
-//                   <label className="text-sm block mb-1">File Path *</label>
-//                   <input
-//                     className="input-colored w-full"
-//                     value={adlsFilePath}
-//                     onChange={(e) => setAdlsFilePath(e.target.value)}
-//                     placeholder="path/to/file.csv"
-//                   />
-//                 </div>
-//                 <div>
-//                   <label className="text-sm block mb-1">Access Key *</label>
-//                   <input
-//                     className="input-colored w-full"
-//                     value={adlsAccessKey}
-//                     onChange={(e) => setAdlsAccessKey(e.target.value)}
-//                     placeholder="••••••"
-//                     type="password"
-//                   />
+//             ) : datasetPreview ? (
+//               <>
+//                 <div className="overflow-auto flex-1 px-1">
+//                   <Table>
+//                     <TableHeader className="sticky top-0 bg-background z-10">
+//                       <TableRow>
+//                         {datasetPreview.columns.map((col) => (
+//                           <TableHead key={col} className="whitespace-nowrap">
+//                             {col}
+//                           </TableHead>
+//                         ))}
+//                       </TableRow>
+//                     </TableHeader>
+//                     <TableBody>
+//                       {datasetPreview.preview_rows.map((row, i) => (
+//                         <TableRow key={i}>
+//                           {datasetPreview.columns.map((col) => (
+//                             <TableCell key={col} className="py-2">
+//                               {row[col] ?? "—"}
+//                             </TableCell>
+//                           ))}
+//                         </TableRow>
+//                       ))}
+//                     </TableBody>
+//                   </Table>
 //                 </div>
 
-//                 <div className="flex justify-end gap-2">
-//                   <Button variant="outline" onClick={backToChoose}>
-//                     Back
-//                   </Button>
-//                   <Button onClick={handleConnectAndUpload}>
-//                     Connect & Upload
-//                   </Button>
-//                 </div>
-//               </div>
-//             )}
-
-//             {uploadWizardStep === "delta" && (
-//               <div className="space-y-3">
-//                 <div>
-//                   <label className="text-sm block mb-1">Workspace URL *</label>
-//                   <input
-//                     className="input-colored w-full"
-//                     value={deltaWorkspaceUrl}
-//                     onChange={(e) => setDeltaWorkspaceUrl(e.target.value)}
-//                     placeholder="https://adb-..."
-//                   />
-//                 </div>
-//                 <div className="grid grid-cols-2 gap-3">
-//                   <div>
-//                     <label className="text-sm block mb-1">Catalog *</label>
-//                     <input
-//                       className="input-colored w-full"
-//                       value={deltaCatalogName}
-//                       onChange={(e) => setDeltaCatalogName(e.target.value)}
-//                       placeholder="main_catalog"
-//                     />
-//                   </div>
-//                   <div>
-//                     <label className="text-sm block mb-1">Schema *</label>
-//                     <input
-//                       className="input-colored w-full"
-//                       value={deltaSchemaName}
-//                       onChange={(e) => setDeltaSchemaName(e.target.value)}
-//                       placeholder="default"
-//                     />
-//                   </div>
-//                 </div>
-//                 <div>
-//                   <label className="text-sm block mb-1">Table Name *</label>
-//                   <input
-//                     className="input-colored w-full"
-//                     value={deltaTableName}
-//                     onChange={(e) => setDeltaTableName(e.target.value)}
-//                     placeholder="my_table"
-//                   />
-//                 </div>
-//                 <div>
-//                   <label className="text-sm block mb-1">Token / PAT *</label>
-//                   <input
-//                     className="input-colored w-full"
-//                     value={deltaToken}
-//                     onChange={(e) => setDeltaToken(e.target.value)}
-//                     placeholder="••••••"
-//                     type="password"
-//                   />
-//                 </div>
-
-//                 <div className="flex justify-end gap-2">
-//                   <Button variant="outline" onClick={backToChoose}>
-//                     Back
-//                   </Button>
-//                   <Button onClick={handleConnectAndUpload}>
-//                     Connect & Upload
-//                   </Button>
-//                 </div>
-//               </div>
-//             )}
-
-//             {uploadWizardStep === "onelake" && (
-//               <div className="space-y-6">
-//                 <OneLakeConnector
-//                   workspace={oneLakeWorkspace}
-//                   setWorkspace={setOneLakeWorkspace}
-//                   lakehouse={oneLakeLakehouse}
-//                   setLakehouse={setOneLakeLakehouse}
-//                   mode={oneLakeMode}
-//                   setMode={(m) => {
-//                     setOneLakeMode(m);
-//                     setOneLakeFolders([]);
-//                     setOneLakeFiles([]);
-//                     setOneLakeTables([]);
-//                     setSelectedOneLakeFolder("");
-//                     setSelectedOneLakeFile("");
-//                     setSelectedOneLakeTable("");
-//                     setOneLakePath("");
-//                   }}
-//                   folders={oneLakeFolders}
-//                   files={oneLakeFiles}
-//                   tables={oneLakeTables}
-//                   selectedFolder={selectedOneLakeFolder}
-//                   selectedFile={selectedOneLakeFile}
-//                   selectedTable={selectedOneLakeTable}
-//                   currentPath={oneLakeCurrentPath}
-//                   loading={oneLakeLoading}
-//                   error={oneLakeError}
-//                   onRootFetch={(root) =>
-//                     fetchOneLakeContents(
-//                       oneLakeWorkspace,
-//                       oneLakeLakehouse,
-//                       root
-//                     )
-//                   }
-//                   onFolderDrill={drillOneLakeFolder}
-//                   onFileSelect={handleOneLakeFileSelect}
-//                   onTableSelect={handleOneLakeTableSelect}
-//                 />
-
-//                 <div className="flex justify-end gap-2">
-//                   <Button variant="outline" onClick={backToChoose}>
-//                     Back
-//                   </Button>
-//                   <Button onClick={handleConnectAndUpload}>
-//                     Connect & Preview
-//                   </Button>
-//                 </div>
-//               </div>
-//             )}
-
-//             {uploadWizardStep === "local" && (
-//               <div className="space-y-3">
-//                 <div className="border-2 border-dashed border-border rounded-xl p-6 text-center bg-primary/3">
-//                   <input
-//                     id="local-test-file"
-//                     type="file"
-//                     accept=".csv"
-//                     onChange={handleLocalFileChange}
-//                     className="hidden"
-//                   />
-//                   <label
-//                     htmlFor="local-test-file"
-//                     className="cursor-pointer inline-block"
+//                 <div className="pt-4 border-t mt-2 flex justify-end gap-3 shrink-0">
+//                   <Button
+//                     variant="outline"
+//                     onClick={() => setPreviewDialogOpen(false)}
 //                   >
-//                     <FileText className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-//                     {localFile ? (
-//                       <>
-//                         <p className="font-medium">{localFile.name}</p>
-//                         <p className="text-xs text-muted-foreground">
-//                           Click to change file
-//                         </p>
-//                       </>
-//                     ) : (
-//                       <>
-//                         <p className="font-medium">Click to choose CSV file</p>
-//                         <p className="text-xs text-muted-foreground">
-//                           Only .csv files are accepted
-//                         </p>
-//                       </>
-//                     )}
-//                   </label>
-//                 </div>
-
-//                 <div className="flex justify-end gap-2">
-//                   <Button variant="outline" onClick={backToChoose}>
-//                     Back
+//                     Cancel
 //                   </Button>
-//                   <Button onClick={handleConnectAndUpload}>Use File</Button>
-//                 </div>
-//               </div>
-//             )}
-//             {uploadWizardStep === "preview" &&
-//               uploadedFile &&
-//               selectedModel && (
-//                 <div className="flex flex-col items-center justify-center py-2 space-y-3">
-//                   {/* Icon */}
-//                   <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-//                     <FileText className="w-8 h-8 text-primary" />
-//                   </div>
-
-//                   {/* Title - already set in DialogTitle, so no need to repeat */}
-
-//                   {/* Dataset */}
-//                   <div className="bg-muted/50 rounded-lg px-2 py-1 text-center">
-//                     <p className="text-sm text-muted-foreground">Dataset</p>
-//                     <p className="font-medium text-lg">
-//                       {(() => {
-//                         let name = uploadedFile.name
-//                           .replace(/\.parquet$/i, "")
-//                           .replace(/\.csv$/i, "")
-//                           .replace(/\.snappy.*$/i, "");
-
-//                         if (name.includes("Tables/")) {
-//                           const parts = name.split("/");
-//                           const idx = parts.indexOf("Tables");
-//                           if (idx !== -1 && parts.length > idx + 1) {
-//                             name = parts[idx + 1];
-//                           }
-//                         }
-//                         return name || "Dataset";
-//                       })()}
-//                     </p>
-//                   </div>
-
-//                   {/* Model */}
-//                   <p className="text-sm text-muted-foreground">
-//                     Model:{" "}
-//                     <span className="font-medium text-foreground">
-//                       {selectedModel.modelName}
-//                     </span>
-//                   </p>
-
-//                   {/* Run Test Button Only */}
 //                   <Button
 //                     onClick={handleRunTest}
-//                     disabled={isRunningTest}
-//                     size="lg"
-//                     className="min-w-32"
+//                     disabled={isRunningTest || !datasetPreview}
 //                   >
-//                     {isRunningTest ? "Running Test..." : "Run Test"}
+//                     {isRunningTest && (
+//                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                     )}
+//                     Run Test
 //                   </Button>
-
-//                   {isRunningTest && (
-//                     <p className="text-sm text-muted-foreground animate-pulse">
-//                       Processing your data...
-//                     </p>
-//                   )}
 //                 </div>
-//               )}
+//               </>
+//             ) : (
+//               <div className="flex-1 flex items-center justify-center text-muted-foreground">
+//                 Preview not available
+//               </div>
+//             )}
 //           </div>
 //         </DialogContent>
 //       </Dialog>
-
 //       {/* Upload/Test Modal (when user clicks model Upload we open wizard; after wizard closes user can run test) */}
 //       <Dialog
 //         open={viewResultsModalOpen}
-//         onOpenChange={setViewResultsModalOpen}
+//         onOpenChange={(open) => {
+//           if (!open) {
+//             // When closing → also force-close other modals if somehow still open
+//             setDatasetSelectionOpen(false);
+//             setPreviewDialogOpen(false);
+//             setUploadModalOpen(false); // if you still have this one
+//           }
+//           setViewResultsModalOpen(open);
+//         }}
 //       >
-//         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-//           <DialogHeader>
-//             <DialogTitle className="text-xl font-semibold">
-//               Test Results
-//             </DialogTitle>
-//             {selectedModel && (
-//               <p className="text-muted-foreground text-sm">
-//                 Results for {selectedModel.modelName} on {selectedModel.dataset}
-//               </p>
-//             )}
+//         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl">
+//           <DialogHeader className="flex flex-row items-center justify-between gap-4">
+//             <div>
+//               <DialogTitle className="text-xl font-semibold">
+//                 Test Results
+//               </DialogTitle>
+//               {selectedModel && (
+//                 <p className="text-muted-foreground text-sm mt-1">
+//                   Results for {selectedModel.modelName} on{" "}
+//                   {selectedModel.dataset}
+//                 </p>
+//               )}
+//             </div>
+
+//             {/* Explicit Close button */}
+//             <Button
+//               variant="ghost"
+//               size="icon"
+//               className="h-8 w-8 rounded-full"
+//               onClick={() => {
+//                 setViewResultsModalOpen(false);
+//                 // Also close others
+//                 setDatasetSelectionOpen(false);
+//                 setPreviewDialogOpen(false);
+//               }}
+//             >
+//               <X className="h-5 w-5" />
+//             </Button>
 //           </DialogHeader>
 
 //           {testResults && (
@@ -1601,7 +1045,7 @@
 //     Record<string, { rows: any[]; predictedCol?: string }>
 //   >({}); // Now stores rows + detected predicted column
 //   const [loadingPreviews, setLoadingPreviews] = useState<Set<string>>(
-//     new Set()
+//     new Set(),
 //   );
 
 //   const PREDICTION_KEYWORDS = [
@@ -1623,7 +1067,7 @@
 //     // Exact matches first
 //     for (const keyword of PREDICTION_KEYWORDS) {
 //       const index = lowerHeaders.findIndex((h) =>
-//         h.includes(keyword.toLowerCase())
+//         h.includes(keyword.toLowerCase()),
 //       );
 //       if (index !== -1) {
 //         return headers[index];
@@ -1633,13 +1077,13 @@
 //     // Fallback: columns containing "pred" or ending with "_pred"
 //     return headers.find(
 //       (h) =>
-//         h.toLowerCase().includes("pred") || h.toLowerCase().endsWith("_pred")
+//         h.toLowerCase().includes("pred") || h.toLowerCase().endsWith("_pred"),
 //     );
 //   };
 
 //   const fetchPredictionsPreview = async (
 //     testResultId: string,
-//     blobPath: string
+//     blobPath: string,
 //   ) => {
 //     if (predictionsPreviews[testResultId]) return;
 
@@ -1650,8 +1094,8 @@
 //     }));
 
 //     try {
-//       const url = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/download_predictions?blob_path=${encodeURIComponent(
-//         blobPath
+//       const url = `https://api.veriton.ai/api/service3/download_predictions?blob_path=${encodeURIComponent(
+//         blobPath,
 //       )}&user_email=${encodeURIComponent(userEmail)}`;
 
 //       const res = await fetch(url);
@@ -1698,10 +1142,9 @@
 //   };
 
 //   const handleDownload = async (blobPath: string, fileName: string) => {
-//     // ... (same as before)
 //     try {
-//       const url = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/download_predictions?blob_path=${encodeURIComponent(
-//         blobPath
+//       const url = `https://api.veriton.ai/api/service3/download_predictions?blob_path=${encodeURIComponent(
+//         blobPath,
 //       )}&user_email=${encodeURIComponent(userEmail)}`;
 
 //       const res = await fetch(url);
@@ -1764,7 +1207,7 @@
 //                   onClick={() =>
 //                     handleDownload(
 //                       test.blobPath!,
-//                       test.testFileName.replace(".csv", "_predictions.csv")
+//                       test.testFileName.replace(".csv", "_predictions.csv"),
 //                     )
 //                   }
 //                 >
@@ -1865,12 +1308,12 @@
 //                       overallStatus === "stable"
 //                         ? "bg-green-100 text-green-700"
 //                         : overallStatus === "activated"
-//                         ? "bg-blue-100 text-blue-700"
-//                         : overallStatus === "data_drift"
-//                         ? "bg-yellow-100 text-yellow-700"
-//                         : overallStatus === "degraded"
-//                         ? "bg-orange-100 text-orange-700"
-//                         : "bg-red-100 text-red-700"
+//                           ? "bg-blue-100 text-blue-700"
+//                           : overallStatus === "data_drift"
+//                             ? "bg-yellow-100 text-yellow-700"
+//                             : overallStatus === "degraded"
+//                               ? "bg-orange-100 text-orange-700"
+//                               : "bg-red-100 text-red-700"
 //                     }`}
 //                   >
 //                     {overallStatus.toUpperCase()}
@@ -1908,7 +1351,7 @@
 //                       {results.drift_report.data_drift.drifted_features?.map(
 //                         (f) => (
 //                           <li key={f}>{f}</li>
-//                         )
+//                         ),
 //                       )}
 //                     </ul>
 //                   </div>
@@ -1965,7 +1408,7 @@
 //                       onClick={() =>
 //                         fetchPredictionsPreview(
 //                           test.testResultId,
-//                           test.blobPath!
+//                           test.blobPath!,
 //                         )
 //                       }
 //                       disabled={isLoading}
@@ -2042,6 +1485,7 @@
 
 // export default TestTab;
 
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -2052,11 +1496,14 @@ import {
   FileText,
   AlertCircle,
   Download,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -2069,14 +1516,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
-import { OneLakeConnector } from "./OneLakeConnector";
 import Header from "../layout/Header";
+import { cn } from "@/lib/utils";
 
 // get user email from localStorage
 const getUserFromLocalStorage = () => {
   try {
-    const raw = localStorage.getItem("aivolve_user");
+    const raw = localStorage.getItem("user");
     if (!raw) return null;
     return JSON.parse(raw) as { email?: string; [k: string]: any };
   } catch (e) {
@@ -2157,10 +1603,26 @@ interface TestResults {
   };
 }
 
-const JOBS_API = "https://api.veriton.ai/api/service3/user_models_summary";
+// Add these interfaces if not already present
+interface DatasetOption {
+  id: string;
+  name: string; // datasetName or filename
+  job_id?: string;
+  user_id?: string;
+  rows?: number;
+  columns?: number;
+  last_modified?: string;
+  type: "global" | "job-specific";
+}
 
-const ONELAKE_BASE_URL =
-  "https://automl-onelake-webapp-eedahsgvbug3apc6.eastus-01.azurewebsites.net";
+interface PreviewData {
+  columns: string[];
+  preview_rows: Record<string, any>[];
+  total_rows: number;
+  preview_row_count: number;
+}
+
+const JOBS_API = "https://api.veriton.ai/api/service3/user_models_summary";
 
 const MODEL_TEST_HISTORY_API =
   "https://api.veriton.ai/api/service3/model_test_history";
@@ -2180,41 +1642,18 @@ const TestTab = () => {
   const [uploadWizardStep, setUploadWizardStep] = useState<
     UploadSource | "preview"
   >("choose");
+  // Add this inside the TestTab component function
+  const mapMetrics = (obj: any): TestMetric[] | undefined => {
+    if (!obj) return undefined;
+    return Object.entries(obj).map(([name, value]) => ({
+      name: String(name),
+      testing: Number(value),
+    }));
+  };
 
   // upload-source specific states
   const [selectedUploadSource, setSelectedUploadSource] =
     useState<UploadSource | null>(null);
-
-  // ADLS fields
-  const [adlsStorageAccount, setAdlsStorageAccount] = useState("");
-  const [adlsFileSystem, setAdlsFileSystem] = useState("");
-  const [adlsFilePath, setAdlsFilePath] = useState("");
-  const [adlsAccessKey, setAdlsAccessKey] = useState("");
-
-  // Delta fields
-  const [deltaWorkspaceUrl, setDeltaWorkspaceUrl] = useState("");
-  const [deltaCatalogName, setDeltaCatalogName] = useState("");
-  const [deltaSchemaName, setDeltaSchemaName] = useState("");
-  const [deltaTableName, setDeltaTableName] = useState("");
-  const [deltaToken, setDeltaToken] = useState("");
-
-  // OneLake fields & options
-  const [oneLakeWorkspace, setOneLakeWorkspace] = useState("");
-  const [oneLakeLakehouse, setOneLakeLakehouse] = useState("");
-  const [oneLakePath, setOneLakePath] = useState(""); // final selected full_path or path
-  const [oneLakeMode, setOneLakeMode] = useState<"files" | "tables" | "">("");
-  const [oneLakeFolders, setOneLakeFolders] = useState<string[]>([]);
-  const [oneLakeFiles, setOneLakeFiles] = useState<any[]>([]); // items from API (name, full_path, last_modified)
-  const [oneLakeTables, setOneLakeTables] = useState<string[]>([]); // table folder names when mode=tables
-  const [oneLakeLoading, setOneLakeLoading] = useState(false);
-  const [oneLakeError, setOneLakeError] = useState("");
-  const [selectedOneLakeFolder, setSelectedOneLakeFolder] = useState("");
-  const [selectedOneLakeFile, setSelectedOneLakeFile] = useState("");
-  const [selectedOneLakeTable, setSelectedOneLakeTable] = useState("");
-  const [oneLakeCurrentPath, setOneLakeCurrentPath] = useState(""); // e.g. Files or Tables/<table>
-
-  // Local file
-  const [localFile, setLocalFile] = useState<File | null>(null);
 
   // Reuse existing test UI state
   const [viewResultsModalOpen, setViewResultsModalOpen] = useState(false);
@@ -2227,6 +1666,19 @@ const TestTab = () => {
 
   const [page, setPage] = useState(0); // current page index
   const [hasNextPage, setHasNextPage] = useState(true);
+  const [datasetSelectionOpen, setDatasetSelectionOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+
+  const [datasetModalOpen, setDatasetModalOpen] = useState(false);
+  const [datasets, setDatasets] = useState<DatasetOption[]>([]);
+  const [selectedTestDataset, setSelectedTestDataset] =
+    useState<DatasetOption | null>(null);
+  const [datasetPreview, setDatasetPreview] = useState<PreviewData | null>(
+    null,
+  ); // reuse type from Jobs.tsx or define similar
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [datasetsLoading, setDatasetsLoading] = useState(false);
 
   // Fetch jobs on mount
   useEffect(() => {
@@ -2309,13 +1761,6 @@ const TestTab = () => {
             .replace(/\.csv$/i, "")
             .replace(/\.parquet$/i, "");
 
-          // ✅ Remove long parquet file prefixes (part-00000-...)
-          // if (dataset.startsWith('part-') && dataset.includes('-')) {
-          //   // This is a raw parquet filename, extract just the base name
-          //   // For now, show a shortened version
-          //   dataset = 'parquet_file'
-          // }
-
           const func = item.task_type || item.function || item.task || "—";
 
           const modelName =
@@ -2359,33 +1804,120 @@ const TestTab = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
+  const loadAvailableDatasets = async () => {
+    setDatasetsLoading(true);
+    const user = getUserFromLocalStorage();
+    const userId = user?.user_id || user?.id; // Adjust based on your localStorage key
+    const userEmail = user?.email;
+
+    if (!userId || !userEmail) {
+      toast({
+        title: "Error",
+        description: "Missing user info",
+        variant: "destructive",
+      });
+      setDatasetsLoading(false);
+      return;
+    }
+
+    const allDatasets: DatasetOption[] = [];
+
+    try {
+      // Global datasets (/datasets API)
+      const globalRes = await fetch(
+        `https://api.veriton.ai/api/service2/datasets?user_id=${userId}`,
+      );
+      if (globalRes.ok) {
+        const data = await globalRes.json();
+        allDatasets.push(
+          ...data.map((item: any, idx: number) => ({
+            id: `global-${idx}`,
+            name: item.dataset_name || "Unnamed",
+            job_id: item.job_id,
+            user_id: userId,
+            rows: item.rows,
+            columns: item.columns_count,
+            last_modified: item.completed_at,
+            type: "global" as const,
+          })),
+        );
+      } else {
+        console.error("Global datasets failed:", globalRes.status);
+      }
+
+      // Job-specific datasets (/list-datasets API)
+      const currentJobId = localStorage.getItem("current_job_id"); // Or fetch if needed
+      if (currentJobId) {
+        const jobRes = await fetch(
+          `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${currentJobId}`,
+        );
+        if (jobRes.ok) {
+          const data = await jobRes.json();
+          allDatasets.push(
+            ...(data.datasets || []).map((d: any, idx: number) => ({
+              id: `job-${idx}`,
+              name: d.filename,
+              job_id: currentJobId,
+              user_id: userId,
+              last_modified: d.date_modified,
+              type: "job-specific" as const,
+            })),
+          );
+        } else {
+          console.error("Job datasets failed:", jobRes.status);
+        }
+      }
+
+      setDatasets(allDatasets);
+    } catch (err) {
+      console.error("Datasets fetch error:", err);
+      toast({ title: "Failed to load datasets", variant: "destructive" });
+    } finally {
+      setDatasetsLoading(false);
+    }
+  };
+
+  const handleSelectTestDataset = async (ds: DatasetOption) => {
+    setSelectedTestDataset(ds);
+    setPreviewLoading(true);
+    setDatasetPreview(null);
+
+    if (!ds.job_id || !ds.user_id) {
+      toast({
+        title: "Error",
+        description: "Missing job/user ID for preview",
+        variant: "destructive",
+      });
+      setPreviewLoading(false);
+      return;
+    }
+
+    try {
+      const url = `https://api.veriton.ai/api/service2/preview-dataset?user_id=${ds.user_id}&job_id=${ds.job_id}&datasetname=${encodeURIComponent(ds.name)}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(`Preview failed: ${res.status} - ${errText}`);
+      }
+      const data = await res.json();
+      setDatasetPreview(data);
+      setSelectedJobId(ds.job_id); // Store for payload
+    } catch (err) {
+      console.error("Preview error:", err);
+      toast({ title: "Failed to load preview", variant: "destructive" });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   // ======= Upload modal flow =======
   const openUploadWizard = () => {
-    setUploadWizardStep("choose");
-    setSelectedUploadSource(null);
-    // clear fields
-    setAdlsStorageAccount("");
-    setAdlsFileSystem("");
-    setAdlsFilePath("");
-    setAdlsAccessKey("");
-    setDeltaWorkspaceUrl("");
-    setDeltaCatalogName("");
-    setDeltaSchemaName("");
-    setDeltaTableName("");
-    setDeltaToken("");
-    setOneLakeWorkspace("");
-    setOneLakeLakehouse("");
-    setOneLakePath("");
-    setOneLakeMode("");
-    setOneLakeFolders([]);
-    setOneLakeFiles([]);
-    setOneLakeTables([]);
-    setSelectedOneLakeFolder("");
-    setSelectedOneLakeFile("");
-    setSelectedOneLakeTable("");
-    setOneLakeCurrentPath("");
-    setLocalFile(null);
     setUploadModalOpen(true);
+    setSelectedTestDataset(null);
+    setDatasetPreview(null);
+    setSelectedJobId(null);
+    loadAvailableDatasets(); // Fetch datasets on open
+    setDatasetSelectionOpen(true);
   };
 
   const selectUploadSource = (src: UploadSource) => {
@@ -2398,381 +1930,12 @@ const TestTab = () => {
     setSelectedUploadSource(null);
   };
 
-  const validateUploadParams = (): boolean => {
-    if (!selectedUploadSource) {
-      toast({ title: "Select source", description: "Please choose a source." });
-      return false;
-    }
-    if (selectedUploadSource === "adls") {
-      if (!adlsStorageAccount || !adlsFileSystem || !adlsFilePath) {
-        toast({
-          title: "Missing fields",
-          description: "Please fill all ADLS fields.",
-        });
-        return false;
-      }
-    }
-    if (selectedUploadSource === "delta") {
-      if (
-        !deltaWorkspaceUrl ||
-        !deltaCatalogName ||
-        !deltaSchemaName ||
-        !deltaTableName
-      ) {
-        toast({
-          title: "Missing fields",
-          description: "Please fill all Delta fields.",
-        });
-        return false;
-      }
-    }
-    if (selectedUploadSource === "onelake") {
-      // require workspace & lakehouse and oneLakePath to be selected
-      if (!oneLakeWorkspace || !oneLakeLakehouse) {
-        toast({
-          title: "Missing fields",
-          description: "Please fill workspace & lakehouse.",
-        });
-        return false;
-      }
-      if (!oneLakeMode) {
-        toast({
-          title: "Missing fields",
-          description: "Please choose Files or Tables.",
-        });
-        return false;
-      }
-      if (!oneLakePath) {
-        toast({
-          title: "Missing fields",
-          description: "Please select a file/table path.",
-        });
-        return false;
-      }
-    }
-    if (selectedUploadSource === "local") {
-      if (!localFile) {
-        toast({
-          title: "No file",
-          description: "Please choose a local CSV file.",
-        });
-        return false;
-      }
-      if (!localFile.name.toLowerCase().endsWith(".csv")) {
-        toast({
-          title: "Invalid file",
-          description: "Only CSV files are allowed.",
-        });
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const fetchOneLakeContents = async (
-    workspace: string,
-    lakehouse: string,
-    path: string,
-  ) => {
-    setOneLakeLoading(true);
-    setOneLakeError("");
-    // DO NOT blindly clear everything
-    // Only clear files/folders/tables if we're at the root of Files or Tables
-    const isRootFiles = path === "Files";
-    const isRootTables = path === "Tables";
-    const isTableFolder = path.startsWith("Tables/") && path !== "Tables";
-
-    if (isRootFiles || isRootTables || isTableFolder) {
-      setOneLakeFiles([]); // always clear files when navigating
-      setSelectedOneLakeFile("");
-      if (isTableFolder) {
-        // We're inside a table → do NOT clear the table list!
-      } else {
-        // We're at root → safe to clear folders/tables
-        setOneLakeFolders([]);
-        setOneLakeTables([]);
-        setSelectedOneLakeFolder("");
-        setSelectedOneLakeTable("");
-      }
-    }
-
-    setOneLakeCurrentPath(path || "");
-
-    try {
-      if (!workspace || !lakehouse) {
-        setOneLakeError("Workspace and lakehouse are required");
-        setOneLakeLoading(false);
-        return null;
-      }
-
-      const encodedWorkspace = encodeURIComponent(workspace);
-      const encodedLakehouse = encodeURIComponent(lakehouse);
-      const encodedPath = encodeURIComponent(path);
-      const url = `${ONELAKE_BASE_URL}/workspaces/${encodedWorkspace}/lakehouses/${encodedLakehouse}/contents?path=${encodedPath}`;
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: { accept: "application/json" },
-      });
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        console.error("OneLake contents error", res.status, txt);
-        setOneLakeError(`Failed to fetch contents: ${res.status}`);
-        setOneLakeLoading(false);
-        return null;
-      }
-
-      const data = await res.json();
-      console.log("api response", data);
-
-      // Only populate tables when at root Tables
-      if (
-        isRootTables &&
-        Array.isArray(data.folders) &&
-        data.folders.length > 0
-      ) {
-        const folderNames = data.folders
-          .map((f: any) => (typeof f === "string" ? f : (f?.name ?? "")))
-          .filter(Boolean);
-        setOneLakeTables(folderNames);
-      }
-
-      // Populate folders (for Files mode or subfolders)
-      if (
-        !isTableFolder &&
-        Array.isArray(data.folders) &&
-        data.folders.length > 0
-      ) {
-        const folderNames = data.folders
-          .map((f: any) => (typeof f === "string" ? f : (f?.name ?? "")))
-          .filter(Boolean);
-        setOneLakeFolders(folderNames);
-      }
-
-      // Always handle files
-      if (Array.isArray(data.files) && data.files.length > 0) {
-        const files = data.files.map((f: any) => ({
-          name: f.name,
-          full_path: f.full_path,
-          size_bytes: f.size_bytes,
-          last_modified: f.last_modified,
-          relative_path: f.relative_path,
-        }));
-        setOneLakeFiles(files);
-      }
-
-      // Fallback for items array
-      if (
-        Array.isArray((data as any).items) &&
-        (data as any).items.length > 0
-      ) {
-        const items = (data as any).items;
-        const foldersFromItems = items
-          .filter((i: any) => i.type === "folder" || i.is_folder)
-          .map((i: any) => i.name || i.path || "");
-        const filesFromItems = items
-          .filter((i: any) => !i.type || i.type === "file")
-          .map((i: any) => ({
-            name: i.name || i.path,
-            full_path: i.full_path || i.path || i.name,
-            size_bytes: i.size_bytes,
-            last_modified: i.last_modified,
-            relative_path: i.relative_path || i.path,
-          }));
-        if (!isTableFolder && foldersFromItems.length) {
-          setOneLakeFolders((prev) => [...prev, ...foldersFromItems]);
-        }
-        if (filesFromItems.length)
-          setOneLakeFiles((prev) => [...prev, ...filesFromItems]);
-      }
-
-      if (
-        (!Array.isArray(data.folders) || data.folders.length === 0) &&
-        (!Array.isArray(data.files) || data.files.length === 0) &&
-        (!Array.isArray((data as any).items) ||
-          (data as any).items.length === 0)
-      ) {
-        if (!isTableFolder) {
-          setOneLakeError("No folders or files found at this path");
-        }
-      }
-
-      setOneLakeLoading(false);
-      return data;
-    } catch (err) {
-      console.error("fetchOneLakeContents error", err);
-      setOneLakeError(
-        "Failed to fetch OneLake contents — check names or CORS.",
-      );
-      setOneLakeLoading(false);
-      return null;
-    }
-  };
-
-  // Drill into a folder (Files mode)
-  const drillOneLakeFolder = async (folderName: string) => {
-    if (!folderName) return;
-    const root = oneLakeMode === "files" ? "Files" : "Tables";
-    const newPath = `${root}/${folderName}`;
-    await fetchOneLakeContents(oneLakeWorkspace, oneLakeLakehouse, newPath);
-  };
-
-  // When user selects a table from Tables root, call contents for Tables/<table> to list files
-  const handleOneLakeTableSelect = async (tableName: string) => {
-    if (!tableName) return;
-    setSelectedOneLakeTable(tableName);
-    const path = `Tables/${tableName}`;
-    const data = await fetchOneLakeContents(
-      oneLakeWorkspace,
-      oneLakeLakehouse,
-      path,
-    );
-    // don't auto-preview (per your instruction). We still set oneLakePath optionally to a file's full_path if you want.
-    // If there are files in the folder, set oneLakePath to first file full_path (so Connect will use it)
-    if (data && Array.isArray(data.files) && data.files.length > 0) {
-      const sorted = data.files
-        .map((f: any) => ({
-          ...f,
-          ts: f.last_modified ? new Date(f.last_modified).getTime() : 0,
-        }))
-        .sort((a: any, b: any) => (b.ts || 0) - (a.ts || 0));
-      const latestFullPath = sorted[0]?.full_path || sorted[0]?.path || "";
-      setOneLakePath(latestFullPath || path);
-      setSelectedOneLakeFile(sorted[0]?.name || "");
-    } else {
-      // if no files, set path to the folder path (so user can still connect if they want)
-      setOneLakePath(path);
-    }
-  };
-
-  const handleOneLakeFileSelect = (fileName: string) => {
-    setSelectedOneLakeFile(fileName);
-    const match = oneLakeFiles.find(
-      (f) => f.name === fileName || f.full_path === fileName,
-    );
-    const chosenPath = match
-      ? match.full_path
-      : oneLakeCurrentPath
-        ? `${oneLakeCurrentPath}/${fileName}`
-        : fileName;
-    setOneLakePath(chosenPath);
-  };
-
-  // When user connects & uploads, prepare uploadedFile (for local use the selected file;
-  // for remote sources create a placeholder File that downstream upload API can process)
-  const handleConnectAndUpload = async () => {
-    if (!validateUploadParams()) return;
-
-    // For local, use the actual file
-    if (selectedUploadSource === "local" && localFile) {
-      setUploadedFile(localFile);
-      toast({
-        title: "File ready",
-        description: `Local file ${localFile.name} selected.`,
-      });
-      setUploadWizardStep("preview");
-      return;
-    }
-
-    // For remote sources we create a placeholder File with dataset name to pass downstream.
-    let datasetName = "remote_dataset.csv";
-    if (selectedUploadSource === "adls") {
-      datasetName = adlsFilePath.split("/").pop() || datasetName;
-    } else if (selectedUploadSource === "delta") {
-      datasetName = `${deltaTableName}.csv`;
-    } else if (selectedUploadSource === "onelake") {
-      try {
-        if (!oneLakePath) {
-          toast({
-            title: "No table selected",
-            description: "Please select a OneLake table first.",
-          });
-          return;
-        }
-
-        // Get the relative_path from the selected file
-        const selectedFileObj = oneLakeFiles.find(
-          (f) => f.full_path === oneLakePath || f.name === selectedOneLakeFile,
-        );
-
-        if (!selectedFileObj || !selectedFileObj.relative_path) {
-          throw new Error("Could not find relative path for selected file");
-        }
-
-        const relativePath = selectedFileObj.relative_path;
-
-        // Download the parquet file directly
-        const downloadUrl =
-          `${ONELAKE_BASE_URL}/workspaces/${encodeURIComponent(
-            oneLakeWorkspace,
-          )}` +
-          `/lakehouses/${encodeURIComponent(oneLakeLakehouse)}` +
-          `/download?path=${encodeURIComponent(relativePath)}`;
-
-        const res = await fetch(downloadUrl, {
-          headers: { accept: "application/octet-stream" },
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to download OneLake file");
-        }
-
-        // Get the blob (parquet file)
-        const blob = await res.blob();
-
-        // ✅ Extract clean table name from path
-        let displayName = "onelake_data";
-
-        if (selectedOneLakeTable) {
-          // If we have a selected table name, use it
-          displayName = selectedOneLakeTable;
-        } else if (relativePath.includes("Tables/")) {
-          // Extract table name from path like "Tables/iris/part-00000-..."
-          const parts = relativePath.split("/");
-          const tableIndex = parts.indexOf("Tables");
-          if (tableIndex !== -1 && parts.length > tableIndex + 1) {
-            displayName = parts[tableIndex + 1];
-          }
-        }
-
-        // Create File object with clean table name
-        const parquetFile = new File([blob], `${displayName}.parquet`, {
-          type: "application/octet-stream",
-        });
-
-        setUploadedFile(parquetFile);
-
-        // toast({
-        //   title: "File Ready",
-        //   description: `Downloaded ${displayName} from OneLake`,
-        // });
-      } catch (err) {
-        console.error("OneLake download error:", err);
-        toast({
-          title: "OneLake Error",
-          description: "Could not download file from OneLake.",
-          variant: "destructive",
-        });
-      }
-
-      setUploadWizardStep("preview");
-      return;
-    }
-  };
-  // Local file input handler (for Upload wizard)
-  const handleLocalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLocalFile(file);
-  };
-
   // ======= End upload modal flow =======
 
   const handleUploadClick = (model: TrainedModel) => {
     setSelectedModel(model);
-    setUploadedFile(null);
     setTestResults(null);
-    openUploadWizard();
+    openUploadWizard(); // This now triggers dataset load
   };
 
   const handleViewResults = async (model: TrainedModel) => {
@@ -2788,15 +1951,6 @@ const TestTab = () => {
       });
       return;
     }
-
-    const mapMetrics = (obj: any): TestMetric[] | undefined => {
-      if (!obj) return undefined;
-
-      return Object.entries(obj).map(([name, value]) => ({
-        name,
-        testing: Number(value), // <-- force value to number
-      }));
-    };
 
     try {
       const url = `${MODEL_TEST_HISTORY_API}/${encodeURIComponent(
@@ -2849,21 +2003,6 @@ const TestTab = () => {
     }
   };
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.name.toLowerCase().endsWith(".csv")) {
-        toast({
-          title: "Invalid File Type",
-          description: "Please upload a CSV file only.",
-          variant: "destructive",
-        });
-        return;
-      }
-      setUploadedFile(file);
-    }
-  };
-
   const fetchDriftReport = async (modelId: string, testResultId: string) => {
     const userEmail = getUserFromLocalStorage()?.email;
     if (!userEmail) return null;
@@ -2897,20 +2036,22 @@ const TestTab = () => {
   };
 
   const handleRunTest = async () => {
-    if (!uploadedFile || !selectedModel) {
+    if (!selectedModel || !selectedTestDataset || !selectedJobId) {
       toast({
-        title: "No file or model",
-        description: "Please select a model and upload a test dataset.",
+        title: "Missing selection",
+        description: "Select a model and dataset first.",
       });
       return;
     }
 
     const user = getUserFromLocalStorage();
     const userEmail = user?.email;
-    if (!userEmail) {
+    const userId = user?.user_id || user?.id; // Adjust as needed
+
+    if (!userEmail || !userId) {
       toast({
-        title: "Authentication error",
-        description: "User email not found. Please log in again.",
+        title: "Auth error",
+        description: "User email/ID not found.",
         variant: "destructive",
       });
       return;
@@ -2919,16 +2060,28 @@ const TestTab = () => {
     setIsRunningTest(true);
 
     try {
-      const formData = new FormData();
-      formData.append("test_file", uploadedFile);
-      formData.append("model_id", selectedModel.id);
-      formData.append("user_email", userEmail);
-      formData.append("return_predictions", "true");
-      formData.append("save_predictions", "true");
+      const filePath = `Files/Datasets/${userId}/${selectedJobId}/${selectedTestDataset.name}.csv`;
+
+      const payload = {
+        file_path: filePath,
+        model_id: selectedModel.id,
+        user_email: userEmail,
+      };
+      const params = new URLSearchParams();
+      params.append("file_path", filePath);
+      params.append("model_id", selectedModel.id);
+      params.append("user_email", userEmail);
 
       const response = await fetch(
-        "https://api.veriton.ai/api/service3/test_model",
-        { method: "POST", body: formData },
+        "https://api.veriton.ai/api/service3/test_model_v",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Accept: "application/json",
+          },
+          body: params.toString(),
+        },
       );
 
       if (!response.ok) {
@@ -2937,90 +2090,43 @@ const TestTab = () => {
         toast({
           title: "Test Failed",
           description:
-            "Failed to run test on model. Check file format or server logs.",
+            "Failed to run test on model. Check file path or server logs.",
           variant: "destructive",
         });
-        setIsRunningTest(false);
         return;
       }
 
       const data = await response.json();
-      const fetchDriftReport = async (
-        modelId: string,
-        testResultId: string,
-      ) => {
-        const userEmail = getUserFromLocalStorage()?.email;
-        if (!userEmail) return null;
 
-        const body = new URLSearchParams({
-          mode: "test",
-          user_email: userEmail,
-          model_id: modelId,
-          test_result_id: testResultId,
-        });
-
-        const res = await fetch(
-          "https://api.veriton.ai/api/service3/drift/report",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-              accept: "application/json",
-            },
-            body,
-          },
-        );
-
-        if (!res.ok) {
-          console.error("Failed to fetch drift report");
-          return null;
-        }
-
-        const json = await res.json();
-        return json.drift_report;
-      };
-
+      // Assuming response structure is similar; adapt as needed (e.g., data.status, data.test_metrics, etc.)
       if (data.status !== "success") {
         toast({
           title: "Error",
           description: data.message || "Test failed",
           variant: "destructive",
         });
-        setIsRunningTest(false);
         return;
       }
+
+      // Fetch drift report (keep as-is, or adapt if endpoint changes)
       const driftReport = await fetchDriftReport(
-        data.model_info.model_id,
+        selectedModel.id,
         data.test_result_id,
       );
 
-      // -------------------------------
-      // 🔥 Dynamic metric parser (NO training metrics)
-      // -------------------------------
-      const mapMetrics = (obj: any) => {
-        if (!obj) return undefined;
-        return Object.entries(obj).map(([name, value]) => ({
-          name,
-          testing: Number(value),
-        }));
-      };
-
+      // Map metrics (keep your existing mapMetrics function)
       const metricsList = mapMetrics(data.test_metrics);
 
-      // -------------------------------
-      // 🔥 Add fresh test into history
-      // -------------------------------
+      // History entry (adapt fields if response differs)
       const historyEntry = {
         testResultId: data.test_result_id,
-        testFileName: data.test_file,
+        testFileName: selectedTestDataset.name, // Use dataset name instead of file name
         groundTruthAvailable: data.has_ground_truth,
         metrics: metricsList,
         blobPath: data.predictions_file?.blob_path,
       };
 
-      // -------------------------------
-      // 🔥 FINAL test results object
-      // -------------------------------
+      // Final TestResults (adapt as needed)
       const mappedResults: TestResults = {
         modelId: data.model_info.model_id,
         modelName: data.model_info.model_name,
@@ -3039,12 +2145,10 @@ const TestTab = () => {
             })) || [],
         blobPath: data.predictions_file?.blob_path,
         testResultId: data.test_result_id,
-        testHistory: [historyEntry], // <-- ESSENTIAL for modal display
+        testHistory: [historyEntry],
       };
 
       setTestResults(mappedResults);
-
-      // Update on grid so eye modal also uses new data
       setTrainedModels((prev) =>
         prev.map((m) =>
           m.id === selectedModel.id ? { ...m, testResults: mappedResults } : m,
@@ -3056,8 +2160,7 @@ const TestTab = () => {
         description: data.message || "Model tested successfully.",
       });
 
-      // 🔥 Auto-open test results modal
-      setViewResultsModalOpen(true);
+      setViewResultsModalOpen(true); // Auto-open results
     } catch (err) {
       console.error("Exception during test:", err);
       toast({
@@ -3070,15 +2173,15 @@ const TestTab = () => {
     }
   };
 
-  const closeUploadModal = () => {
-    setUploadModalOpen(false);
-    setUploadWizardStep("choose");
-  };
-
-  const closeViewResultsModal = () => {
+  const closeAllModals = () => {
     setViewResultsModalOpen(false);
+    setDatasetSelectionOpen(false);
+    setPreviewDialogOpen(false);
+    setUploadModalOpen(false);
+
     setSelectedModel(null);
-    setTestResults(null);
+    setSelectedTestDataset(null);
+    setDatasetPreview(null);
   };
 
   return (
@@ -3097,14 +2200,12 @@ const TestTab = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-
                 <Button
                   variant="outline"
                   onClick={() => navigate("/workflow/automl")}
                 >
                   Back to Jobs
                 </Button>
-
               </div>
             </div>
 
@@ -3228,389 +2329,184 @@ const TestTab = () => {
       </div>
 
       {/* Upload Wizard Modal */}
-      <Dialog open={uploadModalOpen} onOpenChange={setUploadModalOpen}>
-        <DialogContent
-          className={
-            uploadWizardStep === "preview"
-              ? "max-w-md p-8"
-              : "max-w-2xl max-h-[90vh] overflow-y-auto"
-          }
-        >
+      <Dialog
+        open={datasetSelectionOpen}
+        onOpenChange={setDatasetSelectionOpen}
+      >
+        <DialogContent className="max-w-2xl max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
-              {uploadWizardStep === "choose"
-                ? "Choose upload source"
-                : uploadWizardStep === "preview"
-                  ? "Ready to Test Model"
-                  : `Connect: ${selectedUploadSource?.toUpperCase()}`}
+            <DialogTitle>Select Dataset to Test</DialogTitle>
+            <DialogDescription>
+              Choose a dataset to run predictions with model:{" "}
+              <strong>{selectedModel?.modelName}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 max-h-[55vh] overflow-y-auto pr-2">
+            {datasetsLoading ? (
+              <div className="py-12 text-center text-muted-foreground">
+                Loading datasets...
+              </div>
+            ) : datasets.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">
+                No datasets available
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {datasets.map((ds) => (
+                  <button
+                    key={ds.id}
+                    onClick={() => {
+                      handleSelectTestDataset(ds); // ← this already sets selected + fetches preview
+                      setPreviewDialogOpen(true); // ← open preview dialog
+                      // Do NOT close selection dialog yet — keep it open behind
+                    }}
+                    className={cn(
+                      "w-full text-left p-3.5 rounded-lg border transition",
+                      selectedTestDataset?.id === ds.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40 hover:bg-muted/50",
+                    )}
+                  >
+                    <div className="font-medium truncate">{ds.name}</div>
+                    <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                      <span>{ds.type}</span>
+                      {ds.rows && (
+                        <span>• {ds.rows.toLocaleString()} rows</span>
+                      )}
+                      {ds.columns && <span>• {ds.columns} cols</span>}
+                      {ds.last_modified && <span>• {ds.last_modified}</span>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-6">
+            <Button
+              variant="outline"
+              onClick={closeAllModals}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Dataset Preview: {selectedTestDataset?.name}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2"
+                onClick={() => {
+                  setPreviewDialogOpen(false);
+                }}
+              >
+                Back to datasets
+              </Button>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            {uploadWizardStep === "choose" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button
-                  onClick={() => selectUploadSource("adls")}
-                  className="datasource-card text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      AD
-                    </div>
-                    <div>
-                      <p className="font-semibold">ADLS Gen2</p>
-                      <p className="text-xs text-muted-foreground">
-                        Connect to Azure Data Lake Storage Gen2
-                      </p>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => selectUploadSource("delta")}
-                  className="datasource-card text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                      DT
-                    </div>
-                    <div>
-                      <p className="font-semibold">Delta Tables</p>
-                      <p className="text-xs text-muted-foreground">
-                        Fetch tables from your Delta catalog
-                      </p>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => selectUploadSource("onelake")}
-                  className="datasource-card text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-warm/10 flex items-center justify-center">
-                      OL
-                    </div>
-                    <div>
-                      <p className="font-semibold">OneLake</p>
-                      <p className="text-xs text-muted-foreground">
-                        Select files / tables from OneLake
-                      </p>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => selectUploadSource("local")}
-                  className="datasource-card text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-muted/10 flex items-center justify-center">
-                      LF
-                    </div>
-                    <div>
-                      <p className="font-semibold">Local File</p>
-                      <p className="text-xs text-muted-foreground">
-                        Upload a CSV from your machine
-                      </p>
-                    </div>
-                  </div>
-                </button>
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {previewLoading ? (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                Loading preview...
               </div>
-            )}
-
-            {uploadWizardStep === "adls" && (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm block mb-1">
-                    Storage Account *
-                  </label>
-                  <input
-                    className="input-colored w-full"
-                    value={adlsStorageAccount}
-                    onChange={(e) => setAdlsStorageAccount(e.target.value)}
-                    placeholder="mystorageacct"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm block mb-1">
-                    File System (container) *
-                  </label>
-                  <input
-                    className="input-colored w-full"
-                    value={adlsFileSystem}
-                    onChange={(e) => setAdlsFileSystem(e.target.value)}
-                    placeholder="container"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm block mb-1">File Path *</label>
-                  <input
-                    className="input-colored w-full"
-                    value={adlsFilePath}
-                    onChange={(e) => setAdlsFilePath(e.target.value)}
-                    placeholder="path/to/file.csv"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm block mb-1">Access Key *</label>
-                  <input
-                    className="input-colored w-full"
-                    value={adlsAccessKey}
-                    onChange={(e) => setAdlsAccessKey(e.target.value)}
-                    placeholder="••••••"
-                    type="password"
-                  />
+            ) : datasetPreview ? (
+              <>
+                <div className="overflow-auto flex-1 px-1">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background z-10">
+                      <TableRow>
+                        {datasetPreview.columns.map((col) => (
+                          <TableHead key={col} className="whitespace-nowrap">
+                            {col}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {datasetPreview.preview_rows.map((row, i) => (
+                        <TableRow key={i}>
+                          {datasetPreview.columns.map((col) => (
+                            <TableCell key={col} className="py-2">
+                              {row[col] ?? "—"}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
 
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={backToChoose}>
-                    Back
-                  </Button>
-                  <Button onClick={handleConnectAndUpload}>
-                    Connect & Upload
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {uploadWizardStep === "delta" && (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm block mb-1">Workspace URL *</label>
-                  <input
-                    className="input-colored w-full"
-                    value={deltaWorkspaceUrl}
-                    onChange={(e) => setDeltaWorkspaceUrl(e.target.value)}
-                    placeholder="https://adb-..."
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm block mb-1">Catalog *</label>
-                    <input
-                      className="input-colored w-full"
-                      value={deltaCatalogName}
-                      onChange={(e) => setDeltaCatalogName(e.target.value)}
-                      placeholder="main_catalog"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm block mb-1">Schema *</label>
-                    <input
-                      className="input-colored w-full"
-                      value={deltaSchemaName}
-                      onChange={(e) => setDeltaSchemaName(e.target.value)}
-                      placeholder="default"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm block mb-1">Table Name *</label>
-                  <input
-                    className="input-colored w-full"
-                    value={deltaTableName}
-                    onChange={(e) => setDeltaTableName(e.target.value)}
-                    placeholder="my_table"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm block mb-1">Token / PAT *</label>
-                  <input
-                    className="input-colored w-full"
-                    value={deltaToken}
-                    onChange={(e) => setDeltaToken(e.target.value)}
-                    placeholder="••••••"
-                    type="password"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={backToChoose}>
-                    Back
-                  </Button>
-                  <Button onClick={handleConnectAndUpload}>
-                    Connect & Upload
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {uploadWizardStep === "onelake" && (
-              <div className="space-y-6">
-                <OneLakeConnector
-                  workspace={oneLakeWorkspace}
-                  setWorkspace={setOneLakeWorkspace}
-                  lakehouse={oneLakeLakehouse}
-                  setLakehouse={setOneLakeLakehouse}
-                  mode={oneLakeMode}
-                  setMode={(m) => {
-                    setOneLakeMode(m);
-                    setOneLakeFolders([]);
-                    setOneLakeFiles([]);
-                    setOneLakeTables([]);
-                    setSelectedOneLakeFolder("");
-                    setSelectedOneLakeFile("");
-                    setSelectedOneLakeTable("");
-                    setOneLakePath("");
-                  }}
-                  folders={oneLakeFolders}
-                  files={oneLakeFiles}
-                  tables={oneLakeTables}
-                  selectedFolder={selectedOneLakeFolder}
-                  selectedFile={selectedOneLakeFile}
-                  selectedTable={selectedOneLakeTable}
-                  currentPath={oneLakeCurrentPath}
-                  loading={oneLakeLoading}
-                  error={oneLakeError}
-                  onRootFetch={(root) =>
-                    fetchOneLakeContents(
-                      oneLakeWorkspace,
-                      oneLakeLakehouse,
-                      root,
-                    )
-                  }
-                  onFolderDrill={drillOneLakeFolder}
-                  onFileSelect={handleOneLakeFileSelect}
-                  onTableSelect={handleOneLakeTableSelect}
-                />
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={backToChoose}>
-                    Back
-                  </Button>
-                  <Button onClick={handleConnectAndUpload}>
-                    Connect & Preview
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {uploadWizardStep === "local" && (
-              <div className="space-y-3">
-                <div className="border-2 border-dashed border-border rounded-xl p-6 text-center bg-primary/3">
-                  <input
-                    id="local-test-file"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleLocalFileChange}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="local-test-file"
-                    className="cursor-pointer inline-block"
+                <div className="pt-4 border-t mt-2 flex justify-end gap-3 shrink-0">
+                  <Button
+                    variant="outline"
+                    onClick={closeAllModals}
                   >
-                    <FileText className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                    {localFile ? (
-                      <>
-                        <p className="font-medium">{localFile.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Click to change file
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="font-medium">Click to choose CSV file</p>
-                        <p className="text-xs text-muted-foreground">
-                          Only .csv files are accepted
-                        </p>
-                      </>
-                    )}
-                  </label>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={backToChoose}>
-                    Back
+                    Cancel
                   </Button>
-                  <Button onClick={handleConnectAndUpload}>Use File</Button>
-                </div>
-              </div>
-            )}
-            {uploadWizardStep === "preview" &&
-              uploadedFile &&
-              selectedModel && (
-                <div className="flex flex-col items-center justify-center py-2 space-y-3">
-                  {/* Icon */}
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-primary" />
-                  </div>
-
-                  {/* Title - already set in DialogTitle, so no need to repeat */}
-
-                  {/* Dataset */}
-                  <div className="bg-muted/50 rounded-lg px-2 py-1 text-center">
-                    <p className="text-sm text-muted-foreground">Dataset</p>
-                    <p className="font-medium text-lg">
-                      {(() => {
-                        let name = uploadedFile.name
-                          .replace(/\.parquet$/i, "")
-                          .replace(/\.csv$/i, "")
-                          .replace(/\.snappy.*$/i, "");
-
-                        if (name.includes("Tables/")) {
-                          const parts = name.split("/");
-                          const idx = parts.indexOf("Tables");
-                          if (idx !== -1 && parts.length > idx + 1) {
-                            name = parts[idx + 1];
-                          }
-                        }
-                        return name || "Dataset";
-                      })()}
-                    </p>
-                  </div>
-
-                  {/* Model */}
-                  <p className="text-sm text-muted-foreground">
-                    Model:{" "}
-                    <span className="font-medium text-foreground">
-                      {selectedModel.modelName}
-                    </span>
-                  </p>
-
-                  {/* Run Test Button Only */}
                   <Button
                     onClick={handleRunTest}
-                    disabled={isRunningTest}
-                    size="lg"
-                    className="min-w-32"
+                    disabled={isRunningTest || !datasetPreview}
                   >
-                    {isRunningTest ? "Running Test..." : "Run Test"}
+                    {isRunningTest && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Run Test
                   </Button>
-
-                  {isRunningTest && (
-                    <p className="text-sm text-muted-foreground animate-pulse">
-                      Processing your data...
-                    </p>
-                  )}
                 </div>
-              )}
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                Preview not available
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Upload/Test Modal (when user clicks model Upload we open wizard; after wizard closes user can run test) */}
       <Dialog
         open={viewResultsModalOpen}
-        onOpenChange={setViewResultsModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeAllModals();
+          else setViewResultsModalOpen(true);
+        }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
-              Test Results
-            </DialogTitle>
-            {selectedModel && (
-              <p className="text-muted-foreground text-sm">
-                Results for {selectedModel.modelName} on {selectedModel.dataset}
-              </p>
-            )}
-          </DialogHeader>
+        <DialogContent className="max-w-4xl p-0 border border-border rounded-2xl overflow-hidden shadow-xl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
+            <div>
+              <DialogTitle className="text-xl font-semibold">
+                Test Results
+              </DialogTitle>
 
-          {testResults && (
-            <div className="py-4">
-              <TestResultsDisplay results={testResults} />
+              {selectedModel && (
+                <p className="text-muted-foreground text-sm mt-1">
+                  Results for {selectedModel.modelName} on{" "}
+                  {selectedModel.dataset}
+                </p>
+              )}
             </div>
-          )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={closeAllModals}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Scrollable Body */}
+          <div className="max-h-[75vh] overflow-y-auto px-6 py-4">
+            {testResults && <TestResultsDisplay results={testResults} />}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
@@ -3721,7 +2617,6 @@ const TestResultsDisplay = ({ results }: { results: TestResults }) => {
   };
 
   const handleDownload = async (blobPath: string, fileName: string) => {
-    // ... (same as before)
     try {
       const url = `https://api.veriton.ai/api/service3/download_predictions?blob_path=${encodeURIComponent(
         blobPath,
@@ -3815,7 +2710,6 @@ const TestResultsDisplay = ({ results }: { results: TestResults }) => {
                         if (results.task?.toLowerCase().includes("multistep")) {
                           return m.name.toLowerCase().startsWith("avg_");
                         }
-                        // For other tasks, show all metrics
                         return true;
                       })
                       .map((m) => (
@@ -3875,7 +2769,6 @@ const TestResultsDisplay = ({ results }: { results: TestResults }) => {
                   </p>
                 </div>
               )}
-            {/* ================= Drift Report ================= */}
             {/* ================= Drift Report ================= */}
             {results.drift_report && (
               <div className="mb-6 border border-border rounded-xl p-4">

@@ -685,7 +685,7 @@
 // }
 
 // export async function finalizeDashboardJson(threadId: string): Promise<any> {
-//   const response = await fetch(`https://api.veriton.ai/api/service2/finalize-dashboard-json`, {
+//   const response = await fetch(`${MODELING_API}/finalize-dashboard-json`, {
 //     method: 'POST',
 //     headers: {
 //       'Accept': 'application/json',
@@ -700,6 +700,182 @@
 
 //   return response.json();
 // }
+
+// // ---------------- MODELING DATA ----------------
+
+// export const getModelingData = async (
+//   userId: string,
+//   jobId: string
+// ): Promise<any> => {
+//   const res = await fetch(`${MODELING_API}/api/status/${userId}/${jobId}`, {
+//     method: "GET",
+//     headers: { "Accept": "application/json", ...getAuthHeaders() }
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch modeling data");
+//   // /api/status returns { status, data } — we want the data object
+//   return result.data ?? result;
+// };
+
+// // ---------------- ENTITIES ----------------
+
+// export const getEntities = async (
+//   userId: string,
+//   jobId: string
+// ): Promise<any> => {
+//   const res = await fetch(`${MODELING_API}/api/entities/${userId}/${jobId}`, {
+//     method: "GET",
+//     headers: { "Accept": "application/json", ...getAuthHeaders() }
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch entities");
+//   return result;
+// };
+
+// export interface EntityPatchPayload {
+//   primary_keys?: string[];
+//   columns?: Array<{
+//     name: string;
+//     is_primary_key?: boolean;
+//     is_foreign_key?: boolean;
+//     data_type?: string;
+//     references?: string;
+//   }>;
+// }
+
+// export const patchEntity = async (
+//   userId: string,
+//   jobId: string,
+//   entityName: string,
+//   payload: EntityPatchPayload
+// ): Promise<any> => {
+//   const res = await fetch(
+//     `${MODELING_API}/api/entities/${userId}/${jobId}/${encodeURIComponent(entityName)}`,
+//     {
+//       method: "PATCH",
+//       headers: {
+//         "Content-Type": "application/json",
+//         "Accept": "application/json",
+//         ...getAuthHeaders()
+//       },
+//       body: JSON.stringify(payload)
+//     }
+//   );
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to update entity");
+//   return result;
+// };
+
+// // ---------------- RELATIONSHIPS ----------------
+
+// export interface RelationshipPayload {
+//   from_table: string;
+//   from_column: string;
+//   to_table: string;
+//   to_column: string;
+//   relationship_type: string;
+//   description?: string;
+// }
+
+// export const addRelationship = async (
+//   userId: string,
+//   jobId: string,
+//   payload: RelationshipPayload
+// ): Promise<any> => {
+//   const res = await fetch(
+//     `${MODELING_API}/api/relationships/${userId}/${jobId}`,
+//     {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         "Accept": "application/json",
+//         ...getAuthHeaders()
+//       },
+//       body: JSON.stringify(payload)
+//     }
+//   );
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to add relationship");
+//   return result;
+// };
+
+// export const deleteRelationship = async (
+//   userId: string,
+//   jobId: string,
+//   relationshipId: string
+// ): Promise<any> => {
+//   const res = await fetch(
+//     `${MODELING_API}/api/relationships/${userId}/${jobId}`,
+//     {
+//       method: "DELETE",
+//       headers: {
+//         "Content-Type": "application/json",
+//         "Accept": "application/json",
+//         ...getAuthHeaders()
+//       },
+//       body: JSON.stringify({ relationship_id: relationshipId })
+//     }
+//   );
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to delete relationship");
+//   return result;
+// };
+
+// // ---------------- MATERIALIZE ----------------
+
+// export interface MaterializeResponse {
+//   message: string;
+//   job_instance_id: string;
+//   user_id: string;
+//   job_id: string;
+//   status_url: string;
+// }
+
+// export interface MaterializeStatusResponse {
+//   job_instance_id: string;
+//   fabric_status: string;
+//   materialized_tables: string[];
+//   failed_tables: string[];
+//   table_prefix: string;
+//   ready_for_preview: boolean;
+//   start_time: string | null;
+//   end_time: string | null;
+//   error: any | null;
+// }
+
+// export const submitMaterializeJob = async (
+//   userId: string,
+//   jobId: string,
+//   containerName: string = "userdata"
+// ): Promise<MaterializeResponse> => {
+//   const res = await fetch(
+//     `${MODELING_API}/api/materialize?user_id=${encodeURIComponent(userId)}&job_id=${encodeURIComponent(jobId)}&container_name=${encodeURIComponent(containerName)}`,
+//     {
+//       method: "POST",
+//       headers: { "Accept": "application/json", ...getAuthHeaders() }
+//     }
+//   );
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || result.message || "Failed to submit materialize job");
+//   return result;
+// };
+
+// export const getMaterializeStatus = async (
+//   jobInstanceId: string,
+//   userId: string,
+//   jobId: string
+// ): Promise<MaterializeStatusResponse> => {
+//   const res = await fetch(
+//     `${MODELING_API}/api/materialize/status?job_instance_id=${encodeURIComponent(jobInstanceId)}&user_id=${encodeURIComponent(userId)}&job_id=${encodeURIComponent(jobId)}`,
+//     {
+//       method: "GET",
+//       headers: { "Accept": "application/json", ...getAuthHeaders() }
+//     }
+//   );
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || result.message || "Failed to fetch materialize status");
+//   return result;
+// };
 
 const API_BASE_URL = "https://api.veriton.ai/api/service1";
 const MODELING_API_BASE = "https://api.veriton.ai/api/service2";

@@ -112,6 +112,86 @@ export default function PathSelection1() {
  
   // Update to PathSelection1.tsx (only showing the changed parts)
  
+// const handleAutoMLClick = async () => {
+//   setLoading(true);
+ 
+//   try {
+//     // Get stored identifiers from DatasetTab navigation
+//     const userId = localStorage.getItem("selected_user_id") || "";
+//     const jobId = localStorage.getItem("selected_job_id") || "";
+//     const datasetName = localStorage.getItem("selected_dataset_name") || "";
+ 
+//     if (!userId || !jobId || !datasetName) {
+//       toast.error("No dataset selected. Please go back and choose one.");
+//       setLoading(false);
+//       return;
+//     }
+ 
+//     // Register/login if needed (keep your existing code here if still required)
+//     const storedUser = localStorage.getItem("user");
+//     if (!storedUser) throw new Error("Base user missing");
+ 
+//     const baseUser = JSON.parse(storedUser);
+ 
+//     const formData = new URLSearchParams();
+//     formData.append("email", baseUser.email);
+//     formData.append("full_name", baseUser.name);
+ 
+//     const res = await fetch(
+//       "https://api.veriton.ai/api/service3/automl_register_login",
+//       {
+//         method: "POST",
+//         headers: {
+//           accept: "application/json",
+//           "Content-Type": "application/x-www-form-urlencoded",
+//         },
+//         body: formData.toString(),
+//       }
+//     );
+ 
+//     const data = await res.json();
+ 
+//     const aivolveUser = {
+//       ...data.user,
+//       agent_id: data.agent_id,
+//       agent_name: data.agent_name,
+//       session_id: data.session_id,
+//       total_chats: data.total_chats,
+//     };
+ 
+//     localStorage.setItem("aivolve_user", JSON.stringify(aivolveUser));
+ 
+//     window.dispatchEvent(new Event("storage"));
+ 
+//     // Now prepare dataset
+//     const toastId = toast.loading("Preparing dataset for AutoML...");
+ 
+//     const prepared = await prepareDataset(userId, jobId, datasetName);
+ 
+//     if (!prepared) {
+//       toast.error("Failed to prepare dataset", { id: toastId });
+//       setLoading(false);
+//       return;
+//     }
+ 
+//     toast.success("Dataset ready!", { id: toastId });
+ 
+//     // Navigate to new hub with prepared data
+//     navigate("/workflow/automl/automlhub", {
+//       state: {
+//         preparedDataset: prepared,
+//       },
+//     });
+//     console.log("Navigation call executed");
+ 
+//   } catch (err: any) {
+//     console.error(err);
+//     toast.error("Preparation failed: " + (err.message || "Unknown error"));
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
 const handleAutoMLClick = async () => {
   setLoading(true);
  
@@ -127,9 +207,13 @@ const handleAutoMLClick = async () => {
       return;
     }
  
-    // Register/login if needed (keep your existing code here if still required)
+    // ── 1. Register / Login ──
     const storedUser = localStorage.getItem("user");
-    if (!storedUser) throw new Error("Base user missing");
+    if (!storedUser) {
+      toast.error("Base user information missing. Please login again.");
+      setLoading(false);
+      return;
+    }
  
     const baseUser = JSON.parse(storedUser);
  
@@ -149,6 +233,10 @@ const handleAutoMLClick = async () => {
       }
     );
  
+    if (!res.ok) {
+      throw new Error(`Register/login failed: ${res.status}`);
+    }
+ 
     const data = await res.json();
  
     const aivolveUser = {
@@ -160,37 +248,28 @@ const handleAutoMLClick = async () => {
     };
  
     localStorage.setItem("aivolve_user", JSON.stringify(aivolveUser));
- 
     window.dispatchEvent(new Event("storage"));
  
-    // Now prepare dataset
-    const toastId = toast.loading("Preparing dataset for AutoML...");
+    // toast.success("AutoML session ready");
  
-    const prepared = await prepareDataset(userId, jobId, datasetName);
- 
-    if (!prepared) {
-      toast.error("Failed to prepare dataset", { id: toastId });
-      setLoading(false);
-      return;
-    }
- 
-    toast.success("Dataset ready!", { id: toastId });
- 
-    // Navigate to new hub with prepared data
+    // ── 2. Navigate to hub immediately ──
     navigate("/workflow/automl/automlhub", {
       state: {
-        preparedDataset: prepared,
+        // Optional: pass identifiers if you want to avoid localStorage read
+        userId,
+        jobId,
+        datasetName,
       },
     });
-    console.log("Navigation call executed");
  
   } catch (err: any) {
     console.error(err);
-    toast.error("Preparation failed: " + (err.message || "Unknown error"));
+    toast.error("AutoML initialization failed: " + (err.message || "Unknown error"));
   } finally {
     setLoading(false);
   }
 };
+ 
  
 // ... rest of PathSelection1 remains the same
  

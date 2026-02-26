@@ -173,7 +173,7 @@ export function BusinessRuleCompleteDialog({
               )} */}
             </div>
 
-            <div className="flex gap-3 w-full">
+            {/* <div className="flex gap-3 w-full">
               <Button
                 variant="outline"
                 className="flex-1"
@@ -186,7 +186,7 @@ export function BusinessRuleCompleteDialog({
                 <ArrowRight className="h-4 w-4 mr-2" />
                 Continue to Path Selection
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
       </DialogContent>

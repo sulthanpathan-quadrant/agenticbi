@@ -227,6 +227,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/layout/Header";
+import { Workflowheader } from "@/components/WorkFlowHeader1";
 
 export default function AutoMLHub() {
   const location = useLocation();
@@ -340,7 +341,7 @@ export default function AutoMLHub() {
 
   return (
     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
-      <Header />
+      <Workflowheader />
 
       <div className="flex-1 flex flex-col overflow-auto">
         <main className="px-6 py-6">

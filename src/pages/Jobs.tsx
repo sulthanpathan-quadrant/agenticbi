@@ -34,6 +34,7 @@ import {
   X,
   Settings,
   Clock,
+Sparkles
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { toast } from "sonner";
@@ -437,7 +438,14 @@ const Jobs = () => {
                 <TableIcon className="w-4 h-4" />   {/* Perfect icon for datasets */}
                 Datasets
               </button>
-
+                
+              <button
+                onClick={() => navigate("/workflow/automl/jobs1")}  // or any route you prefer
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />   {/* Perfect icon for datasets */}
+                Auto AI/ML
+              </button>
  
               <div className="flex items-center gap-3">
                 <ThemeToggle />

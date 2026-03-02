@@ -679,7 +679,7 @@ export default function BusinessLogic() {
       blob_path: blobPath,
       rules: rulesPayloadForProcess,
       mode: "auto",
-      overwrite_source: false,
+      overwrite_source: true,
       output_blob_path: "processed/Book1_1_filtered.csv",
     };
 

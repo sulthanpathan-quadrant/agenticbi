@@ -2810,6 +2810,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Header from "@/components/layout/Header";
+import { toast } from "sonner";
 
 const modelsByFunction: Record<string, string[]> = {
   Classification: [
@@ -3025,7 +3026,7 @@ const BuildModelTab = () => {
     });
 
     // Optional but recommended: show message to user
-    setTransformationMessage(
+    toast.info(
       "This dataset appears to be in wide format and requires transformation. " +
       "The function has been automatically set to Multi-Step Forecasting."
     );

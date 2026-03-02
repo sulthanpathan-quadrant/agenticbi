@@ -40,6 +40,7 @@ import BuildModelTab from "../../components/create-job/BuildModelTab"; // Import
 import CompareTab from "@/components/create-job/CompareTab";
 import AutoMLHub from "./AutoMLHub";
 import TestTab from "@/components/create-job/TestTab";
+import AutoMLJobs1 from "./Jobs1";
  
  
  
@@ -51,6 +52,7 @@ const AutoMLRoutes = () => {
       <Route index element={<AutoMLJobs />} />
       {/* Other AutoML pages */}
       <Route path="jobs" element={<AutoMLJobs />} />
+      <Route path="jobs1" element={<AutoMLJobs1 />} />
       <Route path="create-job" element={<CreateJob />} />
       <Route path="modal-building/:id" element={<ModalBuilding />} />
       <Route path="build-model" element={<BuildModelTab />} />

@@ -427,7 +427,7 @@ export default function DataModeling() {
     }
 
     setIsProcessing(true);
-    const loadingToastId = toast.info("Materialization started, please wait...", { duration: Infinity });
+    const loadingToastId = toast.info("Materialization started, please wait...", { duration: 1000 });
 
     try {
       const submitData = await submitMaterializeJob(userId, jobId);
@@ -474,7 +474,7 @@ export default function DataModeling() {
           if (!statusData.ready_for_preview) {
             const failedList = statusData.failed_tables?.join(", ") || "unknown";
             toast.error(`Materialization completed but some tables failed: ${failedList}`, {
-              duration: 6000,
+              duration: 3000,
               action: closeToastButton,
             });
             return; // ← stay on current page

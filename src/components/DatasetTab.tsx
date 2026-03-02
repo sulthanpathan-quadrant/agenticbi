@@ -552,6 +552,7 @@ import {
   GitBranch,
   Table as TableIcon,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -809,6 +810,14 @@ const DatasetTab = () => {
               >
                 <TableIcon className="w-4 h-4" />
                 Datasets
+              </button>
+
+               <button
+                onClick={() => navigate("/workflow/automl/jobs1")}  // or any route you prefer
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />   {/* Perfect icon for datasets */}
+                Auto AI/ML
               </button>
  
               <div className="flex items-center gap-3">

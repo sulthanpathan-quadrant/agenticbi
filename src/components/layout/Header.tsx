@@ -185,7 +185,7 @@ const Header = () => {
             {/* Logo */}
             <a href="/" className="flex-shrink-0">
               <img
-                src="/logo.png"
+                src="/logo2.png"
                 alt="Veriton"
                 className="
                   h-10               /* mobile base size */

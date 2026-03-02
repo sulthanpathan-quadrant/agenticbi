@@ -367,7 +367,74 @@ const Jobs = () => {
     }
     return parts.join(" • ") || "N/A";
   };
+
+ const handleAutoMLClick = async () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      toast.error("Please log in again", { action: closeToastButton });
+      return;
+    }
  
+    const baseUser = JSON.parse(storedUser);
+    if (!baseUser?.email || !baseUser?.name) {
+      toast.error("User profile incomplete", { action: closeToastButton });
+      return;
+    }
+ 
+    // Show a quick toast so user knows something is happening
+    toast.loading("Connecting to Auto AI/ML...", {
+      id: "automl-connect",
+      action: closeToastButton,
+    });
+ 
+    const formData = new URLSearchParams();
+    formData.append("email", baseUser.email);
+    formData.append("full_name", baseUser.name);
+ 
+    const res = await fetch(
+      "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/automl_register_login",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+      }
+    );
+ 
+    if (!res.ok) throw new Error("AutoML connection failed");
+ 
+    const data = await res.json();
+ 
+    const aivolveUser = {
+      ...data.user,
+      agent_id: data.agent_id,
+      agent_name: data.agent_name,
+      session_id: data.session_id,
+      total_chats: data.total_chats,
+    };
+ 
+    localStorage.setItem("aivolve_user", JSON.stringify(aivolveUser));
+    window.dispatchEvent(new Event("storage"));
+ 
+    toast.dismiss("automl-connect");
+    toast.success("Connected!", { action: closeToastButton });
+ 
+    // Hard redirect — but feels cleaner without button changing
+    window.location.href = "/workflow/automl/jobs1";
+ 
+  } catch (err) {
+    toast.dismiss("automl-connect");
+    toast.error("Connection failed. Please try again.", {
+      action: closeToastButton,
+    });
+    console.error(err);
+  }
+};
+ 
+
   return (
     <div className=" h-screen flex flex-col overflow-hidden">
       {/* Header */}
@@ -439,11 +506,11 @@ const Jobs = () => {
                 Datasets
               </button>
                 
-              <button
-                onClick={() => navigate("/workflow/automl/jobs1")}  // or any route you prefer
+             <button
+                onClick={handleAutoMLClick}
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Sparkles className="w-4 h-4" />   {/* Perfect icon for datasets */}
+                <Sparkles className="w-4 h-4" />
                 Auto AI/ML
               </button>
  

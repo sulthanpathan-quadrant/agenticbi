@@ -307,6 +307,7 @@ import { AuthProvider } from "./components/contexts/AuthContext";
 import { JobsProvider } from "./components/contexts/JobsContext";
 import { ChatProvider } from "./components/contexts/ChatContext";
 import PowerBIDashboard1 from "./pages/PowerBIDashboard1"
+import PowerBIPage from "./pages/PowerBIPage";
  
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -373,7 +374,9 @@ const App = () => (
                         <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
                         <Route path="/datasets" element={<ProtectedRoute><DatasetTab/></ProtectedRoute>} />
                         <Route path="/workflow/etl-output1" element={<ProtectedRoute><ETLOutput1 /></ProtectedRoute>}/>
-                       
+
+                        {/* <Route path="/worlflow/powerbi-flow" element={<ProtectedRoute><PowerBIPage/></ProtectedRoute>} /> */}
+
                         <Route path="/PowerBIDashboard1" element={<ProtectedRoute><PowerBIDashboard1/></ProtectedRoute>}/>
                         <Route path="/job-details/:id" element={<ProtectedRoute><JobDetails /></ProtectedRoute>} />
                         <Route path="/edit-job/:id" element={<ProtectedRoute><EditJob /></ProtectedRoute>} />
@@ -395,6 +398,9 @@ const App = () => (
                         <Route path="/workflow/powerbi-dashboard" element={<ProtectedRoute><PowerBIDashboard /></ProtectedRoute>} />
                         <Route path="/workflow/automl-dashboard" element={<ProtectedRoute><AutoMLDashboard /></ProtectedRoute>} />
  
+
+                        <Route path="/workflow/powerbi-flow" element={<ProtectedRoute><PowerBIPage /></ProtectedRoute>}/>
+
                         <Route path="workflow/automl/*"  element={
                           <ProtectedRoute>
                             <AutoMLRoutes />
@@ -415,7 +421,7 @@ const App = () => (
     </AuthProvider>
   </QueryClientProvider>
 );
- 
+
 export default App;
  
  

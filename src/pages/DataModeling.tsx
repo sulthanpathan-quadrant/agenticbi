@@ -1,4 +1,4 @@
-// import { useState, useEffect, useCallback } from "react";
+// import { useState, useEffect, useCallback, useRef } from "react";
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
 // import { Button } from "@/components/ui/button";
 // import { Database, ArrowLeft, Loader2, X, RefreshCw, Link } from "lucide-react";
@@ -20,10 +20,10 @@
 //   const navigate = useNavigate();
 
 //   const [modelingData, setModelingData] = useState<any>(null);
-//   const [loadingData, setLoadingData]   = useState(true);
+//   const [loadingData, setLoadingData] = useState(true);
 //   const [isProcessing, setIsProcessing] = useState(false);
 //   const [isRefreshing, setIsRefreshing] = useState(false);
-
+//   const isCancelledRef = useRef(false);
 //   const userId = localStorage.getItem("user")
 //     ? JSON.parse(localStorage.getItem("user") || "{}").id
 //     : null;
@@ -69,6 +69,12 @@
 //     fetchModelingData();
 //   }, [fetchModelingData]);
 
+//   useEffect(() => {
+//     return () => {
+//       isCancelledRef.current = true;
+//     };
+//   }, []);
+
 //   // ── Delete relationship ───────────────────────────────────────
 //   const handleDeleteRelationship = useCallback(async (relationshipId: string) => {
 //     if (!userId || !jobId) return;
@@ -112,53 +118,88 @@
 //   }, [userId, jobId, fetchModelingData]);
 
 //   // ── Materialize + navigate to Data Preview ────────────────────
+
 //   const handleNextToDataPreview = async () => {
+//     if (isProcessing) return;
 //     if (!userId || !jobId) {
-//       toast.error("Missing user or job information.", { duration: 1000, action: closeToastButton });
+//       toast.error("Missing user or job information.", {
+//         duration: 1000,
+//         action: closeToastButton,
+//       });
 //       return;
 //     }
 
 //     setIsProcessing(true);
-//     let pollingInterval: NodeJS.Timeout | null = null;
 
 //     try {
 //       const submitData = await submitMaterializeJob(userId, jobId);
 
-//       if (!submitData.job_instance_id) throw new Error("No job_instance_id returned");
+//       if (!submitData.job_instance_id) {
+//         throw new Error("No job_instance_id returned");
+//       }
 
-//       pollingInterval = setInterval(async () => {
-//         try {
-//           const statusData = await getMaterializeStatus(submitData.job_instance_id, userId, jobId);
-//           const s = statusData.fabric_status;
+//       const maxAttempts = 60; // 10 minutes (10s interval)
+//       let attempts = 0;
 
-//           if (s === "Succeeded" || s === "Completed") {
-//             if (pollingInterval) clearInterval(pollingInterval);
-//             if (statusData.table_prefix) localStorage.setItem("table_prefix", statusData.table_prefix);
-//             if (statusData.materialized_tables?.length) {
-//               localStorage.setItem("materialized_tables", JSON.stringify(statusData.materialized_tables));
-//             }
-//             setIsProcessing(false);
-//             navigate("/workflow/data-preview");
+//       while (attempts < maxAttempts) {
+//         if (isCancelledRef.current) {
+//           setIsProcessing(false);
+//           return;
+//         }
+//         attempts++;
 
-//           } else if (s === "Failed" || s === "Error") {
-//             if (pollingInterval) clearInterval(pollingInterval);
-//             const reason = typeof statusData.error === "string"
+//         const statusData = await getMaterializeStatus(
+//           submitData.job_instance_id,
+//           userId,
+//           jobId
+//         );
+
+//         const s = statusData.fabric_status;
+
+//         // ❌ Failed
+//         if (s === "Failed" || s === "Error") {
+//           const reason =
+//             typeof statusData.error === "string"
 //               ? statusData.error
 //               : statusData.error?.message || "Unknown reason";
-//             throw new Error(`Materialization failed: ${reason}`);
-//           }
-//         } catch (pollError: any) {
-//           if (pollingInterval) clearInterval(pollingInterval);
-//           pollingInterval = null;
-//           setIsProcessing(false);
-//           toast.error(pollError.message || "Error during materialization", { duration: 3000, action: closeToastButton });
-//         }
-//       }, 10000);
 
+//           throw new Error(`Materialization failed: ${reason}`);
+//         }
+
+//         // ✅ Completed → verify preview API ready
+//         // if (s === "Succeeded" || s === "Completed") {
+//         //   const previewCheck = await fetch(
+//         //     `https://api.veriton.ai/api/service2/api/preview/tables?user_id=${userId}&job_id=${jobId}`
+//         //   );
+
+//         //   if (previewCheck.ok) {
+//         //     const previewData = await previewCheck.json();
+
+//         //     if (previewData.tables?.length) {
+//         //       setIsProcessing(false);
+//         //       navigate("/workflow/data-preview");
+//         //       return;
+//         //     }
+//         //   }
+//         // }
+//         if (s === "Succeeded" || s === "Completed") {
+//           setIsProcessing(false);
+//           navigate("/workflow/data-preview");
+//           return;
+//         }
+
+//         // wait 10 seconds before next poll
+//         await new Promise((res) => setTimeout(res, 10000));
+//       }
+
+//       throw new Error("Materialization timed out.");
 //     } catch (error: any) {
-//       if (pollingInterval) clearInterval(pollingInterval);
 //       setIsProcessing(false);
-//       toast.error(error.message || "Failed to start materialization", { duration: 3000, action: closeToastButton });
+
+//       toast.error(error.message || "Materialization failed", {
+//         duration: 4000,
+//         action: closeToastButton,
+//       });
 //     }
 //   };
 
@@ -228,8 +269,7 @@
 //             <span>Dimension Table</span>
 //           </div>
 //           <span className="text-muted-foreground/60 ml-2">
-//             {/* Click node to edit columns · Click edge to delete · Drag between nodes to add relationship */}
-//                 Click node to edit columns · Click <Link className="h-3 w-3 inline-block text-muted-foreground" /> on nodes to link tables · Click edge to delete
+//             Click node to edit columns · Click <Link className="h-3 w-3 inline-block text-muted-foreground" /> on node to link tables · Click edge to delete
 //           </span>
 //         </div>
 
@@ -255,8 +295,7 @@
 //     </WorkflowLayout>
 //   );
 // }
-
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
 import { Database, ArrowLeft, Loader2, X, RefreshCw, Link } from "lucide-react";
@@ -278,10 +317,10 @@ export default function DataModeling() {
   const navigate = useNavigate();
 
   const [modelingData, setModelingData] = useState<any>(null);
-  const [loadingData, setLoadingData]   = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
+  const isCancelledRef = useRef(false);
   const userId = localStorage.getItem("user")
     ? JSON.parse(localStorage.getItem("user") || "{}").id
     : null;
@@ -327,6 +366,13 @@ export default function DataModeling() {
     fetchModelingData();
   }, [fetchModelingData]);
 
+  useEffect(() => {
+    isCancelledRef.current = false;  // ADD this line
+    return () => {
+      isCancelledRef.current = true;
+    };
+  }, []);
+
   // ── Delete relationship ───────────────────────────────────────
   const handleDeleteRelationship = useCallback(async (relationshipId: string) => {
     if (!userId || !jobId) return;
@@ -371,52 +417,84 @@ export default function DataModeling() {
 
   // ── Materialize + navigate to Data Preview ────────────────────
   const handleNextToDataPreview = async () => {
+    if (isProcessing) return;
     if (!userId || !jobId) {
-      toast.error("Missing user or job information.", { duration: 1000, action: closeToastButton });
+      toast.error("Missing user or job information.", {
+        duration: 1000,
+        action: closeToastButton,
+      });
       return;
     }
 
     setIsProcessing(true);
-    let pollingInterval: NodeJS.Timeout | null = null;
+    const loadingToastId = toast.info("Materialization started, please wait...", { duration: Infinity });
 
     try {
       const submitData = await submitMaterializeJob(userId, jobId);
 
-      if (!submitData.job_instance_id) throw new Error("No job_instance_id returned");
 
-      pollingInterval = setInterval(async () => {
-        try {
-          const statusData = await getMaterializeStatus(submitData.job_instance_id, userId, jobId);
-          const s = statusData.fabric_status;
 
-          if (s === "Succeeded" || s === "Completed") {
-            if (pollingInterval) clearInterval(pollingInterval);
-            if (statusData.table_prefix) localStorage.setItem("table_prefix", statusData.table_prefix);
-            if (statusData.materialized_tables?.length) {
-              localStorage.setItem("materialized_tables", JSON.stringify(statusData.materialized_tables));
-            }
-            setIsProcessing(false);
-            navigate("/workflow/data-preview");
+      if (!submitData.job_instance_id) {
+        throw new Error("No job_instance_id returned");
+      }
 
-          } else if (s === "Failed" || s === "Error") {
-            if (pollingInterval) clearInterval(pollingInterval);
-            const reason = typeof statusData.error === "string"
+      const maxAttempts = 60; // 10 minutes (10s interval)
+      let attempts = 0;
+
+      while (attempts < maxAttempts) {
+        if (isCancelledRef.current) {
+          setIsProcessing(false);
+          return;
+        }
+        attempts++;
+
+        const statusData = await getMaterializeStatus(
+          submitData.job_instance_id,
+          userId,
+          jobId
+        );
+
+        const s = statusData.fabric_status;
+
+        // ❌ Failed
+        if (s === "Failed" || s === "Error") {
+          const reason =
+            typeof statusData.error === "string"
               ? statusData.error
               : statusData.error?.message || "Unknown reason";
-            throw new Error(`Materialization failed: ${reason}`);
-          }
-        } catch (pollError: any) {
-          if (pollingInterval) clearInterval(pollingInterval);
-          pollingInterval = null;
-          setIsProcessing(false);
-          toast.error(pollError.message || "Error during materialization", { duration: 3000, action: closeToastButton });
-        }
-      }, 6000);
 
+          throw new Error(`Materialization failed: ${reason}`);
+        }
+
+        // ✅ Completed → verify preview API ready
+        if (s === "Succeeded" || s === "Completed") {
+          toast.dismiss(loadingToastId);
+          setIsProcessing(false);
+
+          if (!statusData.ready_for_preview) {
+            const failedList = statusData.failed_tables?.join(", ") || "unknown";
+            toast.error(`Materialization completed but some tables failed: ${failedList}`, {
+              duration: 6000,
+              action: closeToastButton,
+            });
+            return; // ← stay on current page
+          }
+
+          navigate("/workflow/data-preview");
+          return;
+        }
+        // wait 10 seconds before next poll
+        await new Promise((res) => setTimeout(res, 10000));
+      }
+
+      throw new Error("Materialization timed out.");
     } catch (error: any) {
-      if (pollingInterval) clearInterval(pollingInterval);
+      toast.dismiss(loadingToastId);
       setIsProcessing(false);
-      toast.error(error.message || "Failed to start materialization", { duration: 3000, action: closeToastButton });
+      toast.error(error.message || "Materialization failed", {
+        duration: 4000,
+        action: closeToastButton,
+      });
     }
   };
 
@@ -428,7 +506,7 @@ export default function DataModeling() {
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Automated Data Modeling</h1>
-            <p className="text-muted-foreground">AI-generated star schema from your data sources</p>
+            <p className="text-muted-foreground">AI-generated schema from your data sources</p>
           </div>
           <Button
             variant="outline"
@@ -447,7 +525,7 @@ export default function DataModeling() {
           <div className="flex items-center mb-4">
             <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
               <Database className="h-5 w-5" />
-              Star Schema — {modelingData?.model?.type || "STAR_SCHEMA"}
+              Schema — {modelingData?.model?.type || "STAR_SCHEMA"}
             </h2>
             {modelingData && (
               <div className="ml-auto flex gap-4 text-sm text-muted-foreground">

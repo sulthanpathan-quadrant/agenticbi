@@ -17,8 +17,8 @@
 // import '@xyflow/react/dist/style.css';
 // import { Button } from '@/components/ui/button';
 // import { Badge } from '@/components/ui/badge';
-// import { Trash2, Check, X, ChevronRight } from 'lucide-react';
 // import { RelationshipPayload, EntityPatchPayload } from "@/components/api/api";
+// import { Trash2, Check, X, ChevronRight, Link } from 'lucide-react';
 
 // // ── Types ─────────────────────────────────────────────────────
 // interface Column {
@@ -45,121 +45,143 @@
 //   onEditEntity: (entityName: string, payload: EntityPatchPayload) => Promise<void>;
 // }
 
+
 // // ── Deletable Edge ─────────────────────────────────────────────
+
 // function DeletableEdge({
 //   id, sourceX, sourceY, targetX, targetY,
 //   label, selected, data,
-// }: EdgeProps & { data?: { onDelete: (id: string) => void } }) {
+// }: EdgeProps & { data?: { onDelete: (id: string) => void; onHover: (id: string | null) => void } }) {
 //   const [edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
-//   const midX = (sourceX + targetX) / 2;
-//   const midY = (sourceY + targetY) / 2;
 
 //   return (
 //     <>
 //       <BaseEdge
 //         id={id}
 //         path={edgePath}
+//         interactionWidth={20}
+//         onMouseEnter={() => data?.onHover(id)}
+//         onMouseLeave={() => data?.onHover(null)}
 //         style={{
 //           stroke: selected ? '#f59e0b' : 'hsl(var(--primary))',
 //           strokeWidth: selected ? 3 : 2,
 //           strokeDasharray: '6 4',
 //         }}
 //       />
-//       {/* Relationship type label */}
-//       <foreignObject x={labelX - 20} y={labelY - 12} width={40} height={24}>
+//       <foreignObject x={labelX - 20} y={labelY - 12} width={40} height={24} className="pointer-events-none">
 //         <div className="flex items-center justify-center">
 //           <span className="text-[10px] font-semibold bg-background border border-border rounded px-1 text-foreground">
 //             {String(label || 'M:1')}
 //           </span>
 //         </div>
 //       </foreignObject>
-//       {/* Delete button shown when edge is selected */}
-      
-//           </>
-//         );
-//       }
+//     </>
+//   );
+// }
 
+
+
+// // ── Fact Node ─────────────────────────────────────────────────
 // // ── Fact Node ─────────────────────────────────────────────────
 // function FactNode({ data, selected }: NodeProps) {
 //   const typedData = data as {
 //     label: string;
 //     columns: Column[];
-//     row_count?: number;
 //     highlightedColumns?: string[];
 //     onClick: () => void;
+//     onLinkClick: (e: React.MouseEvent) => void; // Added
+//     isSource: boolean; // Added
 //   };
-//   const { label, columns = [], highlightedColumns = [], onClick } = typedData;
+//   const { label, columns = [], highlightedColumns = [], onClick, onLinkClick, isSource } = typedData;
 
 //   return (
 //     <div
 //       onClick={onClick}
 //       className={`border-2 ${selected ? 'border-yellow-400 shadow-lg shadow-yellow-500/30' : 'border-cyan-500'}
+//         ${isSource ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-background' : ''} 
 //         rounded-lg p-4 bg-cyan-950/30 w-64 cursor-pointer hover:bg-cyan-950/50 transition-all shadow-md relative`}
 //     >
 //       <Handle type="target" position={Position.Left} className="!bg-transparent !border-0" />
 //       <Handle type="source" position={Position.Right} className="!bg-transparent !border-0" />
 //       <div className="flex items-center justify-between mb-2">
 //         <span className="text-sm font-semibold text-foreground truncate">{label}</span>
-//         <span className="text-[10px] bg-cyan-600 text-white rounded px-1.5 py-0.5 ml-1 shrink-0">FACT</span>
+//         <div className="flex items-center gap-1 ml-1 shrink-0">
+//           <span className="text-[10px] bg-cyan-600 text-white rounded px-1.5 py-0.5">FACT</span>
+//           <button
+//             onClick={onLinkClick}
+//             title="Link to another table"
+//             className={`rounded p-0.5 transition-colors ${isSource 
+//               ? 'bg-green-500 text-white' 
+//               : 'text-muted-foreground hover:text-green-400 hover:bg-green-400/10'}`}
+//           >
+//             <Link className="h-3 w-3" />
+//           </button>
+//         </div>
 //       </div>
 //       <div className="text-xs text-muted-foreground space-y-0.5 max-h-44 overflow-y-auto">
 //         {columns.map((col, i) => (
 //           <div key={i} className={`px-1 py-0.5 rounded flex items-center justify-between
-//             ${highlightedColumns?.includes(col.name) ? 'bg-yellow-200/20 text-yellow-300' : ''}`}>
+//             ${highlightedColumns?.includes(col.name) ? 'bg-yellow-400/30 text-yellow-900 font-bold' : 'text-foreground'}`}>
 //             <span className="truncate">{col.display_label || col.name}</span>
 //             {col.is_primary_key && <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 shrink-0">PK</Badge>}
 //             {col.is_foreign_key && <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 shrink-0">FK</Badge>}
 //           </div>
 //         ))}
-//         <div className="text-[10px] text-muted-foreground/60 mt-1 pt-1 border-t border-border">
-//           {columns.length} columns
-//         </div>
 //       </div>
 //     </div>
 //   );
 // }
-
-
 
 // // ── Dim Node ──────────────────────────────────────────────────
 // function DimNode({ data, selected }: NodeProps) {
 //   const typedData = data as {
 //     label: string;
 //     columns: Column[];
-//     row_count?: number;
 //     highlightedColumns?: string[];
 //     onClick: () => void;
+//     onLinkClick: (e: React.MouseEvent) => void; // Added
+//     isSource: boolean; // Added
 //   };
-//   const { label, columns = [], row_count = 0, highlightedColumns = [], onClick } = typedData;
+//   const { label, columns = [], highlightedColumns = [], onClick, onLinkClick, isSource } = typedData;
 
 //   return (
 //     <div
 //       onClick={onClick}
 //       className={`border ${selected ? 'border-yellow-400 shadow-lg shadow-yellow-500/30' : 'border-blue-500'}
+//         ${isSource ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-background' : ''}
 //         rounded-lg p-4 bg-card/90 backdrop-blur w-56 cursor-pointer hover:bg-card transition-all shadow-md relative`}
 //     >
 //       <Handle type="target" position={Position.Left} className="!bg-transparent !border-0" />
 //       <Handle type="source" position={Position.Right} className="!bg-transparent !border-0" />
 //       <div className="flex items-center justify-between mb-2">
 //         <span className="text-sm font-semibold text-foreground truncate">{label}</span>
-//         <span className="text-[10px] border border-blue-400 text-blue-400 rounded px-1.5 py-0.5 ml-1 shrink-0">DIM</span>
+//         <div className="flex items-center gap-1 ml-1 shrink-0">
+//           <span className="text-[10px] border border-blue-400 text-blue-400 rounded px-1.5 py-0.5">DIM</span>
+//           <button
+//             onClick={onLinkClick}
+//             title="Link to another table"
+//             className={`rounded p-0.5 transition-colors ${isSource 
+//               ? 'bg-green-500 text-white' 
+//               : 'text-muted-foreground hover:text-green-400 hover:bg-green-400/10'}`}
+//           >
+//             <Link className="h-3 w-3" />
+//           </button>
+//         </div>
 //       </div>
 //       <div className="text-xs text-muted-foreground space-y-0.5 max-h-36 overflow-y-auto">
 //         {columns.map((col, i) => (
 //           <div key={i} className={`px-1 py-0.5 rounded flex items-center justify-between
-//             ${highlightedColumns?.includes(col.name) ? 'bg-yellow-200/20 text-yellow-300' : ''}`}>
+//             ${highlightedColumns?.includes(col.name) ? 'bg-yellow-400/30 text-yellow-900 font-bold' : 'text-foreground'}}`}>
 //             <span className="truncate">{col.display_label || col.name}</span>
 //             {col.is_primary_key && <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 shrink-0">PK</Badge>}
 //             {col.is_foreign_key && <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 shrink-0">FK</Badge>}
 //           </div>
 //         ))}
-//         <div className="text-[10px] text-muted-foreground/60 mt-1 pt-1 border-t border-border">
-//           {columns.length} columns
-//         </div>
 //       </div>
 //     </div>
 //   );
 // }
+
 
 // const nodeTypes = { fact: FactNode, dim: DimNode };
 // const edgeTypes = { deletable: DeletableEdge };
@@ -178,6 +200,8 @@
 //   const [isSavingEntity, setIsSavingEntity]         = useState(false);
 //   const [isDeletingEdge, setIsDeletingEdge]         = useState(false);
 //   const [isAddingRel, setIsAddingRel]               = useState(false);
+//   const [sourceNode, setSourceNode] = useState<string | null>(null);
+//   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
   
 
 
@@ -327,55 +351,89 @@
 //     const radius    = Math.max(380, dimTables.length * 50);
 //     const angleStep = (2 * Math.PI) / Math.max(1, dimTables.length);
 
+//     const createNodeData = (table: any) => {
+//       const tableName = table.table_name;
+//       return {
+//         label: tableName,
+//         columns: table.columns || [],
+//         row_count: table.row_count ?? 0,
+//         onClick: () => handleNodeClick(tableName),
+//         // --- Added Logic ---
+//         onLinkClick: (e: React.MouseEvent) => {
+//           e.stopPropagation();
+//           if (sourceNode === tableName) {
+//             setSourceNode(null); // Toggle off if clicking the same node
+//           } else if (sourceNode) {
+//             // trigger connection
+//             const { fromColumn, toColumn, relationship_type } = autoDetectColumns(sourceNode, tableName);
+//             setPendingConnection({ fromTable: sourceNode, toTable: tableName, fromColumn, toColumn, relationship_type });
+//             setSourceNode(null);
+//           } else {
+//             setSourceNode(tableName);
+//             setSelectedEntity(null);
+//           }
+//         },
+//         highlightedColumns: hoveredEdgeId 
+//           ? (() => {
+//               const rel = modelingData?.relationships?.find((r: any) => r.relationship_id === hoveredEdgeId);
+//               if (!rel) return [];
+//               if (rel.from_table === tableName) return [rel.from_column];
+//               if (rel.to_table === tableName) return [rel.to_column];
+//               return [];
+//             })() 
+//           : [],
+//         isSource: sourceNode === tableName,
+//       };
+//     };
+
 //     const factNode: Node = {
-//       id:   factTable.table_name,
+//       id: factTable.table_name,
 //       type: 'fact',
 //       position: { x: 0, y: 0 },
-//       data: {
-//         label:     factTable.table_name,
-//         columns:   factTable.columns || [],
-//         row_count: factTable.row_count ?? 0,
-//         onClick:   () => handleNodeClick(factTable.table_name),
-//       },
+//       data: createNodeData(factTable),
 //     };
 
 //     const dimNodes: Node[] = dimTables.map((t: any, i: number) => {
 //       const angle = i * angleStep - Math.PI / 2;
 //       return {
-//         id:   t.table_name,
+//         id: t.table_name,
 //         type: 'dim',
 //         position: {
 //           x: Math.cos(angle) * radius,
 //           y: Math.sin(angle) * radius,
 //         },
-//         data: {
-//           label:     t.table_name,
-//           columns:   t.columns || [],
-//           row_count: t.row_count ?? 0,
-//           onClick:   () => handleNodeClick(t.table_name),
-//         },
+//         data: createNodeData(t),
+//         selected: hoveredEdgeId 
+//           ? (() => {
+//               const rel = modelingData?.relationships?.find((r: any) => r.relationship_id === hoveredEdgeId);
+//               return rel?.from_table === t.table_name || rel?.to_table === t.table_name;
+//             })()
+//           : false,
 //       };
 //     });
 
 //     return [factNode, ...dimNodes];
-//   }, [modelingData, handleNodeClick]);
+//   }, [modelingData, handleNodeClick, sourceNode, hoveredEdgeId, autoDetectColumns]); // Added dependencies
+
 
 //   // ── Build edges using actual relationship_id ─────────────────
 //   const edges = useMemo<Edge[]>(() => {
 //     return (modelingData?.relationships || []).map((rel: any) => {
-//       const relId = rel.relationship_id || `${rel.from_table}-${rel.from_column}-${rel.to_table}-${rel.to_column}`;
-//       return {
+//       const relId = rel.relationship_id || `${rel.from_table}.${rel.from_column}-->${rel.to_table}.${rel.to_column}`;      return {
 //         id:     relId,
 //         source: rel.from_table || '',
 //         target: rel.to_table   || '',
 //         type:   'deletable',
 //         label:  rel.relationship_type || 'M:1',
 //         selected: selectedEdgeId === relId,
-//         data: { onDelete: handleDeleteEdge },
+//         data: { 
+//           onDelete: handleDeleteEdge,
+//           onHover: (id: string | null) => setHoveredEdgeId(id) // Added
+//         },
 //       };
 //     });
 //   }, [modelingData, selectedEdgeId, handleDeleteEdge]);
-
+  
 //   return (
 //     <div className="relative">
 //       {/* Main ReactFlow canvas */}
@@ -387,6 +445,8 @@
 //             nodeTypes={nodeTypes}
 //             edgeTypes={edgeTypes}
 //             onConnect={handleConnect}
+//             onEdgeMouseEnter={(_, edge) => setHoveredEdgeId(edge.id)}
+//             onEdgeMouseLeave={() => setHoveredEdgeId(null)}
 //             onEdgeClick={(e, edge) => {
 //               e.stopPropagation();
 //               const rel = modelingData?.relationships?.find(
@@ -415,7 +475,6 @@
 //             panOnDrag
 //             zoomOnScroll
 //             nodesDraggable={false}
-//             nodesConnectable={true}
 //             proOptions={{ hideAttribution: true }}
 //           >
 //             <Background gap={24} size={1.5} />
@@ -688,10 +747,30 @@ interface StarSchemaDiagramProps {
 // ── Deletable Edge ─────────────────────────────────────────────
 
 function DeletableEdge({
-  id, sourceX, sourceY, targetX, targetY,
-  label, selected, data,
-}: EdgeProps & { data?: { onDelete: (id: string) => void; onHover: (id: string | null) => void } }) {
-  const [edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  label,
+  selected,
+  data,
+}: EdgeProps & {
+  data?: {
+    onDelete: (id: string) => void;
+    onHover: (id: string | null) => void;
+    isHovered?: boolean;
+  };
+}) {
+  const [edgePath, labelX, labelY] = getStraightPath({
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+  });
+
+  // ✅ MUST be defined here (outside JSX)
+  const isActive = selected || data?.isHovered;
 
   return (
     <>
@@ -699,15 +778,21 @@ function DeletableEdge({
         id={id}
         path={edgePath}
         interactionWidth={20}
-        onMouseEnter={() => data?.onHover(id)}
-        onMouseLeave={() => data?.onHover(null)}
         style={{
-          stroke: selected ? '#f59e0b' : 'hsl(var(--primary))',
-          strokeWidth: selected ? 3 : 2,
+          stroke: isActive ? '#f59e0b' : 'hsl(var(--primary))',
+          strokeWidth: isActive ? 3 : 2,
           strokeDasharray: '6 4',
+          transition: 'all 0.15s ease',
         }}
       />
-      <foreignObject x={labelX - 20} y={labelY - 12} width={40} height={24} className="pointer-events-none">
+
+      <foreignObject
+        x={labelX - 20}
+        y={labelY - 12}
+        width={40}
+        height={24}
+        className="pointer-events-none"
+      >
         <div className="flex items-center justify-center">
           <span className="text-[10px] font-semibold bg-background border border-border rounded px-1 text-foreground">
             {String(label || 'M:1')}
@@ -749,8 +834,8 @@ function FactNode({ data, selected }: NodeProps) {
           <button
             onClick={onLinkClick}
             title="Link to another table"
-            className={`rounded p-0.5 transition-colors ${isSource 
-              ? 'bg-green-500 text-white' 
+            className={`rounded p-0.5 transition-colors ${isSource
+              ? 'bg-green-500 text-white'
               : 'text-muted-foreground hover:text-green-400 hover:bg-green-400/10'}`}
           >
             <Link className="h-3 w-3" />
@@ -795,12 +880,14 @@ function DimNode({ data, selected }: NodeProps) {
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-foreground truncate">{label}</span>
         <div className="flex items-center gap-1 ml-1 shrink-0">
-          <span className="text-[10px] border border-blue-400 text-blue-400 rounded px-1.5 py-0.5">DIM</span>
+          {/* <span className="text-[10px] border border-blue-400 text-blue-400 rounded px-1.5 py-0.5">DIM</span> */}
+
+          <span className="text-[10px] border border-blue-400 text-blue-400 rounded px-1.5 py-0.5">{data.mode === "ER_ONLY" ? "ENTITY" : "DIM"}</span>
           <button
             onClick={onLinkClick}
             title="Link to another table"
-            className={`rounded p-0.5 transition-colors ${isSource 
-              ? 'bg-green-500 text-white' 
+            className={`rounded p-0.5 transition-colors ${isSource
+              ? 'bg-green-500 text-white'
               : 'text-muted-foreground hover:text-green-400 hover:bg-green-400/10'}`}
           >
             <Link className="h-3 w-3" />
@@ -832,53 +919,53 @@ export default function StarSchemaDiagram({
   onAddRelationship,
   onEditEntity,
 }: StarSchemaDiagramProps) {
-  const [selectedEdgeId, setSelectedEdgeId]         = useState<string | null>(null);
-  const [pendingConnection, setPendingConnection]   = useState<PendingConnection | null>(null);
-  const [selectedEntity, setSelectedEntity]         = useState<any | null>(null);
-  const [editingColumns, setEditingColumns]         = useState<Column[]>([]);
-  const [isSavingEntity, setIsSavingEntity]         = useState(false);
-  const [isDeletingEdge, setIsDeletingEdge]         = useState(false);
-  const [isAddingRel, setIsAddingRel]               = useState(false);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
+  const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
+  const [editingColumns, setEditingColumns] = useState<Column[]>([]);
+  const [isSavingEntity, setIsSavingEntity] = useState(false);
+  const [isDeletingEdge, setIsDeletingEdge] = useState(false);
+  const [isAddingRel, setIsAddingRel] = useState(false);
   const [sourceNode, setSourceNode] = useState<string | null>(null);
   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
-  
+
 
 
   const [edgeToolbar, setEdgeToolbar] = useState<{
-  x: number;
-  y: number;
-  edgeId: string;
-  fromTable: string;
-  toTable: string;
-  relType: string;
-} | null>(null);
+    x: number;
+    y: number;
+    edgeId: string;
+    fromTable: string;
+    toTable: string;
+    relType: string;
+  } | null>(null);
   useEffect(() => {
-  const close = () => setEdgeToolbar(null);
+    const close = () => setEdgeToolbar(null);
 
-  window.addEventListener('click', close);
-  return () => window.removeEventListener('click', close);
-}, []);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, []);
 
   // ── Auto-detect matching columns between two tables ──────────
   const autoDetectColumns = useCallback((fromTableName: string, toTableName: string) => {
     const tables: any[] = modelingData?.tables || [];
     const fromTable = tables.find((t: any) => t.table_name === fromTableName);
-    const toTable   = tables.find((t: any) => t.table_name === toTableName);
+    const toTable = tables.find((t: any) => t.table_name === toTableName);
 
     if (!fromTable || !toTable) return { fromColumn: '', toColumn: '', relationship_type: 'M:1' };
 
     const fromCols: string[] = (fromTable.columns || []).map((c: any) => c.name);
-    const toCols:   string[] = (toTable.columns   || []).map((c: any) => c.name);
-    const toPKs:    string[] = toTable.primary_keys || [];
+    const toCols: string[] = (toTable.columns || []).map((c: any) => c.name);
+    const toPKs: string[] = toTable.primary_keys || [];
 
     // Try to find FK in fromTable that matches PK in toTable
     let fromColumn = '';
-    let toColumn   = '';
+    let toColumn = '';
 
     for (const pk of toPKs) {
       if (fromCols.includes(pk)) {
         fromColumn = pk;
-        toColumn   = pk;
+        toColumn = pk;
         break;
       }
     }
@@ -888,7 +975,7 @@ export default function StarSchemaDiagram({
       for (const fc of fromCols) {
         if (toCols.includes(fc)) {
           fromColumn = fc;
-          toColumn   = fc;
+          toColumn = fc;
           break;
         }
       }
@@ -897,7 +984,7 @@ export default function StarSchemaDiagram({
     // Last resort: use first columns
     if (!fromColumn) {
       fromColumn = fromCols[0] || '';
-      toColumn   = toPKs[0] || toCols[0] || '';
+      toColumn = toPKs[0] || toCols[0] || '';
     }
 
     return { fromColumn, toColumn, relationship_type: 'M:1' };
@@ -906,14 +993,14 @@ export default function StarSchemaDiagram({
   // ── Handle new connection drawn by user ───────────────────────
   const handleConnect = useCallback((connection: Connection) => {
     const fromTableName = connection.source || '';
-    const toTableName   = connection.target || '';
+    const toTableName = connection.target || '';
     if (!fromTableName || !toTableName || fromTableName === toTableName) return;
 
     const { fromColumn, toColumn, relationship_type } = autoDetectColumns(fromTableName, toTableName);
 
     setPendingConnection({
       fromTable: fromTableName,
-      toTable:   toTableName,
+      toTable: toTableName,
       fromColumn,
       toColumn,
       relationship_type,
@@ -925,10 +1012,10 @@ export default function StarSchemaDiagram({
     if (!pendingConnection) return;
     setIsAddingRel(true);
     await onAddRelationship({
-      from_table:        pendingConnection.fromTable,
-      from_column:       pendingConnection.fromColumn,
-      to_table:          pendingConnection.toTable,
-      to_column:         pendingConnection.toColumn,
+      from_table: pendingConnection.fromTable,
+      from_column: pendingConnection.fromColumn,
+      to_table: pendingConnection.toTable,
+      to_column: pendingConnection.toColumn,
       relationship_type: pendingConnection.relationship_type,
     });
     setPendingConnection(null);
@@ -967,10 +1054,10 @@ export default function StarSchemaDiagram({
     const payload: EntityPatchPayload = {
       primary_keys: newPKs,
       columns: editingColumns.map(c => ({
-        name:          c.name,
+        name: c.name,
         is_primary_key: c.is_primary_key,
         is_foreign_key: c.is_foreign_key,
-        data_type:     c.data_type,
+        data_type: c.data_type,
       })),
     };
 
@@ -981,98 +1068,149 @@ export default function StarSchemaDiagram({
 
   // ── Build nodes ───────────────────────────────────────────────
   const nodes = useMemo<Node[]>(() => {
-    const tables: any[] = modelingData?.tables || [];
-    const factTable  = tables.find((t: any) => t.table_type === 'FACT');
-    const dimTables  = tables.filter((t: any) => t.table_type === 'DIM');
+    const allTables: any[] = modelingData?.tables || [];
 
-    if (!factTable) return [];
+    // If any DIM or FACT tables exist, show only those (hide SOURCE)
+    // If only SOURCE tables exist (no decomposition happened), show SOURCE tables
+    const hasDimOrFact = allTables.some(
+        (t: any) => t.table_type === "DIM" || t.table_type === "FACT"
+    );
 
-    const radius    = Math.max(380, dimTables.length * 50);
-    const angleStep = (2 * Math.PI) / Math.max(1, dimTables.length);
+    const tables = hasDimOrFact
+        ? allTables.filter(
+          (t: any) => t.table_type !== "SOURCE" || !t.has_normalized_counterpart
+        )
+        : allTables;
+
+    const isNodeConnectedToHoveredEdge = (tableName: string) => {
+      if (!hoveredEdgeId) return false;
+
+      const rel = modelingData?.relationships?.find(
+        (r: any) => r.relationship_id === hoveredEdgeId
+      );
+
+      return rel?.from_table === tableName || rel?.to_table === tableName;
+    };
 
     const createNodeData = (table: any) => {
       const tableName = table.table_name;
+
       return {
         label: tableName,
         columns: table.columns || [],
         row_count: table.row_count ?? 0,
-        onClick: () => handleNodeClick(tableName),
-        // --- Added Logic ---
+        // onClick: () => handleNodeClick(tableName),
+        mode: modelingData?.model?. Type,
+
         onLinkClick: (e: React.MouseEvent) => {
           e.stopPropagation();
+
           if (sourceNode === tableName) {
-            setSourceNode(null); // Toggle off if clicking the same node
+            setSourceNode(null);
           } else if (sourceNode) {
-            // trigger connection
-            const { fromColumn, toColumn, relationship_type } = autoDetectColumns(sourceNode, tableName);
-            setPendingConnection({ fromTable: sourceNode, toTable: tableName, fromColumn, toColumn, relationship_type });
+            const { fromColumn, toColumn, relationship_type } =
+              autoDetectColumns(sourceNode, tableName);
+
+            setPendingConnection({
+              fromTable: sourceNode,
+              toTable: tableName,
+              fromColumn,
+              toColumn,
+              relationship_type,
+            });
+
             setSourceNode(null);
           } else {
             setSourceNode(tableName);
             setSelectedEntity(null);
           }
         },
-        highlightedColumns: hoveredEdgeId 
+
+        highlightedColumns: hoveredEdgeId
           ? (() => {
-              const rel = modelingData?.relationships?.find((r: any) => r.relationship_id === hoveredEdgeId);
-              if (!rel) return [];
-              if (rel.from_table === tableName) return [rel.from_column];
-              if (rel.to_table === tableName) return [rel.to_column];
-              return [];
-            })() 
+            const rel = modelingData?.relationships?.find(
+              (r: any) => r.relationship_id === hoveredEdgeId
+            );
+            if (!rel) return [];
+            if (rel.from_table === tableName) return [rel.from_column];
+            if (rel.to_table === tableName) return [rel.to_column];
+            return [];
+          })()
           : [],
+
         isSource: sourceNode === tableName,
       };
     };
 
-    const factNode: Node = {
-      id: factTable.table_name,
-      type: 'fact',
-      position: { x: 0, y: 0 },
-      data: createNodeData(factTable),
-    };
+    // const factTable = tables.find((t: any) => t.table_type === 'FACT');
+    // const dimTables  = tables.filter((t: any) => t.table_type !== 'FACT');
 
-    const dimNodes: Node[] = dimTables.map((t: any, i: number) => {
-      const angle = i * angleStep - Math.PI / 2;
-      return {
-        id: t.table_name,
-        type: 'dim',
-        position: {
-          x: Math.cos(angle) * radius,
-          y: Math.sin(angle) * radius,
-        },
-        data: createNodeData(t),
-        selected: hoveredEdgeId 
-          ? (() => {
-              const rel = modelingData?.relationships?.find((r: any) => r.relationship_id === hoveredEdgeId);
-              return rel?.from_table === t.table_name || rel?.to_table === t.table_name;
-            })()
-          : false,
-      };
+
+    const isERMode = modelingData?.model?.type === "ER_ONLY";
+
+const factTable = isERMode
+  ? undefined
+  : tables.find((t: any) => t.table_type === 'FACT');
+
+const dimTables = isERMode
+  ? tables
+  : tables.filter((t: any) => t.table_type !== 'FACT');
+
+
+    const radius    = Math.max(300, dimTables.length * 60);
+    const angleStep = (2 * Math.PI) / Math.max(1, dimTables.length);
+
+    const factNode = factTable ? [{
+        id:   factTable.table_name,
+        type: 'fact',
+        position: { x: 0, y: 0 },
+        data: createNodeData(factTable),
+        selected: isNodeConnectedToHoveredEdge(factTable.table_name),
+        }] : [];
+
+    const dimNodes = dimTables.map((table: any, index: number) => {
+        const angle = index * angleStep - Math.PI / 2;
+        return {
+            id:   table.table_name,
+            type: 'dim',
+            position: {
+                x: Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius,
+            },
+            data: createNodeData(table),
+            selected: isNodeConnectedToHoveredEdge(table.table_name),
+        };
     });
 
-    return [factNode, ...dimNodes];
-  }, [modelingData, handleNodeClick, sourceNode, hoveredEdgeId, autoDetectColumns]); // Added dependencies
-
+    return [...factNode, ...dimNodes];
+  }, [
+    modelingData,
+    handleNodeClick,
+    sourceNode,
+    hoveredEdgeId,
+    autoDetectColumns,
+  ]);
 
   // ── Build edges using actual relationship_id ─────────────────
   const edges = useMemo<Edge[]>(() => {
     return (modelingData?.relationships || []).map((rel: any) => {
-      const relId = rel.relationship_id || `${rel.from_table}.${rel.from_column}-->${rel.to_table}.${rel.to_column}`;      return {
-        id:     relId,
+      const relId = rel.relationship_id || `${rel.from_table}.${rel.from_column}-->${rel.to_table}.${rel.to_column}`; return {
+        id: relId,
         source: rel.from_table || '',
-        target: rel.to_table   || '',
-        type:   'deletable',
-        label:  rel.relationship_type || 'M:1',
+        target: rel.to_table || '',
+        type: 'deletable',
+        label: rel.relationship_type || 'M:1',
         selected: selectedEdgeId === relId,
-        data: { 
+        data: {
           onDelete: handleDeleteEdge,
-          onHover: (id: string | null) => setHoveredEdgeId(id) // Added
+          onHover: (id: string | null) => setHoveredEdgeId(id),
+          isHovered: hoveredEdgeId === relId,
+
         },
       };
     });
-  }, [modelingData, selectedEdgeId, handleDeleteEdge]);
-  
+  }, [modelingData, selectedEdgeId, handleDeleteEdge, hoveredEdgeId]);
+
   return (
     <div className="relative">
       {/* Main ReactFlow canvas */}
@@ -1084,8 +1222,13 @@ export default function StarSchemaDiagram({
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             onConnect={handleConnect}
-            onEdgeMouseEnter={(_, edge) => setHoveredEdgeId(edge.id)}
-            onEdgeMouseLeave={() => setHoveredEdgeId(null)}
+            onEdgeMouseEnter={(_, edge) => {
+              setHoveredEdgeId(edge.id);
+            }}
+
+            onEdgeMouseLeave={() => {
+              setHoveredEdgeId(null);
+            }}
             onEdgeClick={(e, edge) => {
               e.stopPropagation();
               const rel = modelingData?.relationships?.find(
@@ -1096,8 +1239,8 @@ export default function StarSchemaDiagram({
                 y: e.clientY,
                 edgeId: edge.id,
                 fromTable: rel?.from_table || '',
-                toTable:   rel?.to_table   || '',
-                relType:   rel?.relationship_type || 'M:1',
+                toTable: rel?.to_table || '',
+                relType: rel?.relationship_type || 'M:1',
               });
               setSelectedEntity(null);
               setPendingConnection(null);
@@ -1107,6 +1250,7 @@ export default function StarSchemaDiagram({
               setPendingConnection(null);
               setEdgeToolbar(null)
             }}
+            onPaneMouseLeave={() => setHoveredEdgeId(null)}
             fitView
             fitViewOptions={{ padding: 0.25, minZoom: 0.3, maxZoom: 1.1, duration: 800 }}
             minZoom={0.2}

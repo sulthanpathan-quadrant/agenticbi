@@ -77,7 +77,8 @@ export function Workflowheader() {
     if (
       pathname === "/workflow/etl-output" ||
       pathname === "/workflow/powerbi-dashboard" ||
-      pathname === "/workflow/automl"
+      pathname === "/workflow/automl"||
+      pathname === "//workflow/powerbi-flow"
     ) {
       return "/workflow/path-selection";
     }

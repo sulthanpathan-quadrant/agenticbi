@@ -635,6 +635,7 @@
 //     </WorkflowLayout>
 //   );
 // }
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
@@ -668,7 +669,7 @@ interface FixResult {
 
 interface DatasetFile {
   filename: string;
-  last_modified: string;
+  date_modified: string;
 }
 
 export default function DataQuality() {
@@ -1080,7 +1081,7 @@ export default function DataQuality() {
                     <tr>
                       <th className="text-left p-4 text-sm font-medium text-muted-foreground w-12"></th>
                       <th className="text-left p-4 text-sm font-medium text-muted-foreground">File Name</th>
-                      {/* <th className="text-left p-4 text-sm font-medium text-muted-foreground">Last Modified</th> */}
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Last Modified</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1106,7 +1107,7 @@ export default function DataQuality() {
                           </div>
                         </td>
                         <td className="p-4 text-sm text-muted-foreground">
-                          {new Date(file.last_modified).toLocaleString()}
+                          {new Date(file.date_modified).toLocaleString()}
                         </td>
                       </tr>
                     ))}

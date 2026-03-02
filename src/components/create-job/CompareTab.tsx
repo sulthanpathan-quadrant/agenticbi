@@ -1,634 +1,533 @@
-// import { useState, useMemo, useEffect } from 'react'
-// import { useNavigate } from 'react-router-dom'
-// import { motion } from 'framer-motion'
-// import { ArrowLeft, GitCompare } from 'lucide-react'
-// import { Button } from '@/components/ui/button'
+// import { useState, useMemo, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { motion } from "framer-motion";
+// import { ArrowLeft, GitCompare } from "lucide-react";
+// import { Button } from "@/components/ui/button";
 // import {
 //   Select,
 //   SelectContent,
 //   SelectItem,
 //   SelectTrigger,
-//   SelectValue
-// } from '@/components/ui/select'
+//   SelectValue,
+// } from "@/components/ui/select";
 // // import { ImportedDataset } from '@/components/modals/UnifiedImportModal'
-// import { ImportedDataset } from '../modals/UnifiedImportModal'
-// import { useLocation } from 'react-router-dom'
-// import Header from '../layout/Header'
-// import { toast } from 'sonner'
+// import { ImportedDataset } from "../modals/UnifiedImportModal";
+// import { useLocation } from "react-router-dom";
+// import Header from "../layout/Header";
+// import { toast } from "sonner";
 
 // interface CompareTabProps {
-//   dataset?: ImportedDataset | null
+//   dataset?: ImportedDataset | null;
 // }
 
-// type MetricSpec = { key: string; label: string; isLowerBetter?: boolean }
+// type MetricSpec = { key: string; label: string; isLowerBetter?: boolean };
 
 // const modelsByTask: Record<string, string[]> = {
 //   Classification: [
-//     'Logistic Regression',
-//     'Random Forest',
-//     'Gradient Boosting',
-//     'XGBoost'
+//     "Logistic Regression",
+//     "Random Forest",
+//     "Gradient Boosting",
+//     "XGBoost",
 //   ],
-//   Regression: ['Ridge', 'Random Forest', 'Gradient Boosting', 'XGBoost'],
-//   Forecasting: ['ARIMA', 'Prophet', 'XGBoost', 'LightGBM', 'CatBoost'],
-//   Clustering: ['KMeans', 'KMeans++', 'DBSCAN', 'GMM'],
-//   'Anomaly Detection': [
-//     'Isolation Forest',
-//     'One-Class SVM',
-//     'Local Outlier Factor (LOF)',
-//     'Elliptic Envelope'
-//   ]
-// }
+//   Regression: ["Ridge", "Random Forest", "Gradient Boosting", "XGBoost"],
+//   Forecasting: ["ARIMA", "Prophet", "XGBoost", "LightGBM", "CatBoost"],
+//   Clustering: ["KMeans", "KMeans++", "DBSCAN", "GMM"],
+//   "Anomaly Detection": [
+//     "Isolation Forest",
+//     "One-Class SVM",
+//     "Local Outlier Factor (LOF)",
+//     "Elliptic Envelope",
+//   ],
+// };
 
 // const metricsByTask: Record<string, MetricSpec[]> = {
 //   Classification: [
-//     { key: 'accuracy', label: 'Accuracy' },
-//     { key: 'f1', label: 'F1 Score' },
-//     { key: 'precision', label: 'Precision' },
-//     { key: 'recall', label: 'Recall' },
-//     { key: 'roc_auc', label: 'ROC-AUC' },
-//     { key: 'precision_recall_auc', label: 'PR-AUC' }
+//     { key: "accuracy", label: "Accuracy" },
+//     { key: "f1", label: "F1 Score" },
+//     { key: "precision", label: "Precision" },
+//     { key: "recall", label: "Recall" },
+//     { key: "roc_auc", label: "ROC-AUC" },
+//     { key: "precision_recall_auc", label: "PR-AUC" },
 //   ],
 //   Regression: [
-//     { key: 'rmse', label: 'RMSE', isLowerBetter: true },
-//     { key: 'mae', label: 'MAE', isLowerBetter: true },
-//     { key: 'r2', label: 'R²' },
-//     { key: 'mape', label: 'MAPE', isLowerBetter: true },
-//     { key: 'mean_residual', label: 'Mean Residual', isLowerBetter: true },
-//     { key: 'std_residual', label: 'Std Residual', isLowerBetter: true },
-//     { key: 'pred_mean', label: 'Pred Mean' },
-//     { key: 'pred_std', label: 'Pred Std' }
+//     { key: "rmse", label: "RMSE", isLowerBetter: true },
+//     { key: "mae", label: "MAE", isLowerBetter: true },
+//     { key: "r2", label: "R²" },
+//     { key: "mape", label: "MAPE", isLowerBetter: true },
+//     { key: "mean_residual", label: "Mean Residual", isLowerBetter: true },
+//     { key: "std_residual", label: "Std Residual", isLowerBetter: true },
+//     { key: "pred_mean", label: "Pred Mean" },
+//     { key: "pred_std", label: "Pred Std" },
 //   ],
 //   Forecasting: [
-//     { key: 'rmse', label: 'RMSE', isLowerBetter: true },
-//     { key: 'mae', label: 'MAE', isLowerBetter: true },
-//     { key: 'r2', label: 'R²' },
-//     { key: 'mape', label: 'MAPE', isLowerBetter: true },
-//     { key: 'mse', label: 'MSE', isLowerBetter: true },
-//     { key: 'mean_residual', label: 'Mean Residual', isLowerBetter: true },
-//     { key: 'std_residual', label: 'Std Residual', isLowerBetter: true },
-//     { key: 'pred_mean', label: 'Pred Mean' },
-//     { key: 'pred_std', label: 'Pred Std' }
+//     { key: "rmse", label: "RMSE", isLowerBetter: true },
+//     { key: "mae", label: "MAE", isLowerBetter: true },
+//     { key: "r2", label: "R²" },
+//     { key: "mape", label: "MAPE", isLowerBetter: true },
+//     { key: "mse", label: "MSE", isLowerBetter: true },
+//     { key: "mean_residual", label: "Mean Residual", isLowerBetter: true },
+//     { key: "std_residual", label: "Std Residual", isLowerBetter: true },
+//     { key: "pred_mean", label: "Pred Mean" },
+//     { key: "pred_std", label: "Pred Std" },
 //   ],
 //   Clustering: [
-//     { key: 'n_clusters', label: 'Number of Clusters' },
-//     { key: 'n_noise_points', label: 'Noise Points' },
-//     { key: 'silhouette_score', label: 'Silhouette Score' },
+//     { key: "n_clusters", label: "Number of Clusters" },
+//     { key: "n_noise_points", label: "Noise Points" },
+//     { key: "silhouette_score", label: "Silhouette Score" },
 //     {
-//       key: 'davies_bouldin_score',
-//       label: 'Davies-Bouldin',
-//       isLowerBetter: true
+//       key: "davies_bouldin_score",
+//       label: "Davies-Bouldin",
+//       isLowerBetter: true,
 //     },
-//     { key: 'calinski_harabasz', label: 'Calinski-Harabasz' }
+//     { key: "calinski_harabasz", label: "Calinski-Harabasz" },
 //   ],
-//   'Anomaly Detection': [
-//     { key: 'n_anomalies', label: 'Number of Anomalies' },
-//     { key: 'anomaly_percentage', label: 'Anomaly Percentage (%)' },
-//     { key: 'anomaly_score', label: 'Anomaly Score' },
-//     { key: 'avg_anomaly_score', label: 'Avg Anomaly Score' },
-//     { key: 'std_anomaly_score', label: 'Std Anomaly Score' },
-//     { key: 'min_anomaly_score', label: 'Min Anomaly Score' },
-//     { key: 'max_anomaly_score', label: 'Max Anomaly Score' }
-//   ]
-// }
+//   "Anomaly Detection": [
+//     { key: "n_anomalies", label: "Number of Anomalies" },
+//     { key: "anomaly_percentage", label: "Anomaly Percentage (%)" },
+//     { key: "anomaly_score", label: "Anomaly Score" },
+//     { key: "avg_anomaly_score", label: "Avg Anomaly Score" },
+//     { key: "std_anomaly_score", label: "Std Anomaly Score" },
+//     { key: "min_anomaly_score", label: "Min Anomaly Score" },
+//     { key: "max_anomaly_score", label: "Max Anomaly Score" },
+//   ],
+// };
 
 // // Best-effort mapping from human model name -> API key (extendable)
-// function modelNameToApiKey (name: string) {
-//   if (!name) return name
+// function modelNameToApiKey(name: string) {
+//   if (!name) return name;
 //   const mapping: Record<string, string> = {
-//     'Logistic Regression': 'logistic_regression',
-//     'Random Forest': 'random_forest',
-//     'Gradient Boosting': 'gradient_boosting',
-//     XGBoost: 'xgboost',
-//     Ridge: 'ridge',
-//     ARIMA: 'arima',
-//     Prophet: 'prophet',
-//     LightGBM: 'lightgbm',
-//     CatBoost: 'catboost',
-//     KMeans: 'kmeans',
-//     'KMeans++': 'kmeans_plusplus',
-//     DBSCAN: 'dbscan',
-//     GMM: 'gmm',
-//     'Isolation Forest': 'isolation_forest',
-//     'One-Class SVM': 'one_class_svm',
-//     'Local Outlier Factor (LOF)': 'lof',
-//     'Elliptic Envelope': 'elliptic_envelope'
-//   }
-//   if (mapping[name]) return mapping[name]
-//   return name.toLowerCase().replace(/[^a-z0-9]+/g, '_')
+//     "Logistic Regression": "logistic_regression",
+//     "Random Forest": "random_forest",
+//     "Gradient Boosting": "gradient_boosting",
+//     XGBoost: "xgboost",
+//     Ridge: "ridge",
+//     ARIMA: "arima",
+//     Prophet: "prophet",
+//     LightGBM: "lightgbm",
+//     CatBoost: "catboost",
+//     KMeans: "kmeans",
+//     "KMeans++": "kmeans_plusplus",
+//     DBSCAN: "dbscan",
+//     GMM: "gmm",
+//     "Isolation Forest": "isolation_forest",
+//     "One-Class SVM": "one_class_svm",
+//     "Local Outlier Factor (LOF)": "lof",
+//     "Elliptic Envelope": "elliptic_envelope",
+//   };
+//   if (mapping[name]) return mapping[name];
+//   return name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
 // }
 
 // // Generates mock values appropriate for given task + metric
-// function generateMockMetricsForTask (task: string) {
-//   const specs = metricsByTask[task] || []
-//   const obj: Record<string, string> = {}
-//   specs.forEach(spec => {
+// function generateMockMetricsForTask(task: string) {
+//   const specs = metricsByTask[task] || [];
+//   const obj: Record<string, string> = {};
+//   specs.forEach((spec) => {
 //     // realistic ranges:
 //     if (
-//       spec.key === 'accuracy' ||
-//       spec.key === 'auc' ||
-//       spec.key === 'f1_score' ||
-//       spec.key === 'precision' ||
-//       spec.key === 'recall' ||
-//       spec.key === 'roc_auc' ||
-//       spec.key === 'precision_recall_auc'
+//       spec.key === "accuracy" ||
+//       spec.key === "auc" ||
+//       spec.key === "f1_score" ||
+//       spec.key === "precision" ||
+//       spec.key === "recall" ||
+//       spec.key === "roc_auc" ||
+//       spec.key === "precision_recall_auc"
 //     ) {
-//       const val = 0.7 + Math.random() * 0.3 // 0.7 - 1.0
-//       obj[spec.key] = (val * 100).toFixed(1) + '%'
+//       const val = 0.7 + Math.random() * 0.3; // 0.7 - 1.0
+//       obj[spec.key] = (val * 100).toFixed(1) + "%";
 //     } else if (
-//       spec.key === 'rmse' ||
-//       spec.key === 'mae' ||
-//       spec.key === 'mse' ||
-//       spec.key === 'std_residual'
+//       spec.key === "rmse" ||
+//       spec.key === "mae" ||
+//       spec.key === "mse" ||
+//       spec.key === "std_residual"
 //     ) {
-//       obj[spec.key] = (0.05 + Math.random() * 1.0).toFixed(4)
-//     } else if (spec.key === 'r2') {
-//       obj[spec.key] = (Math.random() * 1).toFixed(4)
-//     } else if (spec.key === 'mape') {
-//       obj[spec.key] = (5 + Math.random() * 50).toFixed(2) + '%'
-//     } else if (spec.key === 'mean_residual') {
-//       obj[spec.key] = ((Math.random() - 0.5) * 0.1).toFixed(6)
-//     } else if (spec.key === 'pred_mean' || spec.key === 'pred_std') {
-//       obj[spec.key] = (Math.random() * 0.5).toFixed(4)
-//     } else if (spec.key === 'silhouette') {
-//       obj[spec.key] = (0.2 + Math.random() * 0.8).toFixed(3)
-//     } else if (spec.key === 'davies_bouldin') {
-//       obj[spec.key] = (0.2 + Math.random() * 3.0).toFixed(3)
-//     } else if (spec.key === 'calinski_harabasz') {
-//       obj[spec.key] = Math.round(50 + Math.random() * 2000).toString()
-//     } else if (spec.key === 'anomaly_score') {
-//       obj[spec.key] = (Math.random() * 1).toFixed(4)
+//       obj[spec.key] = (0.05 + Math.random() * 1.0).toFixed(4);
+//     } else if (spec.key === "r2") {
+//       obj[spec.key] = (Math.random() * 1).toFixed(4);
+//     } else if (spec.key === "mape") {
+//       obj[spec.key] = (5 + Math.random() * 50).toFixed(2) + "%";
+//     } else if (spec.key === "mean_residual") {
+//       obj[spec.key] = ((Math.random() - 0.5) * 0.1).toFixed(6);
+//     } else if (spec.key === "pred_mean" || spec.key === "pred_std") {
+//       obj[spec.key] = (Math.random() * 0.5).toFixed(4);
+//     } else if (spec.key === "silhouette") {
+//       obj[spec.key] = (0.2 + Math.random() * 0.8).toFixed(3);
+//     } else if (spec.key === "davies_bouldin") {
+//       obj[spec.key] = (0.2 + Math.random() * 3.0).toFixed(3);
+//     } else if (spec.key === "calinski_harabasz") {
+//       obj[spec.key] = Math.round(50 + Math.random() * 2000).toString();
+//     } else if (spec.key === "anomaly_score") {
+//       obj[spec.key] = (Math.random() * 1).toFixed(4);
 //     } else {
 //       // default numeric
-//       obj[spec.key] = (Math.random() * 1).toFixed(4)
+//       obj[spec.key] = (Math.random() * 1).toFixed(4);
 //     }
-//   })
-//   return obj
+//   });
+//   return obj;
 // }
 
-// const BUILD_API = 'https://api.veriton.ai/api/service3//build_ml_model'
-
-// const FULL_DATA_URL = 'https://api.veriton.ai/api/service3//data_full'
-
-// const TASK_FEATURES_API = 'https://api.veriton.ai/api/service3//task_features'
-
 // const CompareTab = ({}: CompareTabProps) => {
-//   const navigate = useNavigate()
-//   const [selectedTask, setSelectedTask] = useState('') // previously selectedFunction
-//   const [selectedModel1, setSelectedModel1] = useState('')
-//   const [selectedModel2, setSelectedModel2] = useState('')
-//   const [selectedFeature, setSelectedFeature] = useState<'all' | string>('all')
-//   const [columns, setColumns] = useState<string[]>([])
-//   const [isComparing, setIsComparing] = useState(false)
-//   const [comparisonComplete, setComparisonComplete] = useState(false)
+//   const navigate = useNavigate();
+//   const [selectedTask, setSelectedTask] = useState(""); // previously selectedFunction
+//   const [selectedModel1, setSelectedModel1] = useState("");
+//   const [selectedModel2, setSelectedModel2] = useState("");
+//   const [selectedFeature, setSelectedFeature] = useState<"all" | string>("all");
+//   const [isComparing, setIsComparing] = useState(false);
+//   const [comparisonComplete, setComparisonComplete] = useState(false);
 //   const [model1Metrics, setModel1Metrics] = useState<Record<
 //     string,
 //     any
-//   > | null>(null)
+//   > | null>(null);
 //   const [model2Metrics, setModel2Metrics] = useState<Record<
 //     string,
 //     any
-//   > | null>(null)
-//   const [apiResponseRaw, setApiResponseRaw] = useState<any | null>(null)
-//   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-//   const [blobPath, setBlobPath] = useState<string | null>(null)
-//   const [taskSpecificFeatures, setTaskSpecificFeatures] = useState<string[]>([])
-//   const [isFetchingFeatures, setIsFetchingFeatures] = useState(false)
-//   const location = useLocation()
-//   const dataset = (location.state as any)?.dataset || null
+//   > | null>(null);
+//   const [apiResponseRaw, setApiResponseRaw] = useState<any | null>(null);
+//   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+//   const [blobPath, setBlobPath] = useState<string | null>(null);
+//   const location = useLocation();
+//   const [allTaskFeatures, setAllTaskFeatures] = useState<any>(null);
+//   const [blobPathReady, setBlobPathReady] = useState(false);
+//   const filePath = (location.state as any)?.filePath || "";
+//   const datasetName = (location.state as any)?.datasetName || "";
+
+//   const cameFromHub = location.state?.origin === "automlhub";
 
 //   useEffect(() => {
-//     if (dataset?.blobPath) {
-//       setBlobPath(dataset.blobPath)
-//     }
-//   }, [dataset])
+//     if (!filePath) return;
 
-//   // Fetch task-specific features (targets) when task changes or blobPath becomes available
-//   useEffect(() => {
-//     if (!selectedTask || !blobPath) return
-
-//     const fetchTargets = async () => {
-//       const toastId = toast.loading(
-//         `Analyzing dataset for ${selectedTask} targets...`
-//       )
-
-//       setIsFetchingFeatures(true)
-//       setTaskSpecificFeatures([])
+//     const registerFile = async () => {
+//       const userEmail = getUserEmailFromLocal();
+//       if (!userEmail) return;
 
 //       try {
-//         const userEmail = getUserEmailFromLocal()
-//         if (!userEmail) throw new Error('User email not found')
+//         const params = new URLSearchParams();
+//         params.append("file_path", filePath);
+//         params.append("upload_file_path", "true");
+//         params.append("user_email", userEmail);
+//         params.append("optuna_trials", "2");
+//         params.append("preprocessing_mode", "simple");
+//         params.append("use_cleaning", "true");
+//         params.append("use_optuna", "true");
+//         params.append("test_size", "0.2");
+//         params.append("time_budget", "180");
+//         params.append("horizon", "12");
 
-//         const taskParam = selectedTask.toLowerCase().replace(/\s+/g, '_')
-//         const url = `${TASK_FEATURES_API}?blob_path=${encodeURIComponent(
-//           blobPath
-//         )}&task=${taskParam}&user_email=${encodeURIComponent(userEmail)}`
+//         const res = await fetch(
+//           "https://api.veriton.ai/api/service3/build_ml_model_v",
+//           {
+//             method: "POST",
+//             headers: {
+//               "Content-Type": "application/x-www-form-urlencoded",
+//               accept: "application/json",
+//             },
+//             body: params.toString(),
+//           },
+//         );
 
-//         const res = await fetch(url)
-//         if (!res.ok) throw new Error(`Failed: ${res.status}`)
+//         if (!res.ok) throw new Error(`Registration failed: ${res.status}`);
 
-//         const json = await res.json()
-//         setTaskSpecificFeatures(json.features || [])
-//         toast.dismiss(toastId)
+//         const json = await res.json();
+//         setBlobPath(json.blob_path);
+
+//         if (json.features?.tasks) {
+//           setAllTaskFeatures(json.features.tasks);
+//         }
+
+//         setBlobPathReady(true);
 //       } catch (err) {
-//         console.error('Failed to fetch targets:', err)
-//         toast.error('Could not load target columns', { id: toastId })
-//         setTaskSpecificFeatures([])
-//       } finally {
-//         setIsFetchingFeatures(false)
+//         console.error("File registration error:", err);
 //       }
-//     }
+//     };
 
-//     fetchTargets()
-//   }, [selectedTask, blobPath])
+//     registerFile();
+//   }, [filePath]);
 
 //   // Reset models & results when task changes
 //   useEffect(() => {
-//     setSelectedModel1('')
-//     setSelectedModel2('')
-//     setComparisonComplete(false)
-//     setModel1Metrics(null)
-//     setModel2Metrics(null)
-//     setApiResponseRaw(null)
-//     setErrorMessage(null)
-//     setSelectedFeature('all')
-//   }, [selectedTask])
+//     setSelectedModel1("");
+//     setSelectedModel2("");
+//     setComparisonComplete(false);
+//     setModel1Metrics(null);
+//     setModel2Metrics(null);
+//     setApiResponseRaw(null);
+//     setErrorMessage(null);
+//     setSelectedFeature("all");
+//   }, [selectedTask]);
 
 //   const availableModels = useMemo(() => {
-//     return selectedTask ? modelsByTask[selectedTask] || [] : []
-//   }, [selectedTask])
+//     return selectedTask ? modelsByTask[selectedTask] || [] : [];
+//   }, [selectedTask]);
+
+//   const taskSpecificFeatures = useMemo(() => {
+//     if (!allTaskFeatures || !selectedTask) return [];
+//     const taskKey = selectedTask.toLowerCase().replace(/\s+/g, "_");
+//     return allTaskFeatures[taskKey]?.features || [];
+//   }, [allTaskFeatures, selectedTask]);
 
 //   const getUserEmailFromLocal = (): string | null => {
 //     try {
-//       const raw = localStorage.getItem('aivolve_user')
-//       if (!raw) return null
-//       const parsed = JSON.parse(raw)
-//       return parsed?.email ?? null
+//       const raw = localStorage.getItem("aivolve_user");
+//       if (!raw) return null;
+//       const parsed = JSON.parse(raw);
+//       return parsed?.email ?? null;
 //     } catch {
-//       return null
+//       return null;
 //     }
-//   }
+//   };
 
 //   const getUserFromLocalStorage = () => {
 //     try {
-//       const raw = localStorage.getItem('aivolve_user')
-//       if (!raw) return null
+//       const raw = localStorage.getItem("aivolve_user");
+//       if (!raw) return null;
 //       return JSON.parse(raw) as {
-//         email?: string
-//         session_id?: string
-//         user_id?: string
-//         agent_name?: string
-//         [key: string]: any
-//       }
+//         email?: string;
+//         session_id?: string;
+//         user_id?: string;
+//         agent_name?: string;
+//         [key: string]: any;
+//       };
 //     } catch {
-//       return null
+//       return null;
 //     }
-//   }
+//   };
 
-//   const fetchFullData = async (blobPath: string, userEmail: string) => {
-//     const url = `${FULL_DATA_URL}?blob_path=${encodeURIComponent(
-//       blobPath
-//     )}&user_email=${encodeURIComponent(userEmail)}`
-//     const res = await fetch(url)
-//     if (!res.ok) {
-//       throw new Error('Failed to fetch full data')
-//     }
-//     const text = await res.text()
-//     const blob = new Blob([text], { type: 'text/csv' })
-//     return new File([blob], dataset!.name, { type: 'text/csv' })
-//   }
+//   // const fetchFullData = async (blobPath: string, userEmail: string) => {
+//   //   const url = `${FULL_DATA_URL}?blob_path=${encodeURIComponent(
+//   //     blobPath
+//   //   )}&user_email=${encodeURIComponent(userEmail)}`
+//   //   const res = await fetch(url)
+//   //   if (!res.ok) {
+//   //     throw new Error('Failed to fetch full data')
+//   //   }
+//   //   const text = await res.text()
+//   //   const blob = new Blob([text], { type: 'text/csv' })
+//   //   return new File([blob], dataset!.name, { type: 'text/csv' })
+//   // }
 
 //   const canCompare = !!(
 //     selectedTask &&
 //     selectedModel1 &&
 //     selectedModel2 &&
 //     selectedModel1 !== selectedModel2
-//   )
-
-//   const uploadFileAndGetBlobPath = async (): Promise<string | null> => {
-//     if (blobPath) return blobPath
-
-//     if (!dataset || !dataset.file) {
-//       setErrorMessage('No dataset selected')
-//       return null
-//     }
-
-//     const raw = localStorage.getItem('aivolve_user')
-//     if (!raw) {
-//       setErrorMessage('User not found')
-//       return null
-//     }
-
-//     const user = JSON.parse(raw)
-//     const userEmail = user.email
-
-//     const formData = new FormData()
-//     formData.append('file', dataset.file)
-//     formData.append('upload_file_path', 'true')
-//     formData.append('user_email', userEmail)
-
-//     const res = await fetch(BUILD_API, {
-//       method: 'POST',
-//       body: formData
-//     })
-
-//     if (!res.ok) {
-//       throw new Error('Failed to upload file')
-//     }
-
-//     const json = await res.json()
-
-//     if (json.blob_path) {
-//       setBlobPath(json.blob_path)
-//       return json.blob_path
-//     }
-
-//     return null
-//   }
-
-//   const fetchTaskSpecificFeatures = async (task: string) => {
-//     setIsFetchingFeatures(true)
-//     setTaskSpecificFeatures([])
-
-//     try {
-//       const path = await uploadFileAndGetBlobPath()
-//       if (!path) return
-
-//       const raw = localStorage.getItem('aivolve_user')
-//       const user = JSON.parse(raw!)
-//       const userEmail = user.email
-
-//       const url = `${TASK_FEATURES_API}?blob_path=${encodeURIComponent(
-//         path
-//       )}&task=${task
-//         .toLowerCase()
-//         .replace(/\s+/g, '_')}&user_email=${encodeURIComponent(userEmail)}`
-
-//       const res = await fetch(url)
-//       const json = await res.json()
-
-//       setTaskSpecificFeatures(json.features || [])
-//     } catch {
-//       setTaskSpecificFeatures([])
-//     } finally {
-//       setIsFetchingFeatures(false)
-//     }
-//   }
+//   );
 
 //   const fetchAndCompare = async () => {
-//     setErrorMessage(null)
-//     setIsComparing(true)
-//     setComparisonComplete(false)
-//     setModel1Metrics(null)
-//     setModel2Metrics(null)
-//     setApiResponseRaw(null)
+//     setErrorMessage(null);
+//     setIsComparing(true);
+//     setComparisonComplete(false);
+//     setModel1Metrics(null);
+//     setModel2Metrics(null);
+//     setApiResponseRaw(null);
 
-//     if (!dataset) {
+//     const userEmail = getUserEmailFromLocal();
+//     if (!userEmail) {
+//       setErrorMessage("User email not found. Please login again.");
+//       setIsComparing(false);
+//       return;
+//     }
+
+//     if (!blobPath) {
 //       setErrorMessage(
-//         'No dataset selected. Please select a dataset from the data source tab.'
-//       )
-//       setIsComparing(false)
-//       return
+//         "Dataset not ready. Please wait or go back and try again.",
+//       );
+//       setIsComparing(false);
+//       return;
 //     }
-
-//     const user = getUserFromLocalStorage()
-//     const userEmail = user?.email
-//     if (!userEmail || !user.user_id || !user.agent_name) {
-//       setErrorMessage('User information not found. Please login again.')
-//       setIsComparing(false)
-//       return
-//     }
-
-//     const blobPath = `${user.user_id}/${user.agent_name}/${dataset.name}`
-
-//     let fileToSend: File
-//     if (dataset.file && dataset.file.size > 0) {
-//       fileToSend = dataset.file
-//     } else {
-//       try {
-//         fileToSend = await fetchFullData(blobPath, userEmail)
-//       } catch (err) {
-//         setErrorMessage('Failed to fetch full dataset. Please try again.')
-//         setIsComparing(false)
-//         return
-//       }
-//     }
-
-//     const fd = new FormData()
-//     fd.append('task', selectedTask.toLowerCase().replace(/\s+/g, '_'))
-//     fd.append(
-//       'target',
-//       selectedFeature === 'all' ? 'all' : (selectedFeature as string)
-//     )
-//     fd.append('user_email', userEmail)
-//     fd.append('file', fileToSend)
 
 //     try {
-//       const res = await fetch(BUILD_API, { method: 'POST', body: fd })
+//       const params = new URLSearchParams();
+//       params.append("file_path", filePath);
+//       params.append("upload_file_path", "false");
+//       params.append("user_email", userEmail);
+//       params.append("task", selectedTask.toLowerCase().replace(/\s+/g, "_"));
+//       params.append("target", selectedFeature === "all" ? "" : selectedFeature);
+//       const model1Key = modelNameToApiKey(selectedModel1);
+//       const model2Key = modelNameToApiKey(selectedModel2);
+//       params.append("models", `${model1Key} , ${model2Key}`);
+//       params.append("optuna_trials", "2");
+//       params.append("preprocessing_mode", "simple");
+//       params.append("use_cleaning", "true");
+//       params.append("use_optuna", "true");
+//       params.append("use_feature_selection", "false");
+//       params.append("test_size", "0.2");
+//       params.append("time_budget", "300");
+//       params.append("horizon", "12");
+
+//       const res = await fetch(
+//         "https://api.veriton.ai/api/service3/build_ml_model_v",
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/x-www-form-urlencoded",
+//             accept: "application/json",
+//           },
+//           body: params.toString(),
+//         },
+//       );
+
 //       if (!res.ok) {
-//         const txt = await res.text()
-//         throw new Error(`API error ${res.status}: ${txt}`)
+//         const txt = await res.text();
+//         throw new Error(`API error ${res.status}: ${txt}`);
 //       }
-//       const json = await res.json()
-//       setApiResponseRaw(json)
 
-//       const allModels = json?.all_models ?? {}
-//       // map user-chosen display names to likely API keys
-//       const key1 = modelNameToApiKey(selectedModel1)
-//       const key2 = modelNameToApiKey(selectedModel2)
+//       const json = await res.json();
+//       setApiResponseRaw(json);
 
-//       // helper to find best match in allModels by fuzzy matching
+//       const allModels = json?.all_models ?? {};
+
 //       const findKey = (k: string | null) => {
-//         if (!k) return null
-//         if (allModels[k]) return k
-//         const lower = k.toLowerCase()
+//         if (!k) return null;
+//         if (allModels[k]) return k;
+//         const lower = k.toLowerCase();
 //         const candidate = Object.keys(allModels).find(
-//           c => c.toLowerCase() === lower
-//         )
-//         if (candidate) return candidate
-//         const candidate2 = Object.keys(allModels).find(c =>
-//           c.toLowerCase().includes(lower)
-//         )
-//         if (candidate2) return candidate2
-//         return null
-//       }
+//           (c) => c.toLowerCase() === lower,
+//         );
+//         if (candidate) return candidate;
+//         const candidate2 = Object.keys(allModels).find((c) =>
+//           c.toLowerCase().includes(lower),
+//         );
+//         if (candidate2) return candidate2;
+//         return null;
+//       };
 
-//       const real1 = findKey(key1)
-//       const real2 = findKey(key2)
+//       const real1 = findKey(modelNameToApiKey(selectedModel1));
+//       const real2 = findKey(modelNameToApiKey(selectedModel2));
 
 //       const pickMetrics = (obj: any) => {
-//         if (!obj) return null
-//         return {
-//           train: obj.train ?? null,
-//           test: obj.test ?? null
-//         }
-//       }
+//         if (!obj) return null;
+//         return { train: obj.train ?? null, test: obj.test ?? null };
+//       };
 
-//       setModel1Metrics(real1 ? pickMetrics(allModels[real1]) : null)
-//       setModel2Metrics(real2 ? pickMetrics(allModels[real2]) : null)
-
-//       // if backend didn't return those models, generate mock metrics (graceful fallback)
-//       if (!real1)
-//         setModel1Metrics({
-//           train: generateMockMetricsForTask(selectedTask),
-//           test: generateMockMetricsForTask(selectedTask)
-//         })
-//       if (!real2)
-//         setModel2Metrics({
-//           train: generateMockMetricsForTask(selectedTask),
-//           test: generateMockMetricsForTask(selectedTask)
-//         })
-
-//       setComparisonComplete(true)
+//       setModel1Metrics(real1 ? pickMetrics(allModels[real1]) : null);
+//       setModel2Metrics(real2 ? pickMetrics(allModels[real2]) : null);
+//       setComparisonComplete(true);
 //     } catch (err: any) {
-//       console.error('Build API error', err)
-//       // fallback to mock metrics if API fails but we still want the UI to show something:
-//       setModel1Metrics({
-//         train: generateMockMetricsForTask(selectedTask),
-//         test: generateMockMetricsForTask(selectedTask)
-//       })
-//       setModel2Metrics({
-//         train: generateMockMetricsForTask(selectedTask),
-//         test: generateMockMetricsForTask(selectedTask)
-//       })
-//       setErrorMessage(
-//         err?.message || 'Error calling build API. Showing mock metrics.'
-//       )
-//       setComparisonComplete(true)
+//       console.error("Compare API error", err);
+//       setErrorMessage(err?.message || "Error calling compare API.");
 //     } finally {
-//       setIsComparing(false)
+//       setIsComparing(false);
 //     }
-//   }
-
+//   };
 //   // compare two metric values based on whether lower is better
 //   const compareMetric = (
 //     key: string,
 //     a: any,
 //     b: any,
-//     isLowerBetter = false
+//     isLowerBetter = false,
 //   ) => {
-//     if (a == null && b == null) return { aClass: '', bClass: '' }
+//     if (a == null && b == null) return { aClass: "", bClass: "" };
 //     // parse percent strings and numeric strings
 //     const toNum = (v: any) => {
-//       if (v == null) return NaN
-//       if (typeof v === 'string' && v.includes('%'))
-//         return parseFloat(v.replace('%', ''))
-//       return parseFloat(String(v))
-//     }
-//     const na = toNum(a)
-//     const nb = toNum(b)
-//     if (isNaN(na) || isNaN(nb)) return { aClass: '', bClass: '' }
+//       if (v == null) return NaN;
+//       if (typeof v === "string" && v.includes("%"))
+//         return parseFloat(v.replace("%", ""));
+//       return parseFloat(String(v));
+//     };
+//     const na = toNum(a);
+//     const nb = toNum(b);
+//     if (isNaN(na) || isNaN(nb)) return { aClass: "", bClass: "" };
 //     if (isLowerBetter) {
 //       if (na < nb)
 //         return {
-//           aClass: 'text-success font-semibold',
-//           bClass: 'text-muted-foreground'
-//         }
+//           aClass: "text-success font-semibold",
+//           bClass: "text-muted-foreground",
+//         };
 //       if (nb < na)
 //         return {
-//           aClass: 'text-muted-foreground',
-//           bClass: 'text-success font-semibold'
-//         }
+//           aClass: "text-muted-foreground",
+//           bClass: "text-success font-semibold",
+//         };
 //     } else {
 //       if (na > nb)
 //         return {
-//           aClass: 'text-success font-semibold',
-//           bClass: 'text-muted-foreground'
-//         }
+//           aClass: "text-success font-semibold",
+//           bClass: "text-muted-foreground",
+//         };
 //       if (nb > na)
 //         return {
-//           aClass: 'text-muted-foreground',
-//           bClass: 'text-success font-semibold'
-//         }
+//           aClass: "text-muted-foreground",
+//           bClass: "text-success font-semibold",
+//         };
 //     }
-//     return { aClass: 'text-foreground', bClass: 'text-foreground' }
-//   }
+//     return { aClass: "text-foreground", bClass: "text-foreground" };
+//   };
 
 //   const renderMetricValue = (v: any) => {
-//     if (v == null) return '—'
+//     if (v == null) return "—";
 
 //     // If it's a string with %, return as is
-//     if (typeof v === 'string' && v.includes('%')) {
-//       return v
+//     if (typeof v === "string" && v.includes("%")) {
+//       return v;
 //     }
 
 //     // Convert to number and check if it's valid
-//     const num = typeof v === 'number' ? v : parseFloat(String(v))
+//     const num = typeof v === "number" ? v : parseFloat(String(v));
 
 //     // If it's a valid number, format to 5 decimal places
 //     if (!isNaN(num)) {
-//       return num.toFixed(5)
+//       return num.toFixed(5);
 //     }
 
 //     // Otherwise return as string
-//     return String(v)
-//   }
+//     return String(v);
+//   };
 
 //   return (
-//     <div className='min-h-screen bg-background'>
+//     <div className="min-h-screen bg-background">
 //       <Header />
 
-//       <main className='pt-6 px-8 pb-16 max-w-[1400px] mx-auto'>
+//       <main className="pt-6 px-8 pb-16 max-w-[1400px] mx-auto">
 //         {/* Back button + title */}
-//         <div className='mb-8 flex items-center justify-between'>
-//           <div className='flex items-center gap-6'>
-//             {/* <button
-//               onClick={() => navigate('/workflow/automl')}
-//               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-//             >
-//               <ArrowLeft className="w-4 h-4" />
-//               Back to Jobs
-//             </button> */}
-
+//         <div className="mb-8 flex items-center justify-between">
+//           <div className="flex items-center gap-6">
 //             <div>
-//               <h1 className='text-3xl font-semibold text-foreground'>
+//               <h1 className="text-3xl font-semibold text-foreground">
 //                 Compare Models
 //               </h1>
-//               <p className='text-muted-foreground mt-1'>
+//               <p className="text-muted-foreground mt-1">
 //                 Compare performance of two models on the same dataset
-//                 {dataset?.name && ` — ${dataset.name}`}
+//                 {datasetName && ` — ${datasetName}`}
 //               </p>
 //             </div>
 //           </div>
 
-//           <div className='flex items-center gap-4'>
+//           <div className="flex items-center gap-4">
 //             <Button
-//               variant='outline'
-//               onClick={() =>
-//                 navigate('/workflow/automl/build-model', { state: { dataset } })
-//               }
+//               variant="outline"
+//               onClick={() => {
+//                 if (cameFromHub) {
+//                   navigate("/workflow/automl/automlhub"); // or wherever AutoMLHub is mounted
+//                 } else {
+//                   navigate("/workflow/automl"); // same destination, but different label below
+//                   // If you have a real "Jobs" list page, change to: navigate('/jobs' or '/dashboard')
+//                 }
+//               }}
 //             >
-//               Build a Model
-//             </Button>
-//             <Button
-//               onClick={() => navigate('/workflow/automl')}
-//               variant='outline'
-//             >
-//               {/* <ArrowLeft className="w-4 h-4" /> */}
-//               Back to Jobs
+//               {cameFromHub ? "Back to Preview" : "Back to Jobs"}
 //             </Button>
 //           </div>
 //         </div>
 
 //         {/* Configuration Card */}
-//         <div className='bg-card rounded-xl border border-border p-6 mb-8 shadow-sm'>
-//           <h3 className='text-lg font-semibold mb-5 flex items-center gap-2'>
-//             <GitCompare className='w-5 h-5 text-primary' />
+//         <div className="bg-card rounded-xl border border-border p-6 mb-8 shadow-sm">
+//           <h3 className="text-lg font-semibold mb-5 flex items-center gap-2">
+//             <GitCompare className="w-5 h-5 text-primary" />
 //             Comparison Setup
 //           </h3>
 
-//           <div className='grid grid-cols-1 md:grid-cols-4 gap-5'>
+//           <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
 //             {/* Task */}
 //             <div>
-//               <label className='text-sm text-muted-foreground mb-1.5 block font-medium'>
-//                 Task *
+//               <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
+//                 Function
 //               </label>
 //               <Select value={selectedTask} onValueChange={setSelectedTask}>
-//                 <SelectTrigger className='bg-background'>
-//                   <SelectValue placeholder='Select task' />
+//                 <SelectTrigger className="bg-background">
+//                   <SelectValue placeholder="Select task" />
 //                 </SelectTrigger>
 //                 <SelectContent>
-//                   {Object.keys(modelsByTask).map(task => (
+//                   {Object.keys(modelsByTask).map((task) => (
 //                     <SelectItem key={task} value={task}>
 //                       {task}
 //                     </SelectItem>
@@ -639,23 +538,23 @@
 
 //             {/* Model 1 */}
 //             <div>
-//               <label className='text-sm text-muted-foreground mb-1.5 block font-medium'>
-//                 Model 1 *
+//               <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
+//                 Model 1
 //               </label>
 //               <Select
 //                 value={selectedModel1}
 //                 onValueChange={setSelectedModel1}
 //                 disabled={!selectedTask}
 //               >
-//                 <SelectTrigger className='bg-background'>
+//                 <SelectTrigger className="bg-background">
 //                   <SelectValue
 //                     placeholder={
-//                       selectedTask ? 'Select Model 1' : 'Select task first'
+//                       selectedTask ? "Select Model 1" : "Select task first"
 //                     }
 //                   />
 //                 </SelectTrigger>
 //                 <SelectContent>
-//                   {availableModels.map(m => (
+//                   {availableModels.map((m) => (
 //                     <SelectItem
 //                       key={m}
 //                       value={m}
@@ -670,23 +569,23 @@
 
 //             {/* Model 2 */}
 //             <div>
-//               <label className='text-sm text-muted-foreground mb-1.5 block font-medium'>
-//                 Model 2 *
+//               <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
+//                 Model 2
 //               </label>
 //               <Select
 //                 value={selectedModel2}
 //                 onValueChange={setSelectedModel2}
 //                 disabled={!selectedTask}
 //               >
-//                 <SelectTrigger className='bg-background'>
+//                 <SelectTrigger className="bg-background">
 //                   <SelectValue
 //                     placeholder={
-//                       selectedTask ? 'Select Model 2' : 'Select task first'
+//                       selectedTask ? "Select Model 2" : "Select task first"
 //                     }
 //                   />
 //                 </SelectTrigger>
 //                 <SelectContent>
-//                   {availableModels.map(m => (
+//                   {availableModels.map((m) => (
 //                     <SelectItem
 //                       key={m}
 //                       value={m}
@@ -701,39 +600,59 @@
 
 //             {/* Target Feature */}
 //             <div>
-//               <label className='text-sm text-muted-foreground mb-1.5 block font-medium'>
-//                 Target Feature *
+//               <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
+//                 Target Column
 //               </label>
 //               <Select
-//                 value={selectedFeature === 'all' ? 'all' : selectedFeature}
-//                 onValueChange={v => setSelectedFeature(v as 'all' | string)}
-//                 disabled={isFetchingFeatures || !selectedTask}
+//                 value={selectedFeature === "all" ? "all" : selectedFeature}
+//                 onValueChange={(v) => setSelectedFeature(v as "all" | string)}
+//                 disabled={!selectedTask || !blobPathReady}
 //               >
-//                 <SelectTrigger className='bg-background'>
+//                 <SelectTrigger className="bg-background">
 //                   <SelectValue
 //                     placeholder={
-//                       isFetchingFeatures
-//                         ? 'Loading targets...'
+//                       !blobPathReady
+//                         ? "Loading targets..."
 //                         : selectedTask
-//                         ? 'Select target'
-//                         : 'Select task first'
+//                           ? "Select target"
+//                           : "Select task first"
 //                     }
 //                   />
 //                 </SelectTrigger>
-//                 <SelectContent className='max-h-64'>
-//                   <SelectItem value='all'>All features (auto)</SelectItem>
-//                   {isFetchingFeatures ? (
-//                     <div className='px-3 py-2 text-sm text-muted-foreground'>
+//                 <SelectContent className="max-h-64">
+//                   <SelectItem value="all">All features (auto)</SelectItem>
+//                   {!blobPathReady ? (
+//                     <div className="px-3 py-2 text-sm text-muted-foreground flex items-center gap-2">
+//                       <svg
+//                         className="animate-spin h-3 w-3"
+//                         xmlns="http://www.w3.org/2000/svg"
+//                         fill="none"
+//                         viewBox="0 0 24 24"
+//                       >
+//                         <circle
+//                           className="opacity-25"
+//                           cx="12"
+//                           cy="12"
+//                           r="10"
+//                           stroke="currentColor"
+//                           strokeWidth="4"
+//                         ></circle>
+//                         <path
+//                           className="opacity-75"
+//                           fill="currentColor"
+//                           d="M4 12a8 8 0 018-8v8z"
+//                         ></path>
+//                       </svg>
 //                       Loading targets...
 //                     </div>
 //                   ) : taskSpecificFeatures.length > 0 ? (
-//                     taskSpecificFeatures.map(col => (
+//                     taskSpecificFeatures.map((col) => (
 //                       <SelectItem key={col} value={col}>
 //                         {col}
 //                       </SelectItem>
 //                     ))
 //                   ) : (
-//                     <div className='px-3 py-2 text-sm text-muted-foreground'>
+//                     <div className="px-3 py-2 text-sm text-muted-foreground">
 //                       No targets available
 //                     </div>
 //                   )}
@@ -743,18 +662,18 @@
 //           </div>
 
 //           {errorMessage && (
-//             <div className='mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm'>
+//             <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
 //               {errorMessage}
 //             </div>
 //           )}
 
-//           <div className='mt-6'>
+//           <div className="mt-6">
 //             <Button
 //               onClick={fetchAndCompare}
-//               disabled={!canCompare || isComparing || isFetchingFeatures}
-//               size='lg'
+//               disabled={!canCompare || isComparing || !blobPathReady}
+//               size="lg"
 //             >
-//               {isComparing ? 'Comparing...' : 'Compare Models'}
+//               {isComparing ? "Comparing..." : "Compare Models"}
 //             </Button>
 //           </div>
 //         </div>
@@ -764,62 +683,62 @@
 //           <motion.div
 //             initial={{ opacity: 0, y: 20 }}
 //             animate={{ opacity: 1, y: 0 }}
-//             className='space-y-4'
+//             className="space-y-4"
 //           >
-//             <div className='bg-card rounded-xl border border-border p-5'>
-//               <h4 className='text-base font-semibold text-foreground mb-4'>
+//             <div className="bg-card rounded-xl border border-border p-5">
+//               <h4 className="text-base font-semibold text-foreground mb-4">
 //                 Comparison Summary
 //               </h4>
-//               <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
+//               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
 //                 <div>
-//                   <span className='text-muted-foreground'>Task:</span>
-//                   <span className='ml-2 text-foreground font-medium'>
+//                   <span className="text-muted-foreground">Task:</span>
+//                   <span className="ml-2 text-foreground font-medium">
 //                     {selectedTask}
 //                   </span>
 //                 </div>
 //                 <div>
-//                   <span className='text-muted-foreground'>Model 1:</span>
-//                   <span className='ml-2 text-primary font-medium'>
+//                   <span className="text-muted-foreground">Model 1:</span>
+//                   <span className="ml-2 text-primary font-medium">
 //                     {selectedModel1}
 //                   </span>
 //                 </div>
 //                 <div>
-//                   <span className='text-muted-foreground'>Model 2:</span>
-//                   <span className='ml-2 text-primary font-medium'>
+//                   <span className="text-muted-foreground">Model 2:</span>
+//                   <span className="ml-2 text-primary font-medium">
 //                     {selectedModel2}
 //                   </span>
 //                 </div>
 //                 <div>
-//                   <span className='text-muted-foreground'>Target:</span>
-//                   <span className='ml-2 text-foreground font-medium'>
-//                     {selectedFeature === 'all'
-//                       ? 'All features'
+//                   <span className="text-muted-foreground">Target:</span>
+//                   <span className="ml-2 text-foreground font-medium">
+//                     {selectedFeature === "all"
+//                       ? "All features"
 //                       : selectedFeature}
 //                   </span>
 //                 </div>
 //               </div>
 //             </div>
 
-//             <div className='bg-card rounded-xl border border-border overflow-hidden'>
-//               <div className='p-4 border-b border-border'>
-//                 <h3 className='text-sm font-semibold text-foreground'>
+//             <div className="bg-card rounded-xl border border-border overflow-hidden">
+//               <div className="p-4 border-b border-border">
+//                 <h3 className="text-sm font-semibold text-foreground">
 //                   Model Comparison Results
 //                 </h3>
 //               </div>
-//               <div className='overflow-x-auto'>
-//                 <table className='w-full text-sm'>
+//               <div className="overflow-x-auto">
+//                 <table className="w-full text-sm">
 //                   <thead>
-//                     <tr className='bg-muted/30'>
-//                       <th className='px-4 py-3 text-left text-xs font-bold text-foreground uppercase tracking-wider border-b border-border'>
+//                     <tr className="bg-muted/30">
+//                       <th className="px-4 py-3 text-left text-xs font-bold text-foreground uppercase tracking-wider border-b border-border">
 //                         Model Name
 //                       </th>
-//                       <th className='px-4 py-3 text-center text-xs font-bold text-foreground uppercase tracking-wider border-b border-border'>
+//                       <th className="px-4 py-3 text-center text-xs font-bold text-foreground uppercase tracking-wider border-b border-border">
 //                         Metrics
 //                       </th>
-//                       {(metricsByTask[selectedTask] || []).map(spec => (
+//                       {(metricsByTask[selectedTask] || []).map((spec) => (
 //                         <th
 //                           key={spec.key}
-//                           className='px-4 py-3 text-center text-xs font-bold text-foreground uppercase tracking-wider border-b border-border'
+//                           className="px-4 py-3 text-center text-xs font-bold text-foreground uppercase tracking-wider border-b border-border"
 //                         >
 //                           {spec.label}
 //                         </th>
@@ -828,96 +747,96 @@
 //                   </thead>
 //                   <tbody>
 //                     {/* Model 1 - Train Row */}
-//                     <tr className='border-b border-border/50'>
+//                     <tr className="border-b border-border/50">
 //                       <td
-//                         className='px-4 py-4 font-bold text-blue-500 text-primary border-r border-border'
+//                         className="px-4 py-4 font-bold text-blue-500 text-primary border-r border-border"
 //                         rowSpan={2}
 //                       >
 //                         {selectedModel1}
 //                       </td>
-//                       <td className='px-4 py-3 text-center text-sm font-medium text-muted-foreground bg-muted/20'>
+//                       <td className="px-4 py-3 text-center text-sm font-medium text-muted-foreground bg-muted/20">
 //                         Train
 //                       </td>
-//                       {(metricsByTask[selectedTask] || []).map(spec => {
+//                       {(metricsByTask[selectedTask] || []).map((spec) => {
 //                         const value = model1Metrics?.train
-//                           ? model1Metrics.train[spec.key] ??
-//                             model1Metrics.train[spec.key.replace(/\./g, '_')]
-//                           : null
+//                           ? (model1Metrics.train[spec.key] ??
+//                             model1Metrics.train[spec.key.replace(/\./g, "_")])
+//                           : null;
 //                         return (
 //                           <td
 //                             key={spec.key}
-//                             className='px-4 py-3 text-center text-sm text-foreground'
+//                             className="px-4 py-3 text-center text-sm text-foreground"
 //                           >
 //                             {renderMetricValue(value)}
 //                           </td>
-//                         )
+//                         );
 //                       })}
 //                     </tr>
 //                     {/* Model 1 - Test Row */}
-//                     <tr className='border-b border-border'>
-//                       <td className='px-4 py-3 text-center text-sm font-medium text-muted-foreground bg-muted/20'>
+//                     <tr className="border-b border-border">
+//                       <td className="px-4 py-3 text-center text-sm font-medium text-muted-foreground bg-muted/20">
 //                         Test
 //                       </td>
-//                       {(metricsByTask[selectedTask] || []).map(spec => {
+//                       {(metricsByTask[selectedTask] || []).map((spec) => {
 //                         const value = model1Metrics?.test
-//                           ? model1Metrics.test[spec.key] ??
-//                             model1Metrics.test[spec.key.replace(/\./g, '_')]
-//                           : null
+//                           ? (model1Metrics.test[spec.key] ??
+//                             model1Metrics.test[spec.key.replace(/\./g, "_")])
+//                           : null;
 //                         return (
 //                           <td
 //                             key={spec.key}
-//                             className='px-4 py-3 text-center text-sm text-foreground'
+//                             className="px-4 py-3 text-center text-sm text-foreground"
 //                           >
 //                             {renderMetricValue(value)}
 //                           </td>
-//                         )
+//                         );
 //                       })}
 //                     </tr>
 
 //                     {/* Model 2 - Train Row */}
-//                     <tr className='border-b border-border/50'>
+//                     <tr className="border-b border-border/50">
 //                       <td
-//                         className='px-4 py-4 font-bold text-purple-500 text-primary border-r border-border'
+//                         className="px-4 py-4 font-bold text-purple-500 text-primary border-r border-border"
 //                         rowSpan={2}
 //                       >
 //                         {selectedModel2}
 //                       </td>
-//                       <td className='px-4 py-3 text-center text-sm font-medium text-muted-foreground bg-muted/20'>
+//                       <td className="px-4 py-3 text-center text-sm font-medium text-muted-foreground bg-muted/20">
 //                         Train
 //                       </td>
-//                       {(metricsByTask[selectedTask] || []).map(spec => {
+//                       {(metricsByTask[selectedTask] || []).map((spec) => {
 //                         const value = model2Metrics?.train
-//                           ? model2Metrics.train[spec.key] ??
-//                             model2Metrics.train[spec.key.replace(/\./g, '_')]
-//                           : null
+//                           ? (model2Metrics.train[spec.key] ??
+//                             model2Metrics.train[spec.key.replace(/\./g, "_")])
+//                           : null;
 //                         return (
 //                           <td
 //                             key={spec.key}
-//                             className='px-4 py-3 text-center text-sm text-foreground'
+//                             className="px-4 py-3 text-center text-sm text-foreground"
 //                           >
 //                             {renderMetricValue(value)}
 //                           </td>
-//                         )
+//                         );
 //                       })}
 //                     </tr>
 //                     {/* Model 2 - Test Row */}
-//                     <tr className='border-b border-border'>
-//                       <td className='px-4 py-3 text-center text-sm font-medium text-muted-foreground bg-muted/20'>
+//                     <tr className="border-b border-border">
+//                       <td className="px-4 py-3 text-center text-sm font-medium text-muted-foreground bg-muted/20">
 //                         Test
 //                       </td>
-//                       {(metricsByTask[selectedTask] || []).map(spec => {
+//                       {(metricsByTask[selectedTask] || []).map((spec) => {
 //                         const value = model2Metrics?.test
-//                           ? model2Metrics.test[spec.key] ??
-//                             model2Metrics.test[spec.key.replace(/\./g, '_')]
-//                           : null
+//                           ? (model2Metrics.test[spec.key] ??
+//                             model2Metrics.test[spec.key.replace(/\./g, "_")])
+//                           : null;
 //                         return (
 //                           <td
 //                             key={spec.key}
-//                             className='px-4 py-3 text-center text-sm text-foreground'
+//                             className="px-4 py-3 text-center text-sm text-foreground"
 //                           >
 //                             {renderMetricValue(value)}
 //                           </td>
-//                         )
+//                         );
 //                       })}
 //                     </tr>
 //                   </tbody>
@@ -928,13 +847,13 @@
 //         )}
 //       </main>
 //     </div>
-//   )
-// }
+//   );
+// };
 
-// export default CompareTab
+// export default CompareTab;
 
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, GitCompare } from "lucide-react";
@@ -1125,19 +1044,28 @@ const CompareTab = ({}: CompareTabProps) => {
   const [allTaskFeatures, setAllTaskFeatures] = useState<any>(null);
   const [blobPathReady, setBlobPathReady] = useState(false);
   const filePath = (location.state as any)?.filePath || "";
+  const registerAbortRef = useRef<AbortController | null>(null);
   const datasetName = (location.state as any)?.datasetName || "";
 
   const cameFromHub = location.state?.origin === "automlhub";
+
+  // ✅ add this ref at top of component if not already added
+  // const registerAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!filePath) return;
 
     const registerFile = async () => {
       const userEmail = getUserEmailFromLocal();
+
       if (!userEmail) return;
 
       try {
+        // ✅ Create AbortController
+        registerAbortRef.current = new AbortController();
+
         const params = new URLSearchParams();
+
         params.append("file_path", filePath);
         params.append("upload_file_path", "true");
         params.append("user_email", userEmail);
@@ -1153,17 +1081,23 @@ const CompareTab = ({}: CompareTabProps) => {
           "https://api.veriton.ai/api/service3/build_ml_model_v",
           {
             method: "POST",
+
             headers: {
               "Content-Type": "application/x-www-form-urlencoded",
               accept: "application/json",
             },
+
             body: params.toString(),
+
+            // ✅ attach signal
+            signal: registerAbortRef.current.signal,
           },
         );
 
         if (!res.ok) throw new Error(`Registration failed: ${res.status}`);
 
         const json = await res.json();
+
         setBlobPath(json.blob_path);
 
         if (json.features?.tasks) {
@@ -1171,12 +1105,26 @@ const CompareTab = ({}: CompareTabProps) => {
         }
 
         setBlobPathReady(true);
-      } catch (err) {
+      } catch (err: any) {
+        // ✅ IMPORTANT: ignore abort error
+        if (err.name === "AbortError") {
+          console.log("Registration API aborted");
+
+          return;
+        }
+
         console.error("File registration error:", err);
       }
     };
 
     registerFile();
+
+    // ✅ cleanup when leaving page
+    return () => {
+      if (registerAbortRef.current) {
+        registerAbortRef.current.abort();
+      }
+    };
   }, [filePath]);
 
   // Reset models & results when task changes
@@ -1211,35 +1159,6 @@ const CompareTab = ({}: CompareTabProps) => {
       return null;
     }
   };
-
-  const getUserFromLocalStorage = () => {
-    try {
-      const raw = localStorage.getItem("aivolve_user");
-      if (!raw) return null;
-      return JSON.parse(raw) as {
-        email?: string;
-        session_id?: string;
-        user_id?: string;
-        agent_name?: string;
-        [key: string]: any;
-      };
-    } catch {
-      return null;
-    }
-  };
-
-  // const fetchFullData = async (blobPath: string, userEmail: string) => {
-  //   const url = `${FULL_DATA_URL}?blob_path=${encodeURIComponent(
-  //     blobPath
-  //   )}&user_email=${encodeURIComponent(userEmail)}`
-  //   const res = await fetch(url)
-  //   if (!res.ok) {
-  //     throw new Error('Failed to fetch full data')
-  //   }
-  //   const text = await res.text()
-  //   const blob = new Blob([text], { type: 'text/csv' })
-  //   return new File([blob], dataset!.name, { type: 'text/csv' })
-  // }
 
   const canCompare = !!(
     selectedTask &&
@@ -1432,11 +1351,14 @@ const CompareTab = ({}: CompareTabProps) => {
             <Button
               variant="outline"
               onClick={() => {
+                if (registerAbortRef.current) {
+                  registerAbortRef.current.abort();
+                }
+
                 if (cameFromHub) {
-                  navigate("/workflow/automl/automlhub"); // or wherever AutoMLHub is mounted
+                  navigate("/workflow/automl/automlhub");
                 } else {
-                  navigate("/workflow/automl"); // same destination, but different label below
-                  // If you have a real "Jobs" list page, change to: navigate('/jobs' or '/dashboard')
+                  navigate("/workflow/automl");
                 }
               }}
             >

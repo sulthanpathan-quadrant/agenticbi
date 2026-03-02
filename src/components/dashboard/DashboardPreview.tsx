@@ -10,6 +10,7 @@ import {
   MessageSquare,
   AlertCircle
 } from 'lucide-react';
+import { useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -22,6 +23,8 @@ import {
   Scatter,
   Cell
 } from 'recharts';
+import { PowerBIFlow } from '@/components/powerbi/PowerBIFlow';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardPreviewProps {
   dashboardData: any;
@@ -36,6 +39,20 @@ export function DashboardPreview({ dashboardData, file, query, onBack }: Dashboa
   const visuals = dashboardData?.visuals || [];
   const totalRows = dashboardData?.total_rows || 0;
   const totalVisualsGenerated = dashboardData?.total_visuals_generated || 0;
+  const navigate = useNavigate();
+  
+  const richa = "Hello"
+  //  const [showPowerBIFlow, setShowPowerBIFlow] = useState(false);
+
+
+  //   if (showPowerBIFlow) {
+  //   return (
+  //     <PowerBIFlow
+  //       fileName={file.name}
+  //       onBack={() => setShowPowerBIFlow(false)}
+  //     />
+  //   );
+  // }
 
   // Extract card/KPI visuals (these go to "Key Results" section)
   const cardVisuals = visuals.filter((v: any) => 
@@ -82,7 +99,19 @@ export function DashboardPreview({ dashboardData, file, query, onBack }: Dashboa
           </div>
           
           <div className="flex items-center gap-2 shrink-0 lg:ml-auto">
-            <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+            {/* <Button variant="outline" size="sm" className="gap-2 h-8 text-xs"> */}
+            {/* <Button variant="outline" size="sm" className="gap-2 h-8 text-xs" onClick={() => setShowPowerBIFlow(true)}> */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 h-8 text-xs"
+              onClick={() => {
+                // Navigate to Power BI flow page and pass file name via state
+                navigate('/powerbi-flow');
+               
+              }}
+            >
+            
               <Share2 className="w-3.5 h-3.5" />
               Deploy to Power BI
             </Button>

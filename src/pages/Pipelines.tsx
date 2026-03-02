@@ -14,6 +14,7 @@
 //   GitBranch,
 //   LogOut,
 //   BarChart3,
+//   TableIcon,
 // } from "lucide-react";
 // import { toast } from "sonner";
 // import { ThemeToggle } from "@/components/ThemeToggle";
@@ -27,7 +28,7 @@
 //   jobDetails?: Array<{ job_id: string; job_name: string }>; // ← new optional field
 // }
  
-// const API_BASE = "https://20.81.213.147";
+// const API_BASE = "https://api.veriton.ai/api/service2";
  
 // const Pipelines = () => {
 //   const navigate = useNavigate();
@@ -265,9 +266,10 @@
 //   const userName = user?.name || user?.email?.split("@")[0] || "User";
  
 //   const handleLogout = () => {
-//     localStorage.removeItem("user");
-//     localStorage.removeItem("token");
-//     localStorage.removeItem("pipelines");
+//      localStorage.clear();
+//     // localStorage.removeItem("user");
+//     // localStorage.removeItem("token");
+//     // localStorage.removeItem("pipelines");
 //     toast.success("Logged out successfully");
 //     navigate("/", { replace: true });
 //   };
@@ -278,7 +280,7 @@
 //       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
 //         <div className="container mx-auto px-6 py-4">
 //           <div className="flex items-center justify-between">
-//             <div className="flex items-center gap-3">
+//             {/* <div className="flex items-center gap-3">
 //               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
 //                 <Database className="w-5 h-5 text-primary" />
 //               </div>
@@ -286,6 +288,31 @@
 //                 <h1 className="font-bold text-lg">Veritas</h1>
 //                 <p className="text-sm text-muted-foreground">
 //                   Welcome, <span className="text-primary">{userName}</span>
+//                 </p>
+//               </div> */}
+//               <div className="flex items-center gap-3 md:gap-4">
+//               {/* Logo */}
+//               <a href="/" className="flex-shrink-0">
+//                 <img
+//                   src="/logo2.png"
+//                   alt="Veriton"
+//                   className="
+//                     h-10               /* mobile base size */
+//                     sm:h-10
+//                     md:h-9 lg:h-10    /* larger on desktop */
+//                     w-auto
+//                     object-contain
+//                     drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+//                     transition-transform duration-200
+//                     hover:scale-105
+//                   "
+//                 />
+//               </a>
+
+//               {/* Welcome text – side by side */}
+//               <div className="flex flex-col">
+//                 <p className="text-sm md:text-base text-muted-foreground">
+//                   Welcome, <span className="text-primary font-medium">{userName || "User"}</span>
 //                 </p>
 //               </div>
 //             </div>
@@ -298,7 +325,7 @@
 //               <button onClick={() => navigate("/pipelines")} className=
 //               "flex items-center gap-2 text-primary font-medium border-b-2 border-primary pb-1">
                
-              
+             
 //               <GitBranch className="w-4 h-4" /> Pipelines
 //               </button>
 //               <ThemeToggle />
@@ -306,9 +333,9 @@
 //                 <LogOut className="h-4 w-4" />
 //               </Button>
 //             </nav> */}
-
-
-
+ 
+ 
+ 
 //             <nav className="flex items-center gap-6">
 //               <button
 //                 onClick={() => navigate("/jobs")}
@@ -320,16 +347,20 @@
 //               <button
 //                 onClick={() => navigate("/pipelines")}
 //                 className= "flex items-center gap-2 text-primary font-medium border-b-2 border-primary pb-1">
-               
-             
-             
 //                 <GitBranch className="w-4 h-4" />
 //                 Pipelines
 //               </button>
-
+//               <button
+//                 onClick={() => navigate("/datasets")}  // or any route you prefer
+//                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+//               >
+//                 <TableIcon className="w-4 h-4" />   {/* Perfect icon for datasets */}
+//                 Datasets
+//               </button>
+              
 //               <div className="flex items-center gap-3">
 //                 <ThemeToggle />
-
+ 
 //                 <Button
 //                   variant="ghost"
 //                   size="icon"
@@ -341,7 +372,7 @@
 //                 </Button>
 //               </div>
 //             </nav>
-            
+           
 //           </div>
 //         </div>
 //       </header>
@@ -437,7 +468,7 @@
 //                               variant="ghost"
 //                               className="h-8 w-8"
 //                               onClick={() => viewPipelineJobs(pipeline)}
-//                               onOpenChange={setShowJobModal}
+//                               // onOpenChange={setShowJobModal}
 //                             >
 //                               <Eye className="w-4 h-4" />
 //                             </Button>
@@ -498,7 +529,7 @@
 //             <span className="text-xl">×</span>
 //           </Button>
 //         </div>
-
+ 
 //         {modalLoading ? (
 //           <p className="text-center text-muted-foreground py-8">
 //             Loading job details...
@@ -551,16 +582,12 @@
 //     </Card>
 //   </div>
 // )}
-
+ 
 //     </div>
 //   );
 // };
  
 // export default Pipelines;
- 
-
-
- 
  
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -586,10 +613,10 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 interface Pipeline {
   id: string;
   name: string;
-  jobs: string[];               // job IDs
+  jobs: string[];
   createdAt: string;
-  status: "Completed" | "PENDING" | "Running" | "Failed" | "CREATED";
-  jobDetails?: Array<{ job_id: string; job_name: string }>; // ← new optional field
+  status: string; // ← accept whatever the API sends (no union)
+  jobDetails?: Array<{ job_id: string; job_name: string }>;
 }
  
 const API_BASE = "https://api.veriton.ai/api/service2";
@@ -604,12 +631,11 @@ const Pipelines = () => {
   const [showJobsModal, setShowJobsModal] = useState(false);
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
-  const [showJobModal, setShowJobModal] = useState(false);
  
   const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") || "{}") : {};
   const userId = user?.id || user?.user_id;
  
-  // Load pipelines from localStorage on mount (instant UI)
+  // Load cached pipelines on mount
   useEffect(() => {
     const cached = localStorage.getItem("pipelines");
     if (cached) {
@@ -629,7 +655,7 @@ const Pipelines = () => {
     }
   }, []);
  
-  // Fetch fresh pipelines list + update cache
+  // Fetch fresh pipelines + update cache
   useEffect(() => {
     const fetchPipelines = async () => {
       setLoading(true);
@@ -650,7 +676,7 @@ const Pipelines = () => {
           name: p.name || "Unnamed Pipeline",
           jobs: p.job_ids || [],
           createdAt: p.created_at || "N/A",
-          status: p.status || "CREATED",
+          status: p.status || "CREATED", // ← keep exactly what API sends
         }));
  
         setPipelines(mapped);
@@ -674,7 +700,6 @@ const Pipelines = () => {
     }
   }, [userId]);
  
-  // Fetch detailed pipeline info (including real job names) when opening modal
   const fetchPipelineDetails = async (pipelineId: string) => {
     setModalLoading(true);
     try {
@@ -686,19 +711,15 @@ const Pipelines = () => {
         }
       );
  
-      if (!res.ok) {
-        throw new Error(`Failed to fetch pipeline details: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`Failed to fetch pipeline details: ${res.status}`);
  
       const data = await res.json();
  
-      // Update the selected pipeline with real job details
       setSelectedPipeline(prev => ({
         ...prev!,
         jobDetails: data.jobs || [],
       }));
  
-      // Optional: also update main list so next time modal opens faster
       setPipelines(prev =>
         prev.map(p =>
           p.id === pipelineId ? { ...p, jobDetails: data.jobs || [] } : p
@@ -716,7 +737,6 @@ const Pipelines = () => {
     setSelectedPipeline(pipeline);
     setShowJobsModal(true);
  
-    // Only fetch if we don't already have job details
     if (!pipeline.jobDetails || pipeline.jobDetails.length === 0) {
       fetchPipelineDetails(pipeline.id);
     }
@@ -770,42 +790,113 @@ const Pipelines = () => {
     }
  
     setRunningPipelines(prev => new Set([...prev, pipelineId]));
- 
     setPipelines(prev =>
-      prev.map(p => p.id === pipelineId ? { ...p, status: "Running" } : p)
+      prev.map(p => (p.id === pipelineId ? { ...p, status: "Running" } : p))
     );
  
     toast.info("Starting pipeline...");
  
     try {
-      const res = await fetch(`${API_BASE}/run-pipeline`, {
+      const runRes = await fetch(`${API_BASE}/run-pipeline`, {
         method: "POST",
         headers: {
-          "accept": "application/json",
+          accept: "application/json",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ user_id: userId, pipeline_id: pipelineId }),
       });
  
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`Run failed: ${res.status} - ${txt}`);
+      if (!runRes.ok) {
+        const txt = await runRes.text();
+        throw new Error(`Run request failed: ${runRes.status} - ${txt}`);
       }
  
-      const result = await res.json();
+      const runResult = await runRes.json();
  
-      if (result.status === "SUCCESS") {
-        toast.success(`Pipeline finished (${result.jobs_succeeded}/${result.jobs_total} jobs)`);
-        setPipelines(prev =>
-          prev.map(p => p.id === pipelineId ? { ...p, status: "Completed" } : p)
-        );
+      const startedSuccessfully =
+        runResult.message?.toLowerCase().includes("started") ||
+        ["QUEUED", "RUNNING", "PENDING", "SUCCESS"].includes((runResult.status || "").toUpperCase());
+ 
+      if (!startedSuccessfully) {
+        throw new Error(runResult.message || "Could not start pipeline");
+      }
+ 
+      // Polling
+      const startTime = Date.now();
+      const MAX_POLL_MS = 90000;
+      const POLL_INTERVAL_MS = 3000;
+ 
+      let finalStatus = "Running";
+ 
+      while (Date.now() - startTime < MAX_POLL_MS) {
+        await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+ 
+        try {
+          const statusRes = await fetch(
+            `${API_BASE}/get-pipeline-status?user_id=${userId}&pipeline_id=${pipelineId}`,
+            { headers: { "Content-Type": "application/json" } }
+          );
+ 
+          if (!statusRes.ok) continue;
+ 
+          const data = await statusRes.json();
+ 
+          const apiStatus = (data.status || "UNKNOWN").trim();
+          const total     = Number(data.jobs_total ?? 0);
+          const succeeded = Number(data.jobs_succeeded ?? 0);
+          const failed    = Number(data.jobs_failed ?? 0);
+ 
+          // Progress toast only when actual work happened
+          if (total > 0 && (succeeded > 0 || failed > 0)) {
+            toast.info(`Progress: ${succeeded}/${total} (${failed} failed)`, {
+              id: `progress-${pipelineId}`,
+              duration: 4000,
+            });
+          }
+ 
+          // Use raw API status when we detect end condition
+          if (
+            apiStatus.toUpperCase() === "SUCCESS" ||
+            (total > 0 && succeeded === total && failed === 0)
+          ) {
+            finalStatus = apiStatus; // ← exact value from API
+            break;
+          }
+ 
+          if (
+            apiStatus.toUpperCase() === "FAILED" ||
+            failed > 0
+          ) {
+            finalStatus = apiStatus; // ← exact value from API
+            break;
+          }
+ 
+          // Update live status during polling
+          finalStatus = apiStatus || "Running";
+ 
+        } catch (err) {
+          console.warn("Status poll failed (will retry):", err);
+        }
+      }
+ 
+      setPipelines(prev =>
+        prev.map(p =>
+          p.id === pipelineId ? { ...p, status: finalStatus } : p
+        )
+      );
+ 
+      if (finalStatus.toUpperCase() === "SUCCESS") {
+        toast.success("Pipeline finished successfully");
+      } else if (finalStatus.toUpperCase() === "FAILED" || finalStatus.toUpperCase().includes("FAIL")) {
+        toast.error("Pipeline failed – check job details");
       } else {
-        throw new Error(result.message || "Execution failed");
+        toast.warning("Polling timeout – check status manually", { duration: 8000 });
       }
     } catch (err: any) {
+      console.error("Pipeline run error:", err);
       toast.error(err.message || "Failed to run pipeline");
       setPipelines(prev =>
-        prev.map(p => p.id === pipelineId ? { ...p, status: "Failed" } : p)
+        prev.map(p => (p.id === pipelineId ? { ...p, status: "Failed" } : p))
       );
     } finally {
       setRunningPipelines(prev => {
@@ -817,34 +908,36 @@ const Pipelines = () => {
   };
  
   const getStatusBadge = (status: string) => {
+    const upper = status.toUpperCase();
+ 
     const styles: Record<string, string> = {
-      Completed: "bg-green-500/20 text-green-600 border-green-500/30",
-      CREATED: "bg-purple-500/20 text-purple-600 border-purple-500/30",
+      SUCCESS: "bg-green-500/20 text-green-600 border-green-500/30",
+      FAILED:  "bg-red-500/20 text-red-600 border-red-500/30",
+      RUNNING: "bg-blue-500/20 text-blue-600 border-blue-500/30",
+      QUEUED:  "bg-yellow-500/20 text-yellow-600 border-yellow-500/30",
       PENDING: "bg-orange-500/20 text-orange-600 border-orange-500/30",
-      Running: "bg-blue-500/20 text-blue-600 border-blue-500/30",
-      Failed: "bg-red-500/20 text-red-600 border-red-500/30",
+      CREATED: "bg-purple-500/20 text-purple-600 border-purple-500/30",
     };
-    return <Badge className={styles[status] || styles.Completed}>{status}</Badge>;
+ 
+    const styleClass = styles[upper] || "bg-gray-500/20 text-gray-600 border-gray-500/30";
+ 
+    return <Badge className={styleClass}>{status}</Badge>;
   };
  
   const userName = user?.name || user?.email?.split("@")[0] || "User";
  
   const handleLogout = () => {
-     localStorage.clear();
-    // localStorage.removeItem("user");
-    // localStorage.removeItem("token");
-    // localStorage.removeItem("pipelines");
+    localStorage.clear();
     toast.success("Logged out successfully");
     navigate("/", { replace: true });
   };
  
   return (
     <div className="min-h-screen bg-background">
-      {/* Header – unchanged */}
       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Database className="w-5 h-5 text-primary" />
               </div>
@@ -853,52 +946,8 @@ const Pipelines = () => {
                 <p className="text-sm text-muted-foreground">
                   Welcome, <span className="text-primary">{userName}</span>
                 </p>
-              </div> */}
-              <div className="flex items-center gap-3 md:gap-4">
-              {/* Logo */}
-              <a href="/" className="flex-shrink-0">
-                <img
-                  src="/logo2.png"
-                  alt="Veriton"
-                  className="
-                    h-10               /* mobile base size */
-                    sm:h-10
-                    md:h-9 lg:h-10    /* larger on desktop */
-                    w-auto
-                    object-contain
-                    drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
-                    transition-transform duration-200
-                    hover:scale-105
-                  "
-                />
-              </a>
-
-              {/* Welcome text – side by side */}
-              <div className="flex flex-col">
-                <p className="text-sm md:text-base text-muted-foreground">
-                  Welcome, <span className="text-primary font-medium">{userName || "User"}</span>
-                </p>
               </div>
             </div>
- 
-            {/* <nav className="flex items-center gap-6">
-              <button onClick={() => navigate("/jobs")}
-               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-                <BarChart3 className="w-4 h-4" /> Jobs
-              </button>
-              <button onClick={() => navigate("/pipelines")} className=
-              "flex items-center gap-2 text-primary font-medium border-b-2 border-primary pb-1">
-               
-             
-              <GitBranch className="w-4 h-4" /> Pipelines
-              </button>
-              <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={handleLogout} className="hover:bg-muted rounded-full" title="Logout">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </nav> */}
- 
- 
  
             <nav className="flex items-center gap-6">
               <button
@@ -910,21 +959,21 @@ const Pipelines = () => {
               </button>
               <button
                 onClick={() => navigate("/pipelines")}
-                className= "flex items-center gap-2 text-primary font-medium border-b-2 border-primary pb-1">
+                className="flex items-center gap-2 text-primary font-medium border-b-2 border-primary pb-1"
+              >
                 <GitBranch className="w-4 h-4" />
                 Pipelines
               </button>
               <button
-                onClick={() => navigate("/datasets")}  // or any route you prefer
+                onClick={() => navigate("/datasets")}
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
-                <TableIcon className="w-4 h-4" />   {/* Perfect icon for datasets */}
+                <TableIcon className="w-4 h-4" />
                 Datasets
               </button>
-              
+ 
               <div className="flex items-center gap-3">
                 <ThemeToggle />
- 
                 <Button
                   variant="ghost"
                   size="icon"
@@ -936,7 +985,6 @@ const Pipelines = () => {
                 </Button>
               </div>
             </nav>
-           
           </div>
         </div>
       </header>
@@ -1032,7 +1080,6 @@ const Pipelines = () => {
                               variant="ghost"
                               className="h-8 w-8"
                               onClick={() => viewPipelineJobs(pipeline)}
-                              // onOpenChange={setShowJobModal}
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
@@ -1064,93 +1111,74 @@ const Pipelines = () => {
         )}
       </main>
  
-      {/* Jobs Modal */}
-     {/* Jobs Modal */}
-{showJobsModal && selectedPipeline && (
-  <div
-    className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    onClick={() => setShowJobsModal(false)} // 👈 click outside closes modal
-  >
-    <Card
-      className="w-full max-w-md bg-background border border-border"
-      onClick={(e) => e.stopPropagation()} // 👈 prevent close when clicking inside
-    >
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-semibold">
-              {selectedPipeline.name} – Jobs
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              View all jobs in this pipeline
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowJobsModal(false)} // ❌ still works
+      {showJobsModal && selectedPipeline && (
+        <div
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowJobsModal(false)}
+        >
+          <Card
+            className="w-full max-w-md bg-background border border-border"
+            onClick={e => e.stopPropagation()}
           >
-            <span className="text-xl">×</span>
-          </Button>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold">{selectedPipeline.name} – Jobs</h3>
+                  <p className="text-sm text-muted-foreground">View all jobs in this pipeline</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowJobsModal(false)}>
+                  <span className="text-xl">×</span>
+                </Button>
+              </div>
+ 
+              {modalLoading ? (
+                <p className="text-center text-muted-foreground py-8">Loading job details...</p>
+              ) : (
+                <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                  {!selectedPipeline.jobDetails || selectedPipeline.jobDetails.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-6">
+                      No jobs found in this pipeline
+                    </p>
+                  ) : (
+                    selectedPipeline.jobDetails.map((job, index) => (
+                      <Card
+                        key={job.job_id}
+                        className="p-4 flex items-center justify-between border-l-4 border-l-primary"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-medium">{job.job_name || "Unnamed Job"}</p>
+                            <p className="text-xs text-muted-foreground truncate max-w-[180px]">
+                              ID: {job.job_id}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Status: Created</p>
+                          </div>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setShowJobsModal(false);
+                            navigate(`/job-details/${job.job_id}`);
+                          }}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </Card>
         </div>
- 
-        {modalLoading ? (
-          <p className="text-center text-muted-foreground py-8">
-            Loading job details...
-          </p>
-        ) : (
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {!selectedPipeline.jobDetails ||
-            selectedPipeline.jobDetails.length === 0 ? (
-              <p className="text-center text-muted-foreground py-6">
-                No jobs found in this pipeline
-              </p>
-            ) : (
-              selectedPipeline.jobDetails.map((job, index) => (
-                <Card
-                  key={job.job_id}
-                  className="p-4 flex items-center justify-between border-l-4 border-l-primary"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        {job.job_name || " "}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate max-w-[180px]">
-                        ID: {job.job_id}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Status: Created
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => {
-                      setShowJobsModal(false);
-                      navigate(`/job-details/${job.job_id}`);
-                    }}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                </Card>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-    </Card>
-  </div>
-)}
- 
+      )}
     </div>
   );
 };
  
 export default Pipelines;
- 
  

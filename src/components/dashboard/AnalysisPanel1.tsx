@@ -1513,7 +1513,7 @@ export function AnalysisPanel({
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
         currentStep === 'select-metrics'
           ? "bg-primary text-primary-foreground"
-          : currentStep === 'confirmation' ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"
+          : currentStep === 'confirmation' ? "bg-primary/20 text-primary" : "bg-primary/20 text-muted-foreground"
       )}>
         <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center">2</span>
         Select Metrics
@@ -1521,7 +1521,7 @@ export function AnalysisPanel({
       <ChevronRight className="w-4 h-4 text-muted-foreground" />
       <div className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-        currentStep === 'confirmation' ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+        currentStep === 'confirmation' ? "bg-primary text-primary-foreground" : "bg-primary/20 text-muted-foreground"
       )}>
         <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center">3</span>
         Confirm
@@ -1757,7 +1757,7 @@ export function AnalysisPanel({
                             "px-4 py-2 rounded-full text-sm font-medium border transition-all",
                             isSelected
                               ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                              : "bg-primary/20 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
                           )}
                         >
                           {measurement}

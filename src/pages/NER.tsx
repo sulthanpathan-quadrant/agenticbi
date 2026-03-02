@@ -448,7 +448,7 @@ interface EntityMatch {
 
 interface Dataset {
   filename: string;
-  last_modified: string;
+  date_modified: string;
 }
 
 function Stat({
@@ -803,7 +803,7 @@ export default function NER() {
                 <TableRow className="bg-muted/50 border-b border-border">
                   <TableHead className="w-12"></TableHead>
                   <TableHead className="font-medium">File Name</TableHead>
-                  {/* <TableHead className="font-medium">Last Modified</TableHead> */}
+                  <TableHead className="font-medium">Last Modified</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -823,7 +823,7 @@ export default function NER() {
                       </TableCell>
                       <TableCell className="font-medium">{file.filename}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(file.last_modified).toLocaleString()}
+                        {new Date(file.date_modified).toLocaleString()}
                       </TableCell>
                     </TableRow>
                   );

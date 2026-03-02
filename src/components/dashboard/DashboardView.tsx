@@ -309,6 +309,7 @@ import {
   Funnel,
   LabelList
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
  
 interface DashboardViewProps {
   data: {
@@ -327,6 +328,7 @@ export function DashboardView({ data, file, query, onBack }: DashboardViewProps)
   const visuals = data.visuals || [];
   const backendKpis = data.kpis || [];
   const totalRows = data.total_rows || 0;
+  const navigate = useNavigate();
  
   // Extract card/KPI visuals from backend (these are the main results)
   const cardVisuals = visuals.filter((v: any) =>
@@ -386,7 +388,16 @@ export function DashboardView({ data, file, query, onBack }: DashboardViewProps)
           </div>
  
           <div className="flex items-center gap-2 shrink-0 lg:ml-auto">
-            <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+            {/* <Button variant="outline" size="sm" className="gap-2 h-8 text-xs"> */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 h-8 text-xs"
+              onClick={() => {
+                // Navigate to Power BI flow page and pass file name via state
+                navigate('/workflow/powerbi-flow');
+              }}
+            >
               <Share2 className="w-3.5 h-3.5" />
               Deploy to Power BI
             </Button>

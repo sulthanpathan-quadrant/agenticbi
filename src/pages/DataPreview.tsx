@@ -172,7 +172,7 @@
 //     const fetchAll = async () => {
 //       setLoadingTables(true);
 //       try {
-//         // Both fetches in parallel
+//         // 1. Fetch tables + relationships in parallel
 //         const [tablesRes, relsRes] = await Promise.all([
 //           fetch(`${MODELING_API}/api/preview/tables?user_id=${userId}&job_id=${jobId}`),
 //           fetch(`${MODELING_API}/api/relationships/${userId}/${jobId}`)
@@ -181,17 +181,40 @@
 //         if (!tablesRes.ok) throw new Error("Preview metadata not found. Run materialization first.");
 //         const tablesData = await tablesRes.json();
 //         const allTables: TableSummary[] = tablesData.tables || [];
-//         setTables(allTables);
 
 //         if (relsRes.ok) {
 //           const relsData = await relsRes.json();
 //           setRelationships(relsData.relationships || []);
 //         }
 
-//         // Auto-select fact table first
-//         const fact = allTables.find(t => t.table_type === "FACT");
-//         if (fact) setSelectedTable(fact.table_name);
-//         else if (allTables.length > 0) setSelectedTable(allTables[0].table_name);
+//         // 2. Fetch all individual previews in parallel to get columns
+//         const previewResults = await Promise.allSettled(
+//           allTables.map(t =>
+//             fetch(`${MODELING_API}/api/preview/table?user_id=${userId}&job_id=${jobId}&table_name=${encodeURIComponent(t.table_name)}`)
+//               .then(r => r.ok ? r.json() : null)
+//           )
+//         );
+
+//         // 3. Enrich tables with columns from preview files
+//         const enrichedTables = allTables.map((t, i) => {
+//           const result = previewResults[i];
+//           const previewData = result.status === 'fulfilled' ? result.value : null;
+//           return { ...t, columns: previewData?.columns || [] };
+//         });
+//         setTables(enrichedTables);
+
+//         // 4. Auto-select fact table first, set preview directly (no double fetch)
+//         const fact = enrichedTables.find(t => t.table_type === "FACT");
+//         const firstTable = fact || enrichedTables[0];
+//         if (firstTable) {
+//           setSelectedTable(firstTable.table_name);
+//           // Set preview directly from already-fetched data
+//           const firstIdx = enrichedTables.indexOf(firstTable);
+//           const firstResult = previewResults[firstIdx];
+//           if (firstResult.status === 'fulfilled' && firstResult.value) {
+//             setPreview(firstResult.value);
+//           }
+//         }
 
 //       } catch (err: any) {
 //         toast.error(err.message || "Failed to load tables", { duration: 4000, action: closeToastButton });
@@ -204,11 +227,12 @@
 //   }, [userId, jobId]);
 
 //   // ── Scroll to preview when table selected ────────────────────
-//   useEffect(() => {
-//     if (selectedTable && previewRef.current) {
-//       previewRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-//     }
-//   }, [selectedTable]);
+//  useEffect(() => {
+//   if (preview && previewRef.current) {
+//     previewRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+//   }
+// }, [preview]);
+  
 
 //   // ── Fetch individual table preview ───────────────────────────
 //   useEffect(() => {
@@ -249,8 +273,8 @@
 //       type: "fact",
 //       position: { x: 0, y: 0 },
 //       data: {
-//         label:     factTable.entity_name,
-//         columns:   factTable.columns || [],
+//         label: factTable.entity_name,
+//         columns: factTable.columns || preview?.columns || [],
 //         row_count: factTable.row_count,
 //         onClick: () => setSelectedTable(factTable.table_name),
 //       },
@@ -363,7 +387,7 @@
 //                 <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 min-w-0">
 //                   <TableIcon className="h-5 w-5 shrink-0" />
 //                   <span className="truncate">
-//                     {preview?.entity_name || selectedTable} — Data Preview
+//                     {(tables.find(t => t.table_name === selectedTable)?.entity_name) || selectedTable} — Data Preview
 //                   </span>
 //                 </h3>
 //                 <Badge variant="outline" className="text-xs shrink-0">
@@ -453,7 +477,6 @@
 //     </WorkflowLayout>
 //   );
 // }
-
 import { useState, useEffect, useRef, useMemo } from "react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
@@ -717,46 +740,65 @@ export default function DataPreview() {
   // ── Build ReactFlow nodes from materialized tables ────────────
   const nodes = useMemo<Node[]>(() => {
     const factTable = tables.find(t => t.table_type === "FACT");
-    const dimTables = tables.filter(t => t.table_type === "DIM");
+    const dimTables = tables.filter(t => t.table_type !== "FACT");
 
-    if (!factTable) return [];
+    if (!factTable) {
+        const radius    = Math.max(300, dimTables.length * 80);
+        const angleStep = (2 * Math.PI) / Math.max(1, dimTables.length);
+        return dimTables.map((t, i) => {
+            const angle = i * angleStep - Math.PI / 2;
+            return {
+                id:   t.entity_name,
+                type: "dim",
+                position: {
+                    x: Math.cos(angle) * radius,
+                    y: Math.sin(angle) * radius,
+                },
+                data: {
+                    label:     t.entity_name,
+                    columns:   t.columns || [],
+                    row_count: t.row_count,
+                    onClick:   () => setSelectedTable(t.table_name),
+                },
+            };
+        });
+    }
 
     const radius    = Math.max(360, dimTables.length * 50);
     const angleStep = (2 * Math.PI) / Math.max(1, dimTables.length);
 
     const factNode: Node = {
-      id:   factTable.entity_name,
-      type: "fact",
-      position: { x: 0, y: 0 },
-      data: {
-        label: factTable.entity_name,
-        columns: factTable.columns || preview?.columns || [],
-        row_count: factTable.row_count,
-        onClick: () => setSelectedTable(factTable.table_name),
-      },
+        id:   factTable.entity_name,
+        type: "fact",
+        position: { x: 0, y: 0 },
+        data: {
+            label:     factTable.entity_name,
+            columns:   factTable.columns || preview?.columns || [],
+            row_count: factTable.row_count,
+            onClick:   () => setSelectedTable(factTable.table_name),
+        },
     };
 
     const dimNodes: Node[] = dimTables.map((t, i) => {
-      const angle = i * angleStep - Math.PI / 2;
-      return {
-        id:   t.entity_name,
-        type: "dim",
-        position: {
-          x: Math.cos(angle) * radius,
-          y: Math.sin(angle) * radius,
-        },
-        data: {
-          label:     t.entity_name,
-          columns:   t.columns || [],
-          row_count: t.row_count,
-          onClick: () => setSelectedTable(t.table_name),
-
-        },
-      };
+        const angle = i * angleStep - Math.PI / 2;
+        return {
+            id:   t.entity_name,
+            type: "dim",
+            position: {
+                x: Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius,
+            },
+            data: {
+                label:     t.entity_name,
+                columns:   t.columns || [],
+                row_count: t.row_count,
+                onClick:   () => setSelectedTable(t.table_name),
+            },
+        };
     });
 
     return [factNode, ...dimNodes];
-}, [tables, setSelectedTable]);
+}, [tables, preview, setSelectedTable]);
 
   // ── Build ReactFlow edges from relationships ──────────────────
   // Only include edges where both from_table and to_table exist
@@ -769,8 +811,8 @@ export default function DataPreview() {
   const edges = useMemo<Edge[]>(() => {
     return relationships
       .filter(rel =>
-        materializedEntityNames.has(rel.from_table) &&
-        materializedEntityNames.has(rel.to_table)
+          tables.some(t => t.table_name === rel.from_table || t.entity_name === rel.from_table) &&
+          tables.some(t => t.table_name === rel.to_table   || t.entity_name === rel.to_table)
       )
       .map(rel => ({
         id:     rel.relationship_id,
@@ -782,7 +824,7 @@ export default function DataPreview() {
   }, [relationships, materializedEntityNames]);
 
   const factTable = tables.find(t => t.table_type === "FACT");
-  const dimTables = tables.filter(t => t.table_type === "DIM");
+  const dimTables = tables.filter(t => t.table_type !== "FACT");
 
   return (
     <WorkflowLayout>

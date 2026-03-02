@@ -211,6 +211,10 @@ import {
   MessageSquare,
   AlertCircle
 } from 'lucide-react';
+import { useState } from 'react';
+import { PowerBIFlow } from '@/components/powerbi/PowerBIFlow';
+import { useNavigate } from 'react-router-dom';
+
 
 interface DashboardPreviewProps {
   dashboardData: any;
@@ -226,6 +230,21 @@ export function DashBoardPreview1({ dashboardData, file, query, onBack }: Dashbo
   const visuals = dashboardData?.visuals || [];
   const totalRows = dashboardData?.total_rows || 0;
   const totalVisualsGenerated = dashboardData?.total_visuals_generated || 0;
+  const navigate = useNavigate();
+
+// const [showPowerBIFlow, setShowPowerBIFlow] = useState(false);
+
+
+//     if (showPowerBIFlow) {
+//     return (
+//       <PowerBIFlow
+//         fileName={file.name}
+//         onBack={() => setShowPowerBIFlow(false)}
+//       />
+//     );
+//   }
+
+
   // Display ALL visuals (including non-card types) as cards in Key Results section
   // Separate visuals by type
   const cardVisuals = visuals.filter((v: any) => v.chart_type === 'card');
@@ -271,7 +290,17 @@ export function DashBoardPreview1({ dashboardData, file, query, onBack }: Dashbo
           </div>
 
           <div className="flex items-center gap-2 shrink-0 lg:ml-auto">
-            <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+            {/* <Button variant="outline" size="sm" className="gap-2 h-8 text-xs"> */}
+            {/* <Button variant="outline" size="sm" className="gap-2 h-8 text-xs" onClick={() => setShowPowerBIFlow(true)}> */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 h-8 text-xs"
+              onClick={() => {
+                // Navigate to Power BI flow page and pass file name via state
+                navigate('/workflow/powerbi-flow');
+              }}
+            >
               <Share2 className="w-3.5 h-3.5" />
               Deploy to Power BI
             </Button>

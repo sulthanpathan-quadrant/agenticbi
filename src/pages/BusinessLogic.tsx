@@ -505,7 +505,7 @@ interface Rule {
 
 interface Dataset {
   filename: string;
-  last_modified: string;
+  date_modified: string;
 }
 
 export default function BusinessLogic() {
@@ -904,7 +904,7 @@ export default function BusinessLogic() {
                   <TableRow className="bg-muted/50 border-b border-border">
                     <TableHead className="w-12"></TableHead>
                     <TableHead className="font-medium">File Name</TableHead>
-                    {/* <TableHead className="font-medium">Last Modified</TableHead> */}
+                    <TableHead className="font-medium">Last Modified</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -921,7 +921,7 @@ export default function BusinessLogic() {
                         </TableCell>
                         <TableCell className="font-medium">{file.filename}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {file.last_modified}
+                          {file.date_modified}
                         </TableCell>
                       </TableRow>
                     );

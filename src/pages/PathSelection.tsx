@@ -345,51 +345,51 @@ export default function PathSelection() {
     }
   };
 
-  const handleAutoMLClick = async () => {
-    try {
-      setLoading(true);
+  // const handleAutoMLClick = async () => {
+  //   try {
+  //     setLoading(true);
 
-      const storedUser = localStorage.getItem("user");
-      if (!storedUser) throw new Error("Base user missing");
+  //     const storedUser = localStorage.getItem("user");
+  //     if (!storedUser) throw new Error("Base user missing");
 
-      const baseUser = JSON.parse(storedUser);
+  //     const baseUser = JSON.parse(storedUser);
 
-      const formData = new URLSearchParams();
-      formData.append("email", baseUser.email);
-      formData.append("full_name", baseUser.name);
+  //     const formData = new URLSearchParams();
+  //     formData.append("email", baseUser.email);
+  //     formData.append("full_name", baseUser.name);
 
-      const res = await fetch(
-        "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/automl_register_login",
-        {
-          method: "POST",
-          headers: {
-            accept: "application/json",
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: formData.toString(),
-        }
-      );
+  //     const res = await fetch(
+  //       "https://api.veriton.ai/api/service3/automl_register_login",
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           accept: "application/json",
+  //           "Content-Type": "application/x-www-form-urlencoded",
+  //         },
+  //         body: formData.toString(),
+  //       }
+  //     );
 
-      const data = await res.json();
+  //     const data = await res.json();
 
-      const aivolveUser = {
-        ...data.user,
-        agent_id: data.agent_id,
-        agent_name: data.agent_name,
-        session_id: data.session_id,
-        total_chats: data.total_chats,
-      };
+  //     const aivolveUser = {
+  //       ...data.user,
+  //       agent_id: data.agent_id,
+  //       agent_name: data.agent_name,
+  //       session_id: data.session_id,
+  //       total_chats: data.total_chats,
+  //     };
 
-      localStorage.setItem("aivolve_user", JSON.stringify(aivolveUser));
-      window.dispatchEvent(new Event("storage"));
+  //     localStorage.setItem("aivolve_user", JSON.stringify(aivolveUser));
+  //     window.dispatchEvent(new Event("storage"));
 
-      window.location.href = "/workflow/automl";
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     window.location.href = "/workflow/automl";
+  //   } catch (e) {
+  //     console.error(e);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const paths = [
     {
@@ -451,11 +451,12 @@ export default function PathSelection() {
                 key={path.id}
                 onClick={() => {
                   setSelectedPath(path.title);
-                  if (path.id === "aiml") {
-                    handleAutoMLClick();
-                  } else {
-                    navigate(path.route);
-                  }
+                  // if (path.id === "aiml") {
+                  //   handleAutoMLClick();
+                  // } else {
+                  //   navigate(path.route);
+                  // }
+                     navigate(path.route);
                 }}
                 className={`border rounded-lg p-8 cursor-pointer transition-all ${
                   isSelected

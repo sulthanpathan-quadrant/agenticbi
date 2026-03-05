@@ -25,6 +25,7 @@ import {
 } from 'recharts';
 import { PowerBIFlow } from '@/components/powerbi/PowerBIFlow';
 import { useNavigate } from 'react-router-dom';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface DashboardPreviewProps {
   dashboardData: any;
@@ -41,7 +42,8 @@ export function DashboardPreview({ dashboardData, file, query, onBack }: Dashboa
   const totalVisualsGenerated = dashboardData?.total_visuals_generated || 0;
   const navigate = useNavigate();
   
-  const richa = "Hello"
+  
+  
   //  const [showPowerBIFlow, setShowPowerBIFlow] = useState(false);
 
 
@@ -70,7 +72,7 @@ export function DashboardPreview({ dashboardData, file, query, onBack }: Dashboa
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="border-b border-border/50 bg-card/80">
+      {/* <div className="border-b border-border/50 bg-card/80">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
@@ -79,8 +81,9 @@ export function DashboardPreview({ dashboardData, file, query, onBack }: Dashboa
             <span className="text-lg font-semibold text-foreground">Dashboard Preview</span>
           </div>
         </div>
-      </div>
-
+      </div> */}
+      
+    
       {/* Main Content */}
       <div className="flex-1 max-w-7xl mx-auto px-6 py-6 w-full space-y-8">
         {/* Metadata Section */}

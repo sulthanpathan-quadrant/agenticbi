@@ -255,7 +255,7 @@ export function DashBoardPreview1({ dashboardData, file, query, onBack }: Dashbo
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="border-b border-border/50 bg-card/80">
+      {/* <div className="border-b border-border/50 bg-card/80">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -270,7 +270,7 @@ export function DashBoardPreview1({ dashboardData, file, query, onBack }: Dashbo
             </Button>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Content */}
       <div className="flex-1 max-w-7xl mx-auto px-6 py-6 w-full space-y-8">

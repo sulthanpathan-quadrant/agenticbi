@@ -450,8 +450,9 @@ export function PowerBIFlow({
   // ---------- REPORT VIEW ----------
   if (step === "report") {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <PowerBIHeader onBack={() => setStep("workspaces")} />
+    //   <div className="min-h-screen flex flex-col bg-background">
+    //     <PowerBIHeader onBack={() => setStep("workspaces")} />
+    <>
 
         <div className="flex-1 pt-4">
           <PowerBIReport
@@ -465,7 +466,7 @@ export function PowerBIFlow({
             onBack={() => setStep("workspaces")}
           />
         </div>
-      </div>
+      </>
     );
   }
 

@@ -174,6 +174,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, BarChart3, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '../ThemeToggle';
 
 const API_BASE = 'https://api.veriton.ai/api/service4';
 async function apiFetch(path: string, options: RequestInit = {}) {
@@ -224,6 +225,12 @@ export function PowerBIReport({
   const [embedError, setEmbedError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [currentToken, setCurrentToken] = useState(embedToken ?? '');
+
+
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const userName = user?.name || user?.email?.split("@")[0] || "User";
+
 
   // ── Embed using powerbi-client SDK ──────────────────────────────────────
   const embedReport = async (token: string) => {
@@ -354,13 +361,34 @@ export function PowerBIReport({
       {/* Header */}
       <div className="border-b border-border bg-card px-6 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+          {/* <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <BarChart3 className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground">Power BI Report</h1>
             {workspaceName && <p className="text-xs text-muted-foreground">{workspaceName}</p>}
+          </div> */}
+           <div className="flex items-center gap-3 md:gap-4">
+          <a href="/" className="flex-shrink-0">
+            <img
+              src="/logo2.png"
+              alt="Veriton"
+              className="
+                h-10 sm:h-10 md:h-9 lg:h-10 w-auto object-contain
+                drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+                transition-transform duration-200 hover:scale-105
+              "
+            />
+          </a>
+
+          <div className="flex flex-col">
+            <p className="text-sm md:text-base text-muted-foreground">
+              Welcome, <span className="text-primary font-medium">{userName}</span>
+            </p>
+           
           </div>
+        </div>
+
         </div>
         <div className="flex items-center gap-2">
           {editUrl && (
@@ -377,6 +405,8 @@ export function PowerBIReport({
               Refresh
             </Button>
           )}
+
+           <ThemeToggle />
           <button onClick={onBack}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors ml-2">
             <ArrowLeft className="w-4 h-4" /> Back

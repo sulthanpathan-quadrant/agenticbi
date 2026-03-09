@@ -310,6 +310,8 @@ import {
   LabelList
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import { Workflowheader } from '../WorkFlowHeader1';
+import { ThemeToggle } from '../ThemeToggle';
  
 interface DashboardViewProps {
   data: {
@@ -329,6 +331,12 @@ export function DashboardView({ data, file, query, onBack }: DashboardViewProps)
   const backendKpis = data.kpis || [];
   const totalRows = data.total_rows || 0;
   const navigate = useNavigate();
+
+
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const userName = user?.name || user?.email?.split("@")[0] || "User";
+
  
   // Extract card/KPI visuals from backend (these are the main results)
   const cardVisuals = visuals.filter((v: any) =>
@@ -357,20 +365,70 @@ export function DashboardView({ data, file, query, onBack }: DashboardViewProps)
  
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="border-b border-border/50 bg-card/80">
+      {/* <div className="border-b border-border/50 bg-card/80">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between">
           <button onClick={onBack} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
               <BarChart3 className="w-5 h-5 text-primary" />
             </div>
             <span className="text-lg font-semibold text-foreground">Dashboard Preview</span>
-          </button>
+          </button> 
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4" />
             Back
           </Button>
         </div>
-      </div>
+      </div> */}
+
+      <header className="sticky top-0 z-50 h-20 w-full bg-card border-b border-border">
+        <div className="h-full flex items-center justify-between px-6">
+          {/* Left: Logo + Welcome */}
+          <div className="flex items-center gap-3 md:gap-4">
+            {/* Logo */}
+            <a href="/" className="flex-shrink-0">
+              <img
+                src="/logo2.png"
+                alt="Veriton"
+                className="
+                  h-10               /* mobile base size */
+                  sm:h-10
+                  md:h-9 lg:h-10    /* larger on desktop */
+                  w-auto
+                  object-contain
+                  drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+                  transition-transform duration-200
+                  hover:scale-105
+                "
+              />
+            </a>
+
+            {/* Welcome text */}
+            <div className="flex flex-col">
+              <p className="text-sm md:text-base text-muted-foreground">
+                Welcome, <span className="text-primary font-medium">{userName}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onBack}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </div>
+        </div>
+      </header>
+
+    
+      
  
       <div className="flex-1 max-w-7xl mx-auto px-6 py-6 w-full space-y-8">
         <div className="flex flex-col lg:flex-row lg:items-start gap-4 animate-fade-in">

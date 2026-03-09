@@ -1270,6 +1270,14 @@ export function AnalysisPanel({
  
       const visualsData = response.ok ? await response.json() : { visuals: [], total_rows: 0 };
  
+     sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({ ...visualsData, file_name: file.name }));
+// ── STORE for PowerBIPage to read ──────────────────────────────────────────
+sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
+  ...visualsData,
+  file_name: file.name,
+}));
+
+
       // Extract KPI visuals from backend
       let finalKpis = visualsData.visuals
         ?.filter((v: any) => v.chart_type === "KPI")

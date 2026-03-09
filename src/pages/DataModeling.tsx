@@ -427,7 +427,7 @@ export default function DataModeling() {
     }
 
     setIsProcessing(true);
-    const loadingToastId = toast.info("Materialization started, please wait...", { duration: 1000 });
+    const loadingToastId = toast.info("Materialization started, please wait...", { duration: 500 });
 
     try {
       const submitData = await submitMaterializeJob(userId, jobId);

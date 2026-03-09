@@ -73,7 +73,7 @@ export const JobsProvider = ({ children }: { children: ReactNode }) => {
       const start = (page - 1) * limit;
 
       // Include start and limit parameters in API call
-      const apiUrl = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/user_models_summary?user_email=${encodeURIComponent(userEmail)}&start=${start}&limit=${limit}`;
+      const apiUrl = `https://api.veriton.ai/api/service3/user_models_summary?user_email=${encodeURIComponent(userEmail)}&start=${start}&limit=${limit}`;
       
       console.log('API URL:', apiUrl);
       

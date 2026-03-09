@@ -107,7 +107,7 @@ const JobViewModal = ({ isOpen, onClose, job }: JobViewModalProps) => {
 
       console.log('Fetching metrics for model:', job.id, 'user:', userEmail);
 
-      const apiUrl = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/model_detailed_metrics/${job.id}?user_email=${encodeURIComponent(userEmail)}`;
+      const apiUrl = `https://api.veriton.ai/api/service3/model_detailed_metrics/${job.id}?user_email=${encodeURIComponent(userEmail)}`;
       
       const response = await fetch(apiUrl, {
         method: 'GET',

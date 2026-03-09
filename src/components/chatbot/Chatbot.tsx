@@ -31,7 +31,7 @@ import { useChatContext } from "../contexts/ChatContext";
 // import { Message, BuildData } from "@/contexts/ChatContext";
 import { Message, BuildData } from "../contexts/ChatContext";
 // utility to get session id (imported)
-import { getSessionId as utilsGetSessionId } from "@/lib/utils";
+// import { getSessionId as utilsGetSessionId } from "@/lib/utils";
 
 interface ChatSession {
   id: string;
@@ -46,7 +46,7 @@ interface ChatbotProps {
 }
 
 const API_BASE_URL =
-  "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net";
+  "https://api.veriton.ai/api/service3";
 
 const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
   const navigate = useNavigate();

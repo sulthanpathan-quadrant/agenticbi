@@ -51,13 +51,13 @@ interface OneLakeTable {
 }
 
 const ONELAKE_BASE_URL =
-  'https://automl-onelake-webapp-eedahsgvbug3apc6.eastus-01.azurewebsites.net'
+  'https://api.veriton.ai/api/service3'
 
 const UPLOAD_FILE_URL =
-  'https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/upload_file'
+  'https://api.veriton.ai/api/service3/upload_file'
 
 const DATA_PREVIEW_URL =
-  'https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/data_preview'
+  'https://api.veriton.ai/api/service3/data_preview'
 
 const DataSourceTab = ({
   onDatasetImported,

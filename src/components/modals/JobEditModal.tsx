@@ -202,7 +202,7 @@ const fetchDatasetFeatures = async () => {
       }
 
       // ✅ Step 1: Get blob_path from list_files
-      const listFilesUrl = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/list_files?user_email=${encodeURIComponent(userEmail)}&agent_name=${encodeURIComponent(agentName)}`;
+      const listFilesUrl = `https://api.veriton.ai/api/service3/list_files?user_email=${encodeURIComponent(userEmail)}&agent_name=${encodeURIComponent(agentName)}`;
       
       const listResponse = await fetch(listFilesUrl, {
         method: 'GET',
@@ -239,7 +239,7 @@ const fetchDatasetFeatures = async () => {
       console.log('✅ Found blob path:', matchingFile.blob_name);
 
       // ✅ Step 2: Get data preview using the blob_name
-      const previewUrl = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/data_preview?blob_path=${encodeURIComponent(matchingFile.blob_name)}&user_email=${encodeURIComponent(userEmail)}`;
+      const previewUrl = `https://api.veriton.ai/api/service3/data_preview?blob_path=${encodeURIComponent(matchingFile.blob_name)}&user_email=${encodeURIComponent(userEmail)}`;
       
       const previewResponse = await fetch(previewUrl, {
         method: 'GET',
@@ -332,7 +332,7 @@ const fetchDatasetFeatures = async () => {
       const userEmail = userData.email;
 
       console.log('Downloading file from blob storage...');
-      const downloadUrl = `https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/download_predictions?blob_path=${encodeURIComponent(blobPath)}&user_email=${encodeURIComponent(userEmail)}`;
+      const downloadUrl = `https://api.veriton.ai/api/service3/download_predictions?blob_path=${encodeURIComponent(blobPath)}&user_email=${encodeURIComponent(userEmail)}`;
       
       const downloadResponse = await fetch(downloadUrl, {
         method: 'GET',
@@ -378,7 +378,7 @@ const fetchDatasetFeatures = async () => {
       console.log('Building ML model...');
 
       const buildResponse = await fetch(
-        'https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/build_ml_model',
+        'https://api.veriton.ai/api/service3/build_ml_model',
         {
           method: 'POST',
           body: formData,

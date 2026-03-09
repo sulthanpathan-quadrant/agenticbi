@@ -4,7 +4,7 @@
 // import { Input } from "@/components/ui/input";
 // import { Label } from "@/components/ui/label";
 // import { Loader2, Eye, EyeOff } from "lucide-react";
- 
+// import { toast } from "sonner";  // ← correct import (from sonner)
  
 // import {
 //   S3Credentials,
@@ -12,6 +12,11 @@
 //   OneLakeCredentials,
 //   DatabricksCredentials,
 //   SnowflakeCredentials,
+//   getS3Buckets,
+//   getAzureContainers,
+//   getOneLakeWorkspaces,
+//   getDatabricksCatalogs,
+//   getSnowflakeDatabases,
 // } from "@/components/api/api";
  
 // interface SourceCredentialDialogProps {
@@ -55,7 +60,7 @@
 //   const [password, setPassword] = useState("");
 //   const [warehouse, setWarehouse] = useState("");
  
-//   // Visibility toggles for password fields
+//   // Visibility toggles
 //   const [showAccessKeyId, setShowAccessKeyId] = useState(false);
 //   const [showSecretAccessKey, setShowSecretAccessKey] = useState(false);
 //   const [showClientId, setShowClientId] = useState(false);
@@ -66,53 +71,64 @@
 //   const handleProceed = async () => {
 //     setIsValidating(true);
  
-//     await new Promise(resolve => setTimeout(resolve, 800));
+//     try {
+//       let credentials: any = null;
  
-//     if (sourceId === "s3") {
-//       const credentials: S3Credentials = {
-//         aws_access_key_id: accessKeyId,
-//         aws_secret_access_key: secretAccessKey,
-//         region,
-//       };
-//       onProceed(credentials);
-//     }
+//       // Real validation using backend APIs
+//       if (sourceId === "s3") {
+//         credentials = {
+//           aws_access_key_id: accessKeyId.trim(),
+//           aws_secret_access_key: secretAccessKey.trim(),
+//           region: region.trim(),
+//         };
+//         await getS3Buckets(credentials);
+//       }
+//       else if (sourceId === "azure") {
+//         credentials = { connection_string: connectionString.trim() };
+//         await getAzureContainers(credentials);
+//       }
+//       else if (sourceId === "onelake") {
+//         credentials = {
+//           tenant_id: tenantId.trim(),
+//           client_id: clientId.trim(),
+//           client_secret: clientSecret.trim(),
+//         };
+//         await getOneLakeWorkspaces(credentials);
+//       }
+//       else if (sourceId === "databricks") {
+//         credentials = {
+//           host: host.trim(),
+//           warehouse_id: warehouseId.trim(),
+//           access_token: accessToken.trim(),
+//         };
+//         await getDatabricksCatalogs(credentials);
+//       }
+//       else if (sourceId === "snowflake") {
+//         credentials = {
+//           account_identifier: accountIdentifier.trim(),
+//           username: username.trim(),
+//           password: password.trim(),
+//           warehouse: warehouse.trim(),
+//         };
+//         await getSnowflakeDatabases(credentials);
+//       }
  
-//     else if (sourceId === "azure") {
-//       const credentials: AzureCredentials = {
-//         connection_string: connectionString,
-//       };
-//       onProceed(credentials);
-//     }
+//       // Success case
+//       toast.success(`Connected to ${sourceName} successfully`, {
+//         description: "You can now select files or tables.",
+//       });
  
-//     else if (sourceId === "onelake") {
-//       const credentials: OneLakeCredentials = {
-//         tenant_id: tenantId,
-//         client_id: clientId,
-//         client_secret: clientSecret,
-//       };
 //       onProceed(credentials);
-//     }
+//       onOpenChange(false);
  
-//     else if (sourceId === "databricks") {
-//       const credentials: DatabricksCredentials = {
-//         host: host,
-//         warehouse_id: warehouseId,
-//         access_token: accessToken,
-//       };
-//       onProceed(credentials);
+//     } catch (error: any) {
+//       toast.error("Connection Failed", {
+//         description: error.message || "Invalid credentials. Please check your details and try again.",
+//       });
+//       // Dialog stays open — user can fix credentials
+//     } finally {
+//       setIsValidating(false);
 //     }
-//     else if (sourceId === "snowflake") {
-//       const credentials: SnowflakeCredentials = {
-//         account_identifier: accountIdentifier,
-//         username: username,
-//         password: password,
-//         warehouse: warehouse,
-//       };
-//       onProceed(credentials);
-//     }
- 
-//     setIsValidating(false);
-//     onOpenChange(false);
 //   };
  
 //   const handleClose = () => {
@@ -149,19 +165,24 @@
  
 //   const isFormValid = () => {
 //     if (sourceId === "s3") {
-//       return accessKeyId && secretAccessKey && region;
+//       return accessKeyId.trim() !== "" && secretAccessKey.trim() !== "" && region.trim() !== "";
 //     }
 //     if (sourceId === "azure") {
 //       return connectionString.trim() !== "";
 //     }
 //     if (sourceId === "onelake") {
-//       return tenantId && clientId && clientSecret;
+//       return tenantId.trim() !== "" && clientId.trim() !== "" && clientSecret.trim() !== "";
 //     }
 //     if (sourceId === "databricks") {
-//       return host && warehouseId && accessToken;
+//       return host.trim() !== "" && warehouseId.trim() !== "" && accessToken.trim() !== "";
 //     }
 //     if (sourceId === "snowflake") {
-//       return accountIdentifier && username && password && warehouse;
+//       return (
+//         accountIdentifier.trim() !== "" &&
+//         username.trim() !== "" &&
+//         password.trim() !== "" &&
+//         warehouse.trim() !== ""
+//       );
 //     }
 //     return false;
 //   };
@@ -174,7 +195,6 @@
 //         </DialogHeader>
  
 //         <div className="space-y-4 py-4">
- 
 //           {/* S3 Credentials */}
 //           {sourceId === "s3" && (
 //             <>
@@ -197,11 +217,7 @@
 //                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
 //                     disabled={isValidating}
 //                   >
-//                     {showAccessKeyId ? (
-//                       <EyeOff className="h-4 w-4" />
-//                     ) : (
-//                       <Eye className="h-4 w-4" />
-//                     )}
+//                     {showAccessKeyId ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 //                   </button>
 //                 </div>
 //               </div>
@@ -225,11 +241,7 @@
 //                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
 //                     disabled={isValidating}
 //                   >
-//                     {showSecretAccessKey ? (
-//                       <EyeOff className="h-4 w-4" />
-//                     ) : (
-//                       <Eye className="h-4 w-4" />
-//                     )}
+//                     {showSecretAccessKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 //                   </button>
 //                 </div>
 //               </div>
@@ -239,7 +251,7 @@
 //                 <Input
 //                   id="region"
 //                   type="text"
-//                   placeholder="XXXXXX"
+//                   placeholder="us-east-1"
 //                   value={region}
 //                   onChange={(e) => setRegion(e.target.value)}
 //                   disabled={isValidating}
@@ -255,7 +267,7 @@
 //               <Input
 //                 id="connectionString"
 //                 type="password"
-//                 placeholder="XXXXXXXX"
+//                 placeholder="DefaultEndpointsProtocol=https;AccountName=..."
 //                 value={connectionString}
 //                 onChange={(e) => setConnectionString(e.target.value)}
 //                 disabled={isValidating}
@@ -300,11 +312,7 @@
 //                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
 //                     disabled={isValidating}
 //                   >
-//                     {showClientId ? (
-//                       <EyeOff className="h-4 w-4" />
-//                     ) : (
-//                       <Eye className="h-4 w-4" />
-//                     )}
+//                     {showClientId ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 //                   </button>
 //                 </div>
 //               </div>
@@ -328,11 +336,7 @@
 //                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
 //                     disabled={isValidating}
 //                   >
-//                     {showClientSecret ? (
-//                       <EyeOff className="h-4 w-4" />
-//                     ) : (
-//                       <Eye className="h-4 w-4" />
-//                     )}
+//                     {showClientSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 //                   </button>
 //                 </div>
 //               </div>
@@ -385,11 +389,7 @@
 //                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
 //                     disabled={isValidating}
 //                   >
-//                     {showAccessToken ? (
-//                       <EyeOff className="h-4 w-4" />
-//                     ) : (
-//                       <Eye className="h-4 w-4" />
-//                     )}
+//                     {showAccessToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 //                   </button>
 //                 </div>
 //               </div>
@@ -442,11 +442,7 @@
 //                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
 //                     disabled={isValidating}
 //                   >
-//                     {showPassword ? (
-//                       <EyeOff className="h-4 w-4" />
-//                     ) : (
-//                       <Eye className="h-4 w-4" />
-//                     )}
+//                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 //                   </button>
 //                 </div>
 //               </div>
@@ -487,14 +483,13 @@
 //   );
 // }
  
- 
-import { useState } from "react";
+ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";  // ← correct import (from sonner)
+import { toast } from "sonner";
  
 import {
   S3Credentials,
@@ -531,7 +526,7 @@ export function SourceCredentialDialog({
   const [secretAccessKey, setSecretAccessKey] = useState("");
   const [region, setRegion] = useState("us-east-1");
  
-  // Azure
+  // Azure — starts empty (user must provide their own connection string)
   const [connectionString, setConnectionString] = useState("");
  
   // OneLake
@@ -553,6 +548,7 @@ export function SourceCredentialDialog({
   // Visibility toggles
   const [showAccessKeyId, setShowAccessKeyId] = useState(false);
   const [showSecretAccessKey, setShowSecretAccessKey] = useState(false);
+  const [showConnectionString, setShowConnectionString] = useState(false);
   const [showClientId, setShowClientId] = useState(false);
   const [showClientSecret, setShowClientSecret] = useState(false);
   const [showAccessToken, setShowAccessToken] = useState(false);
@@ -564,7 +560,6 @@ export function SourceCredentialDialog({
     try {
       let credentials: any = null;
  
-      // Real validation using backend APIs
       if (sourceId === "s3") {
         credentials = {
           aws_access_key_id: accessKeyId.trim(),
@@ -572,28 +567,24 @@ export function SourceCredentialDialog({
           region: region.trim(),
         };
         await getS3Buckets(credentials);
-      }
-      else if (sourceId === "azure") {
+      } else if (sourceId === "azure") {
         credentials = { connection_string: connectionString.trim() };
         await getAzureContainers(credentials);
-      }
-      else if (sourceId === "onelake") {
+      } else if (sourceId === "onelake") {
         credentials = {
           tenant_id: tenantId.trim(),
           client_id: clientId.trim(),
           client_secret: clientSecret.trim(),
         };
         await getOneLakeWorkspaces(credentials);
-      }
-      else if (sourceId === "databricks") {
+      } else if (sourceId === "databricks") {
         credentials = {
           host: host.trim(),
           warehouse_id: warehouseId.trim(),
           access_token: accessToken.trim(),
         };
         await getDatabricksCatalogs(credentials);
-      }
-      else if (sourceId === "snowflake") {
+      } else if (sourceId === "snowflake") {
         credentials = {
           account_identifier: accountIdentifier.trim(),
           username: username.trim(),
@@ -603,30 +594,27 @@ export function SourceCredentialDialog({
         await getSnowflakeDatabases(credentials);
       }
  
-      // Success case
       toast.success(`Connected to ${sourceName} successfully`, {
         description: "You can now select files or tables.",
       });
  
       onProceed(credentials);
       onOpenChange(false);
- 
     } catch (error: any) {
       toast.error("Connection Failed", {
         description: error.message || "Invalid credentials. Please check your details and try again.",
       });
-      // Dialog stays open — user can fix credentials
     } finally {
       setIsValidating(false);
     }
   };
  
   const handleClose = () => {
-    // Reset all fields
     setAccessKeyId("");
     setSecretAccessKey("");
     setRegion("us-east-1");
  
+    // Reset to empty — no default/hardcoded value
     setConnectionString("");
  
     setTenantId("");
@@ -642,9 +630,9 @@ export function SourceCredentialDialog({
     setPassword("");
     setWarehouse("");
  
-    // Reset visibility toggles
     setShowAccessKeyId(false);
     setShowSecretAccessKey(false);
+    setShowConnectionString(false);
     setShowClientId(false);
     setShowClientSecret(false);
     setShowAccessToken(false);
@@ -754,14 +742,26 @@ export function SourceCredentialDialog({
           {sourceId === "azure" && (
             <div className="space-y-2">
               <Label htmlFor="connectionString">Connection String</Label>
-              <Input
-                id="connectionString"
-                type="password"
-                placeholder="DefaultEndpointsProtocol=https;AccountName=..."
-                value={connectionString}
-                onChange={(e) => setConnectionString(e.target.value)}
-                disabled={isValidating}
-              />
+              <div className="relative">
+                <Input
+                  id="connectionString"
+                  type={showConnectionString ? "text" : "password"}
+                  placeholder="DefaultEndpointsProtocol=https;AccountName=..."
+                  value={connectionString}
+                  onChange={(e) => setConnectionString(e.target.value)}
+                  disabled={isValidating}
+                  className="pr-10 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConnectionString(!showConnectionString)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={isValidating}
+                >
+                  {showConnectionString ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Format: DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=...
               </p>
@@ -972,5 +972,4 @@ export function SourceCredentialDialog({
     </Dialog>
   );
 }
- 
  

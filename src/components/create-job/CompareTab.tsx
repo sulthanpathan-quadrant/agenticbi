@@ -1,4 +1,4 @@
-// import { useState, useMemo, useEffect } from "react";
+// import { useState, useMemo, useEffect, useRef } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { motion } from "framer-motion";
 // import { ArrowLeft, GitCompare } from "lucide-react";
@@ -189,19 +189,28 @@
 //   const [allTaskFeatures, setAllTaskFeatures] = useState<any>(null);
 //   const [blobPathReady, setBlobPathReady] = useState(false);
 //   const filePath = (location.state as any)?.filePath || "";
+//   const registerAbortRef = useRef<AbortController | null>(null);
 //   const datasetName = (location.state as any)?.datasetName || "";
 
 //   const cameFromHub = location.state?.origin === "automlhub";
+
+//   // ✅ add this ref at top of component if not already added
+//   // const registerAbortRef = useRef<AbortController | null>(null);
 
 //   useEffect(() => {
 //     if (!filePath) return;
 
 //     const registerFile = async () => {
 //       const userEmail = getUserEmailFromLocal();
+
 //       if (!userEmail) return;
 
 //       try {
+//         // ✅ Create AbortController
+//         registerAbortRef.current = new AbortController();
+
 //         const params = new URLSearchParams();
+
 //         params.append("file_path", filePath);
 //         params.append("upload_file_path", "true");
 //         params.append("user_email", userEmail);
@@ -217,17 +226,23 @@
 //           "https://api.veriton.ai/api/service3/build_ml_model_v",
 //           {
 //             method: "POST",
+
 //             headers: {
 //               "Content-Type": "application/x-www-form-urlencoded",
 //               accept: "application/json",
 //             },
+
 //             body: params.toString(),
+
+//             // ✅ attach signal
+//             signal: registerAbortRef.current.signal,
 //           },
 //         );
 
 //         if (!res.ok) throw new Error(`Registration failed: ${res.status}`);
 
 //         const json = await res.json();
+
 //         setBlobPath(json.blob_path);
 
 //         if (json.features?.tasks) {
@@ -235,12 +250,26 @@
 //         }
 
 //         setBlobPathReady(true);
-//       } catch (err) {
+//       } catch (err: any) {
+//         // ✅ IMPORTANT: ignore abort error
+//         if (err.name === "AbortError") {
+//           console.log("Registration API aborted");
+
+//           return;
+//         }
+
 //         console.error("File registration error:", err);
 //       }
 //     };
 
 //     registerFile();
+
+//     // ✅ cleanup when leaving page
+//     return () => {
+//       if (registerAbortRef.current) {
+//         registerAbortRef.current.abort();
+//       }
+//     };
 //   }, [filePath]);
 
 //   // Reset models & results when task changes
@@ -275,35 +304,6 @@
 //       return null;
 //     }
 //   };
-
-//   const getUserFromLocalStorage = () => {
-//     try {
-//       const raw = localStorage.getItem("aivolve_user");
-//       if (!raw) return null;
-//       return JSON.parse(raw) as {
-//         email?: string;
-//         session_id?: string;
-//         user_id?: string;
-//         agent_name?: string;
-//         [key: string]: any;
-//       };
-//     } catch {
-//       return null;
-//     }
-//   };
-
-//   // const fetchFullData = async (blobPath: string, userEmail: string) => {
-//   //   const url = `${FULL_DATA_URL}?blob_path=${encodeURIComponent(
-//   //     blobPath
-//   //   )}&user_email=${encodeURIComponent(userEmail)}`
-//   //   const res = await fetch(url)
-//   //   if (!res.ok) {
-//   //     throw new Error('Failed to fetch full data')
-//   //   }
-//   //   const text = await res.text()
-//   //   const blob = new Blob([text], { type: 'text/csv' })
-//   //   return new File([blob], dataset!.name, { type: 'text/csv' })
-//   // }
 
 //   const canCompare = !!(
 //     selectedTask &&
@@ -496,11 +496,14 @@
 //             <Button
 //               variant="outline"
 //               onClick={() => {
+//                 if (registerAbortRef.current) {
+//                   registerAbortRef.current.abort();
+//                 }
+
 //                 if (cameFromHub) {
-//                   navigate("/workflow/automl/automlhub"); // or wherever AutoMLHub is mounted
+//                   navigate("/workflow/automl/automlhub");
 //                 } else {
-//                   navigate("/workflow/automl"); // same destination, but different label below
-//                   // If you have a real "Jobs" list page, change to: navigate('/jobs' or '/dashboard')
+//                   navigate("/workflow/automl");
 //                 }
 //               }}
 //             >
@@ -870,6 +873,7 @@ import { ImportedDataset } from "../modals/UnifiedImportModal";
 import { useLocation } from "react-router-dom";
 import Header from "../layout/Header";
 import { toast } from "sonner";
+import Header1 from "../layout/Header1";
 
 interface CompareTabProps {
   dataset?: ImportedDataset | null;
@@ -1021,6 +1025,9 @@ function generateMockMetricsForTask(task: string) {
   return obj;
 }
 
+const TRAINING_STATUS_API =
+  "https://api.veriton.ai/api/service3/training-status";
+
 const CompareTab = ({}: CompareTabProps) => {
   const navigate = useNavigate();
   const [selectedTask, setSelectedTask] = useState(""); // previously selectedFunction
@@ -1046,8 +1053,12 @@ const CompareTab = ({}: CompareTabProps) => {
   const filePath = (location.state as any)?.filePath || "";
   const registerAbortRef = useRef<AbortController | null>(null);
   const datasetName = (location.state as any)?.datasetName || "";
-
+  const cameFromJobs1 = location.state?.origin === "jobs1";
   const cameFromHub = location.state?.origin === "automlhub";
+  const [jobId, setJobId] = useState<string | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingRef = useRef(false);
+  const trainingToastRef = useRef<string | number | null>(null);
 
   // ✅ add this ref at top of component if not already added
   // const registerAbortRef = useRef<AbortController | null>(null);
@@ -1139,6 +1150,14 @@ const CompareTab = ({}: CompareTabProps) => {
     setSelectedFeature("all");
   }, [selectedTask]);
 
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
+
   const availableModels = useMemo(() => {
     return selectedTask ? modelsByTask[selectedTask] || [] : [];
   }, [selectedTask]);
@@ -1227,6 +1246,20 @@ const CompareTab = ({}: CompareTabProps) => {
       }
 
       const json = await res.json();
+      if (json.status === "model has started running") {
+        const jobId = json.job_id;
+
+        setJobId(jobId);
+        setIsComparing(true);
+
+        trainingToastRef.current = toast.loading(
+          "Model comparison started. This may take a few minutes...",
+        );
+
+        pollTrainingStatus(jobId);
+
+        return;
+      }
       setApiResponseRaw(json);
 
       const allModels = json?.all_models ?? {};
@@ -1261,6 +1294,86 @@ const CompareTab = ({}: CompareTabProps) => {
       console.error("Compare API error", err);
       setErrorMessage(err?.message || "Error calling compare API.");
     } finally {
+      setIsComparing(false);
+    }
+  };
+
+  const pollTrainingStatus = async (jobId: string) => {
+    const userEmail = getUserEmailFromLocal();
+    if (!userEmail) return;
+
+    if (pollingRef.current) return;
+    pollingRef.current = true;
+
+    try {
+      while (true) {
+        const res = await fetch(
+          `${TRAINING_STATUS_API}/${jobId}?user_email=${encodeURIComponent(userEmail)}`,
+          {
+            method: "GET",
+            headers: { accept: "application/json" },
+          },
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch training status");
+        }
+
+        const json = await res.json();
+
+        if (json.status === "success") {
+          pollingRef.current = false;
+          setIsComparing(false);
+
+          if (trainingToastRef.current) {
+            toast.success("Model comparison completed!", {
+              id: trainingToastRef.current,
+            });
+          }
+
+          const allModels = json.all_models ?? {};
+
+          const findKey = (k: string | null) => {
+            if (!k) return null;
+            if (allModels[k]) return k;
+
+            const lower = k.toLowerCase();
+            const candidate = Object.keys(allModels).find(
+              (c) => c.toLowerCase() === lower,
+            );
+
+            if (candidate) return candidate;
+
+            const candidate2 = Object.keys(allModels).find((c) =>
+              c.toLowerCase().includes(lower),
+            );
+
+            if (candidate2) return candidate2;
+
+            return null;
+          };
+
+          const real1 = findKey(modelNameToApiKey(selectedModel1));
+          const real2 = findKey(modelNameToApiKey(selectedModel2));
+
+          const pickMetrics = (obj: any) => {
+            if (!obj) return null;
+            return { train: obj.train ?? null, test: obj.test ?? null };
+          };
+
+          setModel1Metrics(real1 ? pickMetrics(allModels[real1]) : null);
+          setModel2Metrics(real2 ? pickMetrics(allModels[real2]) : null);
+
+          setComparisonComplete(true);
+
+          break;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 30000));
+      }
+    } catch (err) {
+      console.error("Polling error:", err);
+      pollingRef.current = false;
       setIsComparing(false);
     }
   };
@@ -1330,7 +1443,7 @@ const CompareTab = ({}: CompareTabProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {cameFromJobs1 ? <Header1 /> : <Header />}
 
       <main className="pt-6 px-8 pb-16 max-w-[1400px] mx-auto">
         {/* Back button + title */}
@@ -1351,18 +1464,26 @@ const CompareTab = ({}: CompareTabProps) => {
             <Button
               variant="outline"
               onClick={() => {
+                // ✅ STOP the API first
                 if (registerAbortRef.current) {
                   registerAbortRef.current.abort();
                 }
 
-                if (cameFromHub) {
+                // ✅ THEN navigate based on origin
+                if (cameFromJobs1) {
+                  navigate("/workflow/automl/jobs1");
+                } else if (cameFromHub) {
                   navigate("/workflow/automl/automlhub");
                 } else {
                   navigate("/workflow/automl");
                 }
               }}
             >
-              {cameFromHub ? "Back to Preview" : "Back to Jobs"}
+              {cameFromJobs1
+                ? "Back to Auto AI/ML"
+                : cameFromHub
+                  ? "Back to Preview"
+                  : "Back to Jobs"}
             </Button>
           </div>
         </div>

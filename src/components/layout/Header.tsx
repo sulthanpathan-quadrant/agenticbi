@@ -1,4 +1,4 @@
-// import { useNavigate } from "react-router-dom";
+// import { useLocation, useNavigate } from "react-router-dom";
 // import { useAuth } from "../contexts/AuthContext";
 // import {
 //   Database,
@@ -11,17 +11,16 @@
 // import { Button } from "@/components/ui/button";
 // import { ThemeToggle } from "../ThemeToggle";
 // import { useEffect, useState } from "react";
- 
+
 // const Header = () => {
 //   const navigate = useNavigate();
 //   const { user, logout } = useAuth();
 //   const [isScrolled, setIsScrolled] = useState(false);
- 
+//   const location = useLocation();
 //   const userName = user?.full_name || user?.email || "User";
 //   const formattedUserName =
-//   userName?.charAt(0).toUpperCase() + userName?.slice(1);
- 
- 
+//     userName?.charAt(0).toUpperCase() + userName?.slice(1);
+
 //   useEffect(() => {
 //     const handleScroll = () => {
 //       if (window.scrollY > 10) {
@@ -30,21 +29,21 @@
 //         setIsScrolled(false);
 //       }
 //     };
- 
+
 //     window.addEventListener("scroll", handleScroll);
- 
+
 //     return () => window.removeEventListener("scroll", handleScroll);
 //   }, []);
- 
+
 //   const handleLogout = () => {
 //     logout();
- 
+
 //     // optional: clear everything if needed
 //     localStorage.clear();
- 
+
 //     navigate("/");
 //   };
- 
+
 //   return (
 //     <header
 //       className={`border-b border-border sticky top-0 z-50 transition-all duration-300
@@ -74,7 +73,7 @@
 //                 "
 //               />
 //             </a>
- 
+
 //             {/* Welcome text – side by side */}
 //             <div className="flex flex-col">
 //               <p className="text-sm md:text-base text-muted-foreground">
@@ -85,26 +84,21 @@
 //               </p>
 //             </div>
 //           </div>
- 
+
 //           {/* Right */}
 //           <nav className="flex items-center gap-6">
-            
-//             {/* <button
-//               onClick={() => navigate("/workflow/path-selection")}
-//               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+//             <Button
+//               variant="outline"
+//               onClick={() =>
+//                 navigate(location.state?.from || "/workflow/path-selection")
+//               }
 //             >
-//               <ArrowLeft className="w-4 h-4" />
+//               <ArrowLeft className="h-4 w-4 mr-2" />
 //               Back to Path Selection
-//             </button> */}
-
-//             <Button variant="outline" onClick={() => navigate("/workflow/path-selection")}>
-//             <ArrowLeft className="h-4 w-4 mr-2" />
-//             Back to Path Selection
-//           </Button>
- 
+//             </Button>
 //             <div className="flex items-center gap-3">
 //               <ThemeToggle />
- 
+
 //               <Button
 //                 variant="ghost"
 //                 size="icon"
@@ -120,9 +114,8 @@
 //     </header>
 //   );
 // };
- 
-// export default Header;
 
+// export default Header;
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -137,16 +130,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "../ThemeToggle";
 import { useEffect, useState } from "react";
-
+ 
 const Header = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
-  const userName = user?.full_name || user?.email || "User";
-  const formattedUserName =
-    userName?.charAt(0).toUpperCase() + userName?.slice(1);
-
+    const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const userName = user?.name || user?.email?.split("@")[0] || "User";
+  const userId = user?.id || user?.user_id;
+ 
+ 
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -155,21 +150,21 @@ const Header = () => {
         setIsScrolled(false);
       }
     };
-
+ 
     window.addEventListener("scroll", handleScroll);
-
+ 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
+ 
   const handleLogout = () => {
     logout();
-
+ 
     // optional: clear everything if needed
     localStorage.clear();
-
+ 
     navigate("/");
   };
-
+ 
   return (
     <header
       className={`border-b border-border sticky top-0 z-50 transition-all duration-300
@@ -199,18 +194,15 @@ const Header = () => {
                 "
               />
             </a>
-
+ 
             {/* Welcome text – side by side */}
             <div className="flex flex-col">
               <p className="text-sm md:text-base text-muted-foreground">
-                Welcome,{" "}
-                <span className="text-primary font-medium">
-                  {formattedUserName}
-                </span>
+                Welcome, <span className="text-primary font-medium">{userName || "User"}</span>
               </p>
             </div>
           </div>
-
+ 
           {/* Right */}
           <nav className="flex items-center gap-6">
             <Button
@@ -224,7 +216,7 @@ const Header = () => {
             </Button>
             <div className="flex items-center gap-3">
               <ThemeToggle />
-
+ 
               <Button
                 variant="ghost"
                 size="icon"
@@ -240,8 +232,8 @@ const Header = () => {
     </header>
   );
 };
-
+ 
 export default Header;
-
+ 
  
  

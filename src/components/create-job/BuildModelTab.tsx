@@ -1,4 +1,4 @@
-// import { useState, useMemo, useEffect } from "react";
+// import { useState, useMemo, useEffect, useRef } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { motion } from "framer-motion";
 // import { Sparkles } from "lucide-react";
@@ -17,8 +17,6 @@
 //   PopoverTrigger,
 // } from "@/components/ui/popover";
 // import Header from "@/components/layout/Header";
-
-// import { ImportedDataset } from "../modals/UnifiedImportModal";
 // import { toast } from "sonner";
 
 // const modelsByFunction: Record<string, string[]> = {
@@ -158,7 +156,9 @@
 //   const [selectedMeasures, setSelectedMeasures] = useState<string[]>([]);
 //   const [yearColumn, setYearColumn] = useState("");
 //   const [allTaskFeatures, setAllTaskFeatures] = useState<any>(null);
+//   const registerAbortRef = useRef<AbortController | null>(null);
 //   const [blobPathReady, setBlobPathReady] = useState(false);
+//   const [transformationMessage, setTransformationMessage] = useState<string | null>(null);
 //   const [initialConfig, setInitialConfig] = useState({
 //     function: "Classification",
 //     model: "Logistic Regression",
@@ -175,6 +175,9 @@
 //       if (!userEmail) return;
 
 //       try {
+//         // ✅ create abort controller
+//         registerAbortRef.current = new AbortController();
+
 //         const params = new URLSearchParams();
 //         params.append("file_path", filePath);
 //         params.append("upload_file_path", "true");
@@ -196,6 +199,9 @@
 //               accept: "application/json",
 //             },
 //             body: params.toString(),
+
+//             // ✅ attach signal
+//             signal: registerAbortRef.current.signal,
 //           },
 //         );
 
@@ -207,28 +213,65 @@
 
 //         if (json.analysis_metadata) {
 //           setAnalysisMetadata(json.analysis_metadata);
+
 //           const needsTransform =
 //             json.analysis_metadata?.dataset_structure?.needs_transformation ||
 //             false;
+
 //           setNeedsTransformation(needsTransform);
+//           if (needsTransform) {
+//     // Auto-set function
+//     setSelectedFunction("Multi_Step_Forecasting");
+
+//     // IMPORTANT: Also sync initialConfig so hasConfigChanged starts as false
+//     setInitialConfig({
+//       function: "Multi_Step_Forecasting",
+//       model: "",                    // no model selected yet → user must pick one
+//       target: "",
+//       targets: [],
+//       horizon: 12,                  // or keep current horizon value if you prefer
+//     });
+
+//     // Optional but recommended: show message to user
+//     toast.info(
+//       "This dataset appears to be in wide format and requires transformation. " +
+//       "The function has been automatically set to Multi-Step Forecasting."
+//     );
+//   }
 //         }
 
-//         // ── NEW: store all task features and set targets for current task ──
 //         if (json.features?.tasks) {
 //           setAllTaskFeatures(json.features.tasks);
+
 //           const taskKey =
 //             selectedFunction === "Multi_Step_Forecasting"
 //               ? "multistep_forecasting"
 //               : selectedFunction.toLowerCase().replace(/ /g, "_");
+
 //           setValidTargets(json.features.tasks[taskKey]?.features || []);
 //         }
+
 //         setBlobPathReady(true);
-//       } catch (err) {
+//       } catch (err: any) {
+//         // ✅ ignore abort error
+//         if (err.name === "AbortError") {
+//           console.log("Registration API aborted");
+
+//           return;
+//         }
+
 //         console.error("File registration error:", err);
 //       }
 //     };
 
 //     registerFile();
+
+//     // ✅ cleanup
+//     return () => {
+//       if (registerAbortRef.current) {
+//         registerAbortRef.current.abort();
+//       }
+//     };
 //   }, [filePath]);
 
 //   const availableModels = useMemo(() => {
@@ -656,33 +699,21 @@
 //                 <Button
 //                   variant="outline"
 //                   onClick={() => {
+//                     // ✅ STOP the API first
+//                     if (registerAbortRef.current) {
+//                       registerAbortRef.current.abort();
+//                     }
+
+//                     // ✅ THEN navigate
 //                     if (cameFromHub) {
-//                       navigate("/workflow/automl/automlhub"); // or wherever AutoMLHub is mounted
+//                       navigate("/workflow/automl/automlhub");
 //                     } else {
-//                       navigate("/workflow/automl"); // same destination, but different label below
-//                       // If you have a real "Jobs" list page, change to: navigate('/jobs' or '/dashboard')
+//                       navigate("/workflow/automl");
 //                     }
 //                   }}
 //                 >
 //                   {cameFromHub ? "Back to Preview" : "Back to Jobs"}
 //                 </Button>
-
-//                 {/* <Button
-//                   variant='outline'
-//                   onClick={() =>
-//                     navigate('/workflow/automl/compare', {
-//                       state: { mode: 'compare' }
-//                     })
-//                   }
-//                 >
-//                   Compare Models
-//                 </Button> */}
-//                 {/* <Button
-//                     variant="outline"
-//                     onClick={() => navigate("/workflow/automl")}
-//                   >
-//                     Back to jobs
-//                   </Button> */}
 //               </div>
 //             </div>
 
@@ -702,6 +733,11 @@
 //               <h2 className="text-lg font-bold text-foreground mb-6">
 //                 Configure Training
 //               </h2>
+//               {transformationMessage && (
+//     <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-blue-800 dark:text-blue-300 text-sm">
+//       {transformationMessage}
+//     </div>
+//   )}
 
 //               <div
 //                 className={`grid gap-4 ${
@@ -2339,11 +2375,16 @@
 //               <Button
 //                 variant="outline"
 //                 onClick={() => {
+//                   // ✅ STOP the API first
+//                   if (registerAbortRef.current) {
+//                     registerAbortRef.current.abort();
+//                   }
+
+//                   // ✅ THEN navigate
 //                   if (cameFromHub) {
-//                     navigate("/workflow/automl/automlhub"); // or wherever AutoMLHub is mounted
+//                     navigate("/workflow/automl/automlhub");
 //                   } else {
-//                     navigate("/workflow/automl"); // same destination, but different label below
-//                     // If you have a real "Jobs" list page, change to: navigate('/jobs' or '/dashboard')
+//                     navigate("/workflow/automl");
 //                   }
 //                 }}
 //               >
@@ -2811,6 +2852,7 @@ import {
 } from "@/components/ui/popover";
 import Header from "@/components/layout/Header";
 import { toast } from "sonner";
+import Header1 from "../layout/Header1";
 
 const modelsByFunction: Record<string, string[]> = {
   Classification: [
@@ -2828,7 +2870,7 @@ const modelsByFunction: Record<string, string[]> = {
     "Local Outlier Factor (LOF)",
     "Elliptic Envelope",
   ],
-  Multi_Step_Forecasting: ["XGBoost", "CatBoost", "LightBoost", "LightGBM"],
+  Multi_Step_Forecasting: ["XGBoost", "CatBoost", "LightGBM"],
 };
 
 const functionTypes = Object.keys(modelsByFunction);
@@ -2911,6 +2953,8 @@ function modelNameToApiKey(name: string) {
 }
 
 const DRIFT_API = "https://api.veriton.ai/api/service3/drift/report";
+const TRAINING_STATUS_API =
+  "https://api.veriton.ai/api/service3/training-status";
 
 const BuildModelTab = () => {
   const location = useLocation();
@@ -2951,7 +2995,15 @@ const BuildModelTab = () => {
   const [allTaskFeatures, setAllTaskFeatures] = useState<any>(null);
   const registerAbortRef = useRef<AbortController | null>(null);
   const [blobPathReady, setBlobPathReady] = useState(false);
-  const [transformationMessage, setTransformationMessage] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [pollError, setPollError] = useState<string | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingRef = useRef(false);
+  const trainingToastRef = useRef<string | number | null>(null);
+  const cameFromJobs1 = location.state?.origin === "jobs1";
+  const [transformationMessage, setTransformationMessage] = useState<
+    string | null
+  >(null);
   const [initialConfig, setInitialConfig] = useState({
     function: "Classification",
     model: "Logistic Regression",
@@ -2959,6 +3011,14 @@ const BuildModelTab = () => {
     targets: [] as string[], // NEW
     horizon: 12,
   });
+
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!filePath) return;
@@ -3013,24 +3073,24 @@ const BuildModelTab = () => {
 
           setNeedsTransformation(needsTransform);
           if (needsTransform) {
-    // Auto-set function
-    setSelectedFunction("Multi_Step_Forecasting");
+            // Auto-set function
+            setSelectedFunction("Multi_Step_Forecasting");
 
-    // IMPORTANT: Also sync initialConfig so hasConfigChanged starts as false
-    setInitialConfig({
-      function: "Multi_Step_Forecasting",
-      model: "",                    // no model selected yet → user must pick one
-      target: "",
-      targets: [],
-      horizon: 12,                  // or keep current horizon value if you prefer
-    });
+            // IMPORTANT: Also sync initialConfig so hasConfigChanged starts as false
+            setInitialConfig({
+              function: "Multi_Step_Forecasting",
+              model: "", // no model selected yet → user must pick one
+              target: "",
+              targets: [],
+              horizon: 12, // or keep current horizon value if you prefer
+            });
 
-    // Optional but recommended: show message to user
-    toast.info(
-      "This dataset appears to be in wide format and requires transformation. " +
-      "The function has been automatically set to Multi-Step Forecasting."
-    );
-  }
+            // Optional but recommended: show message to user
+            toast.info(
+              "This dataset appears to be in wide format and requires transformation. " +
+                "The function has been automatically set to Multi-Step Forecasting.",
+            );
+          }
         }
 
         if (json.features?.tasks) {
@@ -3274,11 +3334,85 @@ const BuildModelTab = () => {
       }
 
       const json = await res.json();
+      console.log("");
+
       setDriftReport(json.drift_report);
     } catch (err) {
       console.error("Drift fetch error:", err);
     } finally {
       setIsFetchingDrift(false);
+    }
+  };
+
+  const pollTrainingStatus = async (jobId: string) => {
+    const userEmail = getUserEmailFromLocal();
+    if (!userEmail) return;
+
+    if (pollingRef.current) return; // prevent multiple polling loops
+    pollingRef.current = true;
+
+    try {
+      while (true) {
+        const res = await fetch(
+          `${TRAINING_STATUS_API}/${jobId}?user_email=${encodeURIComponent(userEmail)}`,
+          {
+            method: "GET",
+            headers: { accept: "application/json" },
+          },
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch training status");
+        }
+
+        const json = await res.json();
+
+        if (json.status === "success") {
+          setIsBuilding(false);
+          pollingRef.current = false; // stop polling
+
+          if (trainingToastRef.current) {
+            toast.success("Model training completed. Results are ready!", {
+              id: trainingToastRef.current,
+            });
+          }
+
+          if (selectedModel) {
+            const modelKey = modelNameToApiKey(selectedModel);
+            const results = json.all_models[modelKey];
+
+            setModelResults(results);
+            setAllModelsResults(null);
+            setBestModelKey("");
+          } else {
+            setAllModelsResults(json.all_models);
+            setBestModelKey(json.best_model);
+            setModelResults(null);
+          }
+
+          setPrimaryMetric(json.primary_metric);
+          setPrimaryScore(json.primary_score);
+          setTextSummary(json.text_summary || "");
+          setShowResults(true);
+          setHasConfigChanged(false);
+
+          if (json.model_id) {
+            await fetchDriftReport({
+              mode: "build",
+              modelId: json.model_id,
+            });
+          }
+
+          break;
+        }
+
+        // wait 30 seconds before next poll
+        await new Promise((resolve) => setTimeout(resolve, 30000));
+      }
+    } catch (err) {
+      console.error("Polling error:", err);
+      pollingRef.current = false;
+      setIsBuilding(false);
     }
   };
 
@@ -3363,7 +3497,7 @@ const BuildModelTab = () => {
     // Continue with rest of the formData appends...
     formData.append("user_email", userEmail);
     formData.append("optuna_trials", "2");
-    // ... rest of your code
+
     if (selectedModel) {
       formData.append("models", modelNameToApiKey(selectedModel));
     }
@@ -3394,8 +3528,21 @@ const BuildModelTab = () => {
       }
 
       const json = await res.json();
-      if (json.status !== "success") {
-        throw new Error(json.message || "Failed to build model");
+
+      /* NEW: job started response */
+      if (json.status === "model has started running") {
+        const jobId = json.job_id;
+
+        setJobId(jobId);
+        setIsBuilding(true);
+
+        trainingToastRef.current = toast.loading(
+          "Model training started. This may take a few minutes while results are generated...",
+        );
+
+        pollTrainingStatus(jobId);
+
+        return;
       }
 
       // ✅ Fetch drift report after successful build
@@ -3447,10 +3594,12 @@ const BuildModelTab = () => {
     } catch (err: any) {
       console.error(err);
       setError(err.message || "An error occurred");
-    } finally {
-      setIsBuilding(false);
     }
+    // finally {
+    //   setIsBuilding(false);
+    // }
   };
+
   const canBuild = needsTransformation
     ? selectedFunction === "Multi_Step_Forecasting" &&
       selectedModel &&
@@ -3463,6 +3612,7 @@ const BuildModelTab = () => {
         ? selectedTargets.length >= 1
         : selectedTarget) &&
       hasConfigChanged;
+
   const renderMetricValue = (v: number | undefined) => {
     return v != null ? v.toFixed(4) : "—";
   };
@@ -3470,12 +3620,13 @@ const BuildModelTab = () => {
   // Results view - Single Model
   if (showResults && modelResults) {
     const metrics = metricsByTask[selectedFunction] || [];
-    const isDataDrift = driftReport.overall_status === "data_drift";
-    const isPerformanceDrift = driftReport.performance_drift?.detected === true;
+    const isDataDrift = driftReport?.overall_status === "data_drift";
+    const isPerformanceDrift =
+      driftReport?.performance_drift?.detected === true;
 
     return (
       <div className="min-h-screen bg-background flex flex-col overflow-hidden">
-        <Header />
+        {cameFromJobs1 ? <Header1 /> : <Header />}
 
         <div className="flex-1 overflow-auto">
           <main className="px-6 py-6 max-w-7xl mx-auto w-full">
@@ -3497,15 +3648,21 @@ const BuildModelTab = () => {
                       registerAbortRef.current.abort();
                     }
 
-                    // ✅ THEN navigate
-                    if (cameFromHub) {
+                    // ✅ THEN navigate based on origin
+                    if (cameFromJobs1) {
+                      navigate("/workflow/automl/jobs1");
+                    } else if (cameFromHub) {
                       navigate("/workflow/automl/automlhub");
                     } else {
                       navigate("/workflow/automl");
                     }
                   }}
                 >
-                  {cameFromHub ? "Back to Preview" : "Back to Jobs"}
+                  {cameFromJobs1
+                    ? "Back to Auto AI/ML"
+                    : cameFromHub
+                      ? "Back to Preview"
+                      : "Back to Jobs"}
                 </Button>
               </div>
             </div>
@@ -3527,10 +3684,10 @@ const BuildModelTab = () => {
                 Configure Training
               </h2>
               {transformationMessage && (
-    <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-blue-800 dark:text-blue-300 text-sm">
-      {transformationMessage}
-    </div>
-  )}
+                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-blue-800 dark:text-blue-300 text-sm">
+                  {transformationMessage}
+                </div>
+              )}
 
               <div
                 className={`grid gap-4 ${
@@ -4107,178 +4264,189 @@ const BuildModelTab = () => {
             )}
 
             {driftReport && (
-              <div
-                className={`relative bg-card rounded-xl border border-border p-6 mt-4
-                max-w-7xl mx-auto w-full
-                ${
-                  isDataDrift
-                    ? "border-l-4 border-l-amber-500"
-                    : isPerformanceDrift
-                      ? "border-l-4 border-l-red-500"
-                      : "border-l-4 border-l-green-500"
-                }`}
-              >
-                {/* Status Badge */}
-                <div className="absolute top-4 right-4">
-                  {isDataDrift && (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
-                      Data Drift
-                    </span>
-                  )}
-                  {isPerformanceDrift && (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                      Performance Drift
-                    </span>
-                  )}
-                  {!isDataDrift && !isPerformanceDrift && (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                      Stable
-                    </span>
-                  )}
-                </div>
-
-                {/* Header */}
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-xl">
-                    {isDataDrift ? "⚠️" : isPerformanceDrift ? "📉" : "✅"}
-                  </span>
-                  <h2 className="text-lg font-bold text-foreground">
-                    Drift Monitoring
-                  </h2>
-                </div>
-
-                <p className="text-muted-foreground mb-4">
-                  {driftReport.summary_message}
-                </p>
-
-                {/* Metadata (Total Versions only) */}
-                <div className="mb-6">
-                  <p className="text-sm text-muted-foreground">
-                    Total Model Versions
-                  </p>
-                  <p className="text-foreground font-semibold text-lg">
-                    {driftReport.total_versions}
-                  </p>
-                </div>
-
-                {/* ===================== DATA DRIFT ===================== */}
-                {isDataDrift && (
-                  <>
-                    <h3 className="text-base font-semibold text-foreground mb-3">
-                      Data Drift Details
-                    </h3>
-
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Overall PSI
-                        </p>
-                        <p
-                          className={`text-lg font-bold ${
-                            driftReport.data_drift.overall_psi > 0.25
-                              ? "text-amber-600"
-                              : "text-foreground"
-                          }`}
-                        >
-                          {driftReport.data_drift.overall_psi}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Drifted Features
-                        </p>
-                        <p className="text-lg font-bold text-foreground">
-                          {driftReport.data_drift.drifted_features_count}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <p className="capitalize text-foreground font-medium">
-                          {driftReport.data_drift.status}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Drifted Features */}
-                    {driftReport.data_drift.drifted_features?.length > 0 && (
-                      <div className="mt-3">
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Drifted Columns
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {driftReport.data_drift.drifted_features.map(
-                            (f: string) => (
-                              <span
-                                key={f}
-                                className="px-3 py-1 text-xs rounded-full
-                    bg-amber-100 text-amber-900
-                    border border-amber-200"
-                              >
-                                {f}
-                              </span>
-                            ),
-                          )}
-                        </div>
-                      </div>
+              <div className="max-w-7xl mx-auto w-full">
+                <div
+                  className={`relative bg-card rounded-xl border border-border p-6 mt-6
+      ${
+        isDataDrift
+          ? "border-l-4 border-l-amber-500"
+          : isPerformanceDrift
+            ? "border-l-4 border-l-red-500"
+            : "border-l-4 border-l-green-500"
+      }`}
+                >
+                  {/* Status Badge */}
+                  <div className="absolute top-4 right-4">
+                    {isDataDrift && (
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
+                        Data Drift
+                      </span>
                     )}
+                    {isPerformanceDrift && (
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                        Performance Drift
+                      </span>
+                    )}
+                    {!isDataDrift && !isPerformanceDrift && (
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        Stable
+                      </span>
+                    )}
+                  </div>
 
-                    {/* Details */}
-                    {driftReport.details && (
-                      <p className="mt-4 text-sm text-muted-foreground whitespace-pre-line">
-                        {driftReport.details}
+                  {/* Header */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-xl">
+                      {isDataDrift ? "⚠️" : isPerformanceDrift ? "📉" : "✅"}
+                    </span>
+                    <h2 className="text-lg font-bold text-foreground">
+                      Drift Monitoring
+                    </h2>
+                  </div>
+
+                  {/* Drift Status Message */}
+                  <div className="mb-4">
+                    {isDataDrift && (
+                      <p className="text-amber-600 font-bold text-base">
+                        Data Drift Detected
                       </p>
                     )}
-                  </>
-                )}
 
-                {/* ===================== PERFORMANCE DRIFT ===================== */}
-                {isPerformanceDrift && (
-                  <>
-                    <h3 className="text-base font-semibold text-foreground mb-3">
-                      Performance Drift Details
-                    </h3>
+                    {isPerformanceDrift && (
+                      <p className="text-red-600 font-bold text-base">
+                        Performance Drift Detected
+                      </p>
+                    )}
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Baseline Metric
-                        </p>
-                        <p className="text-lg font-bold text-foreground">
-                          {driftReport.performance_drift.baseline_metric}
-                        </p>
-                      </div>
+                    {!isDataDrift && !isPerformanceDrift && (
+                      <p className="text-green-600 font-bold text-base">
+                        No Drift Detected – Model is Stable
+                      </p>
+                    )}
 
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Current Metric
-                        </p>
-                        <p className="text-lg font-bold text-foreground">
-                          {driftReport.performance_drift.current_metric ?? "—"}
-                        </p>
-                      </div>
+                    <p className="text-muted-foreground mt-2">
+                      {driftReport?.summary_message}
+                    </p>
+                  </div>
 
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Change %
-                        </p>
-                        <p className="text-lg font-bold text-foreground">
-                          {driftReport.performance_drift.change_percent}%
-                        </p>
+                  {/* Metadata */}
+                  <div className="mb-6">
+                    <p className="text-sm text-muted-foreground">
+                      Total Model Versions
+                    </p>
+                    <p className="text-foreground font-semibold text-lg">
+                      {driftReport?.total_versions ?? "—"}
+                    </p>
+                  </div>
+
+                  {/* ===================== DATA DRIFT ===================== */}
+                  <h3 className="text-base font-semibold text-foreground mb-3">
+                    Data Drift Details
+                  </h3>
+
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Overall PSI
+                      </p>
+                      <p
+                        className={`text-lg font-bold ${
+                          driftReport?.data_drift?.overall_psi > 0.25
+                            ? "text-amber-600"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {driftReport?.data_drift?.overall_psi ?? "—"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Drifted Features
+                      </p>
+                      <p className="text-lg font-bold text-foreground">
+                        {driftReport?.data_drift?.drifted_features_count ?? 0}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <p className="capitalize text-foreground font-medium">
+                        {driftReport?.data_drift?.status ?? "stable"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Drifted Features */}
+                  {driftReport?.data_drift?.drifted_features?.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Drifted Columns
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {driftReport?.data_drift?.drifted_features.map(
+                          (f: string) => (
+                            <span
+                              key={f}
+                              className="px-3 py-1 text-xs rounded-full
+                bg-amber-100 text-amber-900
+                border border-amber-200"
+                            >
+                              {f}
+                            </span>
+                          ),
+                        )}
                       </div>
                     </div>
-                  </>
-                )}
+                  )}
 
-                {/* Recommendation */}
-                <div className="mt-6 rounded-md bg-muted/50 p-4">
-                  <p className="text-sm font-semibold text-foreground">
-                    Recommendation
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {driftReport.recommendation}
-                  </p>
+                  {driftReport?.details && (
+                    <p className="mt-4 text-sm text-muted-foreground whitespace-pre-line">
+                      {driftReport?.details}
+                    </p>
+                  )}
+
+                  {/* ===================== PERFORMANCE DRIFT ===================== */}
+                  <h3 className="text-base font-semibold text-foreground mb-3 mt-6">
+                    Performance Drift Details
+                  </h3>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Baseline Metric
+                      </p>
+                      <p className="text-lg font-bold text-foreground">
+                        {driftReport?.performance_drift?.baseline_metric ?? "—"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Current Metric
+                      </p>
+                      <p className="text-lg font-bold text-foreground">
+                        {driftReport?.performance_drift?.current_metric ?? "—"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-muted-foreground">Change %</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {driftReport?.performance_drift?.change_percent ?? "0"}%
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Recommendation */}
+                  <div className="mt-6 rounded-md bg-muted/50 p-4">
+                    <p className="text-sm font-semibold text-foreground">
+                      Recommendation
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {driftReport?.recommendation}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -4298,7 +4466,7 @@ const BuildModelTab = () => {
       bestModelKey,
       ...modelKeys.filter((k) => k !== bestModelKey),
     ];
-    const isDataDrift = driftReport.overall_status === "data_drift";
+    const isDataDrift = driftReport?.overall_status === "data_drift";
     const isPerformanceDrift = driftReport.performance_drift?.detected === true;
 
     return (
@@ -5143,7 +5311,7 @@ const BuildModelTab = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
-      <Header />
+      {cameFromJobs1 ? <Header1 /> : <Header />}
 
       <div className="flex-1 overflow-auto">
         <main className="px-6 py-6 max-w-7xl mx-auto w-full">
@@ -5154,17 +5322,6 @@ const BuildModelTab = () => {
               </h1>
             </div>
             <div className="flex items-center gap-3">
-              {/* <Button
-                variant='outline'
-                onClick={() =>
-                  navigate('/workflow/automl/compare', {
-                    state: { mode: 'compare' }
-                  })
-                }
-              >
-                Compare Models
-              </Button> */}
-
               <Button
                 variant="outline"
                 onClick={() => {
@@ -5173,15 +5330,21 @@ const BuildModelTab = () => {
                     registerAbortRef.current.abort();
                   }
 
-                  // ✅ THEN navigate
-                  if (cameFromHub) {
+                  // ✅ THEN navigate based on origin
+                  if (cameFromJobs1) {
+                    navigate("/workflow/automl/jobs1");
+                  } else if (cameFromHub) {
                     navigate("/workflow/automl/automlhub");
                   } else {
                     navigate("/workflow/automl");
                   }
                 }}
               >
-                {cameFromHub ? "Back to Preview" : "Back to Jobs"}
+                {cameFromJobs1
+                  ? "Back to Auto AI/ML"
+                  : cameFromHub
+                    ? "Back to Preview"
+                    : "Back to Jobs"}
               </Button>
             </div>
           </div>

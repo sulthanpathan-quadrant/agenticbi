@@ -28,8 +28,6 @@
 //   TableRow,
 // } from "@/components/ui/table";
 // import { toast } from "@/hooks/use-toast";
-// import { motion } from "framer-motion";
-// import { OneLakeConnector } from "./OneLakeConnector";
 // import Header from "../layout/Header";
 // import { cn } from "@/lib/utils";
 
@@ -161,7 +159,7 @@
 //     if (!obj) return undefined;
 //     return Object.entries(obj).map(([name, value]) => ({
 //       name: String(name),
-//       testing: Number(value), // convert to number – very important for display
+//       testing: Number(value),
 //     }));
 //   };
 
@@ -687,15 +685,15 @@
 //     }
 //   };
 
-//   const closeUploadModal = () => {
-//     setUploadModalOpen(false);
-//     setUploadWizardStep("choose");
-//   };
-
-//   const closeViewResultsModal = () => {
+//   const closeAllModals = () => {
 //     setViewResultsModalOpen(false);
+//     setDatasetSelectionOpen(false);
+//     setPreviewDialogOpen(false);
+//     setUploadModalOpen(false);
+
 //     setSelectedModel(null);
-//     setTestResults(null);
+//     setSelectedTestDataset(null);
+//     setDatasetPreview(null);
 //   };
 
 //   return (
@@ -900,7 +898,7 @@
 //           <DialogFooter className="mt-6">
 //             <Button
 //               variant="outline"
-//               onClick={() => setDatasetSelectionOpen(false)}
+//               onClick={closeAllModals}
 //             >
 //               Cancel
 //             </Button>
@@ -918,7 +916,6 @@
 //                 className="h-8 px-2"
 //                 onClick={() => {
 //                   setPreviewDialogOpen(false);
-//                   // selection dialog stays open behind
 //                 }}
 //               >
 //                 Back to datasets
@@ -961,7 +958,7 @@
 //                 <div className="pt-4 border-t mt-2 flex justify-end gap-3 shrink-0">
 //                   <Button
 //                     variant="outline"
-//                     onClick={() => setPreviewDialogOpen(false)}
+//                     onClick={closeAllModals}
 //                   >
 //                     Cancel
 //                   </Button>
@@ -988,21 +985,18 @@
 //       <Dialog
 //         open={viewResultsModalOpen}
 //         onOpenChange={(open) => {
-//           if (!open) {
-//             // When closing → also force-close other modals if somehow still open
-//             setDatasetSelectionOpen(false);
-//             setPreviewDialogOpen(false);
-//             setUploadModalOpen(false); // if you still have this one
-//           }
-//           setViewResultsModalOpen(open);
+//           if (!open) closeAllModals();
+//           else setViewResultsModalOpen(true);
 //         }}
 //       >
-//         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl">
-//           <DialogHeader className="flex flex-row items-center justify-between gap-4">
+//         <DialogContent className="max-w-4xl p-0 border border-border rounded-2xl overflow-hidden shadow-xl">
+//           {/* Header */}
+//           <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
 //             <div>
 //               <DialogTitle className="text-xl font-semibold">
 //                 Test Results
 //               </DialogTitle>
+
 //               {selectedModel && (
 //                 <p className="text-muted-foreground text-sm mt-1">
 //                   Results for {selectedModel.modelName} on{" "}
@@ -1011,27 +1005,20 @@
 //               )}
 //             </div>
 
-//             {/* Explicit Close button */}
 //             <Button
 //               variant="ghost"
 //               size="icon"
 //               className="h-8 w-8 rounded-full"
-//               onClick={() => {
-//                 setViewResultsModalOpen(false);
-//                 // Also close others
-//                 setDatasetSelectionOpen(false);
-//                 setPreviewDialogOpen(false);
-//               }}
+//               onClick={closeAllModals}
 //             >
 //               <X className="h-5 w-5" />
 //             </Button>
-//           </DialogHeader>
+//           </div>
 
-//           {testResults && (
-//             <div className="py-4">
-//               <TestResultsDisplay results={testResults} />
-//             </div>
-//           )}
+//           {/* Scrollable Body */}
+//           <div className="max-h-[75vh] overflow-y-auto px-6 py-4">
+//             {testResults && <TestResultsDisplay results={testResults} />}
+//           </div>
 //         </DialogContent>
 //       </Dialog>
 //     </div>
@@ -1235,7 +1222,6 @@
 //                         if (results.task?.toLowerCase().includes("multistep")) {
 //                           return m.name.toLowerCase().startsWith("avg_");
 //                         }
-//                         // For other tasks, show all metrics
 //                         return true;
 //                       })
 //                       .map((m) => (
@@ -1295,7 +1281,6 @@
 //                   </p>
 //                 </div>
 //               )}
-//             {/* ================= Drift Report ================= */}
 //             {/* ================= Drift Report ================= */}
 //             {results.drift_report && (
 //               <div className="mb-6 border border-border rounded-xl p-4">
@@ -1487,7 +1472,7 @@
 
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Eye,
   Upload,
@@ -1518,6 +1503,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import Header from "../layout/Header";
 import { cn } from "@/lib/utils";
+import Header1 from "../layout/Header1";
 
 // get user email from localStorage
 const getUserFromLocalStorage = () => {
@@ -1679,6 +1665,8 @@ const TestTab = () => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [datasetsLoading, setDatasetsLoading] = useState(false);
+  const location = useLocation();
+  const cameFromJobs1 = location.state?.origin === "jobs1";
 
   // Fetch jobs on mount
   useEffect(() => {
@@ -2186,7 +2174,7 @@ const TestTab = () => {
 
   return (
     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
-      <Header />
+      {cameFromJobs1 ? <Header1 /> : <Header />}
       <div className="flex-1 flex flex-col overflow-auto">
         <main className="px-6 py-6">
           <div className="max-w-7xl mx-auto w-full">
@@ -2202,9 +2190,15 @@ const TestTab = () => {
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
-                  onClick={() => navigate("/workflow/automl")}
+                  onClick={() => {
+                    if (cameFromJobs1) {
+                      navigate("/workflow/automl/jobs1");
+                    } else {
+                      navigate("/workflow/automl");
+                    }
+                  }}
                 >
-                  Back to Jobs
+                  {cameFromJobs1 ? "Back to Auto AI/ML" : "Back to Jobs"}
                 </Button>
               </div>
             </div>
@@ -2384,10 +2378,7 @@ const TestTab = () => {
           </div>
 
           <DialogFooter className="mt-6">
-            <Button
-              variant="outline"
-              onClick={closeAllModals}
-            >
+            <Button variant="outline" onClick={closeAllModals}>
               Cancel
             </Button>
           </DialogFooter>
@@ -2444,10 +2435,7 @@ const TestTab = () => {
                 </div>
 
                 <div className="pt-4 border-t mt-2 flex justify-end gap-3 shrink-0">
-                  <Button
-                    variant="outline"
-                    onClick={closeAllModals}
-                  >
+                  <Button variant="outline" onClick={closeAllModals}>
                     Cancel
                   </Button>
                   <Button

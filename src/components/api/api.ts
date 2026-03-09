@@ -930,20 +930,73 @@ export const logout = () => localStorage.removeItem("access_token");
  
  
 // ---------------- S3 ----------------
+// export interface S3Credentials {
+//   aws_access_key_id: string;
+//   aws_secret_access_key: string;
+//   region: string;
+// }
+ 
+// export interface S3Bucket {
+//   name: string;
+// }
+ 
+// export interface S3Object {
+//   key: string;
+//   size: number;
+//   last_modified: string;
+// }
+ 
+// export interface S3ObjectsResponse {
+//   folders: string[];
+//   files: string[];
+// }
+ 
+// export const getS3Buckets = async (credentials: S3Credentials): Promise<string[]> => {
+//   const res = await fetch(`${API_BASE}/buckets`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//     body: JSON.stringify(credentials),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch buckets");
+//   return result;
+// };
+ 
+// export const getS3Objects = async (
+//   bucketName: string,
+//   credentials: S3Credentials & { prefix?: string }
+// ): Promise<S3ObjectsResponse> => {
+//   const res = await fetch(`${API_BASE}/buckets/${encodeURIComponent(bucketName)}/objects`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//     body: JSON.stringify(credentials),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch objects");
+//   return result;
+// };
+ 
+// export const getS3File = async (
+//   bucketName: string,
+//   key: string,
+//   credentials: S3Credentials
+// ): Promise<{ s3_path: string }> => {
+//   const res = await fetch(`${API_BASE}/buckets/${bucketName}/file?key=${encodeURIComponent(key)}`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//     body: JSON.stringify(credentials),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch file");
+//   return result;
+// };
+ 
 export interface S3Credentials {
   aws_access_key_id: string;
   aws_secret_access_key: string;
   region: string;
-}
- 
-export interface S3Bucket {
-  name: string;
-}
- 
-export interface S3Object {
-  key: string;
-  size: number;
-  last_modified: string;
+  bucket_name?: string;
+  prefix?: string;
 }
  
 export interface S3ObjectsResponse {
@@ -955,10 +1008,14 @@ export const getS3Buckets = async (credentials: S3Credentials): Promise<string[]
   const res = await fetch(`${API_BASE}/buckets`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify(credentials),
+    body: JSON.stringify({
+      aws_access_key_id: credentials.aws_access_key_id,
+      aws_secret_access_key: credentials.aws_secret_access_key,
+      region: credentials.region,
+    }),
   });
   const result = await safeJsonParse(res);
-  if (!res.ok) throw new Error(result.detail || "Failed to fetch buckets");
+  if (!res.ok) throw new Error(result.detail || result.message || "Failed to fetch buckets");
   return result;
 };
  
@@ -966,85 +1023,351 @@ export const getS3Objects = async (
   bucketName: string,
   credentials: S3Credentials & { prefix?: string }
 ): Promise<S3ObjectsResponse> => {
+  const body = {
+    aws_access_key_id: credentials.aws_access_key_id,
+    aws_secret_access_key: credentials.aws_secret_access_key,
+    region: credentials.region,
+    bucket_name: bucketName,
+    prefix: credentials.prefix || "",
+  };
+ 
   const res = await fetch(`${API_BASE}/buckets/${encodeURIComponent(bucketName)}/objects`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify(credentials),
+    body: JSON.stringify(body),
   });
+ 
   const result = await safeJsonParse(res);
-  if (!res.ok) throw new Error(result.detail || "Failed to fetch objects");
-  return result;
+  if (!res.ok) throw new Error(result.detail || result.message || "Failed to fetch objects");
+ 
+  return {
+    folders: result.folders || [],
+    files: result.files || [],
+  };
 };
  
-export const getS3File = async (
+export const getS3FilePath = async (
   bucketName: string,
   key: string,
   credentials: S3Credentials
-): Promise<{ s3_path: string }> => {
-  const res = await fetch(`${API_BASE}/buckets/${bucketName}/file?key=${encodeURIComponent(key)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify(credentials),
-  });
-  const result = await safeJsonParse(res);
-  if (!res.ok) throw new Error(result.detail || "Failed to fetch file");
-  return result;
-};
+): Promise<string> => {
+  const res = await fetch(
+    `${API_BASE}/buckets/${encodeURIComponent(bucketName)}/file?key=${encodeURIComponent(key)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify({
+        aws_access_key_id: credentials.aws_access_key_id,
+        aws_secret_access_key: credentials.aws_secret_access_key,
+        region: credentials.region,
+      }),
+    }
+  );
  
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || result.message || "Failed to get file path");
+ 
+  return result.file_path;
+};  
+
  
 // ---------------- AZURE BLOB ----------------
+// export interface AzureCredentials {
+//   connection_string: string;
+// }
+ 
+// export interface AzureBlobsResponse {
+//   folders: string[];
+//   files: string[];
+// }
+ 
+// export const getAzureContainers = async (credentials: AzureCredentials): Promise<string[]> => {
+//   const res = await fetch(`${API_BASE}/containers`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//     body: JSON.stringify(credentials),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch containers");
+//   return result;
+// };
+ 
+// export const getAzureBlobs = async (
+//   containerName: string,
+//   credentials: AzureCredentials & { prefix?: string }
+// ): Promise<AzureBlobsResponse> => {
+//   const res = await fetch(`${API_BASE}/containers/${encodeURIComponent(containerName)}/blobs`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//     body: JSON.stringify({
+//       ...credentials,
+//       container_name: containerName,
+//       prefix: credentials.prefix || ""
+//     }),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch blobs");
+//   return result;
+// };
+ 
+// export const getAzureBlobFile = async (
+//   containerName: string,
+//   blobName: string,
+//   credentials: AzureCredentials
+// ): Promise<{ azure_path: string }> => {
+//   const res = await fetch(`${API_BASE}/containers/${encodeURIComponent(containerName)}/file?blob_name=${encodeURIComponent(blobName)}`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//     body: JSON.stringify(credentials),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch blob file");
+//   return result;
+// };
+ 
+// export const getOneLakeWorkspaces = async (credentials: OneLakeCredentials): Promise<string[]> => {
+//   const res = await fetch(`${API_BASE}/workspaces`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//     body: JSON.stringify(credentials),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch workspaces");
+//     return result.workspaces ? result.workspaces.map((ws: any) => ws.name) : [];
+ 
+// };
+ 
+// export const getOneLakeLakehouses = async (
+//   workspaceName: string,
+//   credentials: OneLakeCredentials
+// ): Promise<string[]> => {
+//   const res = await fetch(`${API_BASE}/workspaces/lakehouses`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//     body: JSON.stringify({
+//       ...credentials,
+//       workspace_name: workspaceName,
+//       lakehouse_name: "",  
+//       path: "Files"        
+//     }),
+//   });
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch lakehouses");
+ 
+ 
+//   return result.lakehouses ? result.lakehouses.map((lh: any) => lh.name) : [];
+// };
+ 
+// export const getOneLakeFolderContents = async (
+//   workspaceName: string,
+//   lakehouseName: string,
+//   credentials: OneLakeCredentials & { path?: string }
+// ): Promise<OneLakeFolderContents> => {
+//   const res = await fetch(
+//     `${API_BASE}/workspaces/${encodeURIComponent(workspaceName)}/lakehouses/${encodeURIComponent(lakehouseName)}/contents`,
+//     {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//       body: JSON.stringify({
+//         ...credentials,
+//         workspace_name: workspaceName,
+//         lakehouse_name: lakehouseName,
+//         path: credentials.path || "Files",
+//       }),
+//     }
+//   );
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch folder contents");
+//   return result;
+// };
+ 
+// export const navigateBack = async (
+//   workspaceName: string,
+//   lakehouseName: string,
+//   currentPath: string,
+//   credentials: OneLakeCredentials
+// ): Promise<OneLakeFolderContents> => {
+//   const res = await fetch(
+//     `${API_BASE}/workspaces/${encodeURIComponent(workspaceName)}/lakehouses/${encodeURIComponent(lakehouseName)}/navigate-back?current_path=${encodeURIComponent(currentPath)}`,
+//     {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//       body: JSON.stringify(credentials),
+//     }
+//   );
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to navigate back");
+//   return result;
+// };
+ 
 export interface AzureCredentials {
   connection_string: string;
 }
  
+// The blobs API returns a flat array of full paths, e.g.:
+//   ["userdata/hello/nov26_all_sources/Book1_1.csv", "userdata/summary.json", ...]
+// We parse these into virtual folders and files relative to the current prefix.
 export interface AzureBlobsResponse {
-  folders: string[];
-  files: string[];
+  folders: string[];   // unique immediate sub-folder names at current prefix level
+  files: string[];     // full blob paths that are direct children of current prefix
 }
+ 
+/**
+ * Fetches all blob paths from a container, then parses them into
+ * folders and files relative to the given prefix.
+ *
+ * The API always returns ALL blobs in the container as a flat array.
+ * Paths may or may not include the container name as the first segment.
+ * We normalise everything to paths WITHOUT the container prefix,
+ * then filter by the virtual "current directory" prefix.
+ *
+ * API body: { connection_string, container_name, prefix }
+ */
+export const getAzureBlobs = async (
+  containerName: string,
+  credentials: AzureCredentials & { prefix?: string }
+): Promise<AzureBlobsResponse> => {
+  // The virtual directory prefix passed in from the dialog.
+  // At root level this is "" (empty string).
+  // When drilling into "hello/", this is "hello/".
+  const virtualPrefix = credentials.prefix || "";
+ 
+  const res = await fetch(`${API_BASE}/containers/${encodeURIComponent(containerName)}/blobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({
+      connection_string: credentials.connection_string,
+      container_name: containerName,
+      prefix: virtualPrefix,
+    }),
+  });
+ 
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch blobs");
+ 
+  // The API returns a flat string array of blob paths
+  const allPaths: string[] = Array.isArray(result) ? result : result.files || [];
+ 
+  // Normalise paths: strip leading "<containerName>/" if present,
+  // so we always work with paths relative to the container root.
+  const normalised = allPaths.map((p) => {
+    const withSlash = `${containerName}/`;
+    return p.startsWith(withSlash) ? p.slice(withSlash.length) : p;
+  }).filter((p) => p.length > 0);
+ 
+  // Filter to paths that live inside the current virtual directory
+  const inCurrentDir = normalised.filter((p) =>
+    virtualPrefix === "" ? true : p.startsWith(virtualPrefix)
+  );
+ 
+  // Strip the virtual prefix so we have paths relative to current dir
+  const relativePaths = inCurrentDir
+    .map((p) => (virtualPrefix ? p.slice(virtualPrefix.length) : p))
+    .filter((p) => p.length > 0);
+ 
+  const foldersSet = new Set<string>();
+  const files: string[] = [];
+ 
+  for (const rel of relativePaths) {
+    const slashIdx = rel.indexOf("/");
+    if (slashIdx !== -1) {
+      // Has deeper path → belongs to a virtual sub-folder
+      foldersSet.add(rel.slice(0, slashIdx));
+    } else {
+      // No slash → direct file at this level
+      // Store as full normalised path (relative to container root) for later use
+      files.push(virtualPrefix + rel);
+    }
+  }
+ 
+  return {
+    folders: Array.from(foldersSet),
+    files,
+  };
+};
  
 export const getAzureContainers = async (credentials: AzureCredentials): Promise<string[]> => {
   const res = await fetch(`${API_BASE}/containers`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify(credentials),
+    body: JSON.stringify({ connection_string: credentials.connection_string }),
   });
   const result = await safeJsonParse(res);
   if (!res.ok) throw new Error(result.detail || "Failed to fetch containers");
   return result;
 };
  
-export const getAzureBlobs = async (
-  containerName: string,
-  credentials: AzureCredentials & { prefix?: string }
-): Promise<AzureBlobsResponse> => {
-  const res = await fetch(`${API_BASE}/containers/${encodeURIComponent(containerName)}/blobs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify({
-      ...credentials,
-      container_name: containerName,
-      prefix: credentials.prefix || ""
-    }),
-  });
-  const result = await safeJsonParse(res);
-  if (!res.ok) throw new Error(result.detail || "Failed to fetch blobs");
-  return result;
-};
- 
+/**
+ * Fetches the azure:// path for a specific blob.
+ * blob_name should be the full path within the container, e.g. "hello/nov26_all_sources/Book1_1.csv"
+ * (i.e. the full path MINUS the container name prefix)
+ */
 export const getAzureBlobFile = async (
   containerName: string,
   blobName: string,
   credentials: AzureCredentials
-): Promise<{ azure_path: string }> => {
-  const res = await fetch(`${API_BASE}/containers/${encodeURIComponent(containerName)}/file?blob_name=${encodeURIComponent(blobName)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify(credentials),
-  });
+): Promise<{ file_path: string; size: number }> => {
+  const res = await fetch(
+    `${API_BASE}/containers/${encodeURIComponent(containerName)}/file?blob_name=${encodeURIComponent(blobName)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify({ connection_string: credentials.connection_string }),
+    }
+  );
   const result = await safeJsonParse(res);
   if (!res.ok) throw new Error(result.detail || "Failed to fetch blob file");
   return result;
 };
+ 
+ 
+// ---------------- ONELAKE ----------------
+// export interface OneLakeCredentials {
+//   tenant_id: string;
+//   client_id: string;
+//   client_secret: string;
+// }
+ 
+// export interface OneLakeFolderContents {
+//   folders: string[];
+//   files: Array<{ [key: string]: string }>;
+//   current_path: string;
+// }
+ 
+// export const getOneLakeTables = async (
+//   workspaceName: string,
+//   lakehouseName: string,
+//   credentials: OneLakeCredentials
+// ): Promise<{
+//   success: boolean;
+//   message: string;
+//   tables: Array<{ [key: string]: string }>;
+//   current_path: string;
+// }> => {
+//   const res = await fetch(
+//     `${API_BASE}/workspaces/${encodeURIComponent(workspaceName)}/lakehouses/${encodeURIComponent(lakehouseName)}/tables`,
+//     {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+//       body: JSON.stringify(credentials),
+//     }
+//   );
+//   const result = await safeJsonParse(res);
+//   if (!res.ok) throw new Error(result.detail || "Failed to fetch tables");
+//   return result;
+// };
+ 
+export interface OneLakeCredentials {
+  tenant_id: string;
+  client_id: string;
+  client_secret: string;
+}
+ 
+export interface OneLakeFolderContents {
+  folders: string[];
+  files: Array<{ [key: string]: string }>;
+  current_path: string;
+}
  
 export const getOneLakeWorkspaces = async (credentials: OneLakeCredentials): Promise<string[]> => {
   const res = await fetch(`${API_BASE}/workspaces`, {
@@ -1054,8 +1377,7 @@ export const getOneLakeWorkspaces = async (credentials: OneLakeCredentials): Pro
   });
   const result = await safeJsonParse(res);
   if (!res.ok) throw new Error(result.detail || "Failed to fetch workspaces");
-    return result.workspaces ? result.workspaces.map((ws: any) => ws.name) : [];
- 
+  return result.workspaces ? result.workspaces.map((ws: any) => ws.name) : [];
 };
  
 export const getOneLakeLakehouses = async (
@@ -1068,14 +1390,12 @@ export const getOneLakeLakehouses = async (
     body: JSON.stringify({
       ...credentials,
       workspace_name: workspaceName,
-      lakehouse_name: "",  
-      path: "Files"        
+      lakehouse_name: "",
+      path: "Files"
     }),
   });
   const result = await safeJsonParse(res);
   if (!res.ok) throw new Error(result.detail || "Failed to fetch lakehouses");
- 
- 
   return result.lakehouses ? result.lakehouses.map((lh: any) => lh.name) : [];
 };
  
@@ -1121,20 +1441,6 @@ export const navigateBack = async (
   return result;
 };
  
- 
-// ---------------- ONELAKE ----------------
-export interface OneLakeCredentials {
-  tenant_id: string;
-  client_id: string;
-  client_secret: string;
-}
- 
-export interface OneLakeFolderContents {
-  folders: string[];
-  files: Array<{ [key: string]: string }>;
-  current_path: string;
-}
- 
 export const getOneLakeTables = async (
   workspaceName: string,
   lakehouseName: string,
@@ -1158,6 +1464,8 @@ export const getOneLakeTables = async (
   return result;
 };
  
+ 
+
 // ---------------- DATABASE ----------------
  
 export interface DatabaseCredentials {

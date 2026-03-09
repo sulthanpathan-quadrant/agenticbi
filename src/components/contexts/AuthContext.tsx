@@ -35,7 +35,7 @@
 //       formData.append("password", password);
 
 //       const res = await fetch(
-//         "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/login",
+//         " /login",
 //         {
 //           method: "POST",
 //           headers: {
@@ -193,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       formData.append("password", password);
 
       const res = await fetch(
-        "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/login",
+        "https://api.veriton.ai/api/service3/login",
         {
           method: "POST",
           headers: {
@@ -244,7 +244,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       formData.append("full_name", name);
 
       const res = await fetch(
-        "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/register",
+        "https://api.veriton.ai/api/service3/register",
         {
           method: "POST",
           headers: {

@@ -26,6 +26,7 @@ import {
 import { PowerBIFlow } from '@/components/powerbi/PowerBIFlow';
 import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../ThemeToggle';
+import { Workflowheader } from '../WorkFlowHeader1';
 
 interface DashboardPreviewProps {
   dashboardData: any;
@@ -81,11 +82,14 @@ export function DashboardPreview({ dashboardData, file, query, onBack }: Dashboa
             <span className="text-lg font-semibold text-foreground">Dashboard Preview</span>
           </div>
         </div>
-      </div> */}
+      </div>  */}
+
+      <Workflowheader />
       
     
       {/* Main Content */}
-      <div className="flex-1 max-w-7xl mx-auto px-6 py-6 w-full space-y-8">
+      {/* <div className="flex-1 max-w-7xl mx-auto px-6 py-6 w-full space-y-8"> */}
+      <div className="flex-1 max-w-7xl mx-auto px-6 pt-8 pb-12 w-full space-y-8">
         {/* Metadata Section */}
         <div className="flex flex-col lg:flex-row lg:items-start gap-4 animate-fade-in">
           <div className="space-y-3 flex-1">

@@ -932,6 +932,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
  
 interface KPIWithTarget {
   id: string;
@@ -984,6 +985,7 @@ export function AnalysisPanel({
   const [queryText, setQueryText] = useState('');
   const [stateRestored, setStateRestored] = useState(false);
   const hasInitializedRef = useRef(false);
+  const navigate = useNavigate();
  
   // Reusable X close button for all toasts (Sonner style)
   const closeToastButton = (
@@ -1305,10 +1307,12 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
         visuals: visualsData.visuals || [],
         total_rows: visualsData.total_rows || selectedComputedKpis.length
       });
+
+      // navigate('/workflow/powerbi-flow?from=analysis');
  
-      toast.success("Dashboard generated with real visuals!", {
-        action: closeToastButton,
-      });
+      // toast.success("Dashboard generated with real visuals!", {
+      //   action: closeToastButton,
+      // });
     } catch (err) {
       console.error("Generate visuals failed:", err);
       toast.info("Showing your selected KPIs", {

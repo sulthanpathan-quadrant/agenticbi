@@ -996,6 +996,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
  
 // ─────────────────────────────────────────────────────────────
 // Helper: Create minimal DataFile from just a name
@@ -1085,6 +1086,7 @@ export function AnalysisPanel({
   const [showDashboard, setShowDashboard] = useState(false);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [queryText, setQueryText] = useState('');
+  const navigate = useNavigate();
  
   const closeToastButton = (
     <button
@@ -1318,7 +1320,9 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
         total_rows: visualsData.total_rows || selectedComputedKpis.length
       });
  
-      toast.success("Dashboard generated with real visuals!", { action: closeToastButton });
+    //  navigate('/workflow/powerbi-flow?from=analysis1');
+
+      // toast.success("Dashboard generated with real visuals!", { action: closeToastButton });
     } catch (err) {
       console.error("Generate visuals failed:", err);
       toast.info("Showing your selected KPIs", { action: closeToastButton });

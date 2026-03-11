@@ -549,7 +549,7 @@ export function PowerBIFlow({
   // ---------- MICROSOFT LOGIN ----------
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <PowerBIHeader onBack={onBack} hideBackButton={true} />
+      <PowerBIHeader onBack={onBack} hideBackButton={false} />
 
       <div className="flex-1 pt-4">
         <PowerBIMicrosoftLogin

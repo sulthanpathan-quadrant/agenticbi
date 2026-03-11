@@ -598,7 +598,7 @@ const Auth = () => {
           title: "Account Created Successfully! 🎉",
           description: "Welcome! You're all set to get started.",
           variant: "default",
-          duration: 2000,
+          duration: 1000,
         });
       } else {
         console.log("Showing SUCCESS toast for login");
@@ -606,7 +606,7 @@ const Auth = () => {
           title: "Welcome Back!",
           description: "You've been successfully signed in.",
           variant: "default",
-          duration: 2000,
+          duration: 1000,
         });
       }
  
@@ -703,7 +703,7 @@ const Auth = () => {
         title: errorTitle,
         description: errorDescription,
         variant: "destructive",
-        duration: 4000,
+        duration: 2000,
       });
     } finally {
       setLoading(false);

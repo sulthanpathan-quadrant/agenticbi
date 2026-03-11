@@ -295,6 +295,7 @@
 //     </WorkflowLayout>
 //   );
 // }
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
@@ -427,7 +428,7 @@ export default function DataModeling() {
     }
 
     setIsProcessing(true);
-    const loadingToastId = toast.info("Materialization started, please wait...", { duration: 500 });
+    const loadingToastId = toast.info("Materialization started, please wait...", { duration: 100 });
 
     try {
       const submitData = await submitMaterializeJob(userId, jobId);

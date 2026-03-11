@@ -801,7 +801,7 @@ export default function LandingZone() {
         statusResponse = await getProcessingStatus(userId, jobId);
 
         if (statusResponse.status === "completed" && statusResponse.data) {
-          localStorage.setItem("modeling_data", JSON.stringify(statusResponse.data));
+          // localStorage.setItem("modeling_data", JSON.stringify(statusResponse.data));
           break;
         } else if (statusResponse.status === "failed") {
           throw new Error(statusResponse.message || "Processing failed");

@@ -45,17 +45,6 @@ export function DashboardPreview({ dashboardData, file, query, onBack }: Dashboa
   
   
   
-  //  const [showPowerBIFlow, setShowPowerBIFlow] = useState(false);
-
-
-  //   if (showPowerBIFlow) {
-  //   return (
-  //     <PowerBIFlow
-  //       fileName={file.name}
-  //       onBack={() => setShowPowerBIFlow(false)}
-  //     />
-  //   );
-  // }
 
   // Extract card/KPI visuals (these go to "Key Results" section)
   const cardVisuals = visuals.filter((v: any) => 
@@ -72,17 +61,7 @@ export function DashboardPreview({ dashboardData, file, query, onBack }: Dashboa
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      {/* <div className="border-b border-border/50 bg-card/80">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <BarChart3 className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-lg font-semibold text-foreground">Dashboard Preview</span>
-          </div>
-        </div>
-      </div>  */}
+     
 
       <Workflowheader />
       
@@ -114,7 +93,8 @@ export function DashboardPreview({ dashboardData, file, query, onBack }: Dashboa
               className="gap-2 h-8 text-xs"
               onClick={() => {
                 // Navigate to Power BI flow page and pass file name via state
-                navigate('/powerbi-flow');
+                // navigate('/powerbi-flow');
+                navigate('/workflow/powerbi-flow?from=analysis');
                
               }}
             >

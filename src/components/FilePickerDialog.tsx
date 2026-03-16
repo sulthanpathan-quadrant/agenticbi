@@ -988,7 +988,7 @@
 //   );
 // }
  
- import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1034,7 +1034,8 @@ interface FilePickerDialogProps {
   files: FileOption[];
   onSelect: (
     files: FileOption[],
-    credentials?: S3Credentials | AzureCredentials | OneLakeCredentials | DatabricksCredentials | SnowflakeCredentials
+    credentials?: S3Credentials | AzureCredentials | OneLakeCredentials | DatabricksCredentials | SnowflakeCredentials,
+    extra?: { currentContainer?: string | null }
   ) => void;
   s3Credentials?: S3Credentials | null;
   azureCredentials?: AzureCredentials | null;
@@ -1604,7 +1605,8 @@ export function FilePickerDialog({
         isOneLake ? { ...oneLakeCredentials, workspace_name: currentWorkspace, lakehouse_name: currentLakehouse } :
         isDatabricks ? { ...databricksCredentials, catalog: currentCatalog, schema: currentSchema } :
         isSnowflake ? { ...snowflakeCredentials, database: currentDatabase, schema: currentSnowflakeSchema } :
-        undefined as any
+        undefined as any,
+        { currentContainer }
       );
     } else {
       onSelect(files.filter(f => selectedFiles.includes(f.id)));

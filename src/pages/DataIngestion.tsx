@@ -941,18 +941,44 @@ export default function DataIngestion() {
 
   const handleFileSelection = (
     files: Array<{ id: string; name: string; size: string; rows: string; fullPath?: string }>,
-    credentials?: any
-  ) => {
-    if (credentials && currentSource && files.length > 0) {
-      saveSelectionToStorage(
-        files.map(f => ({
-          name: f.name,
-          fullPath: f.fullPath || f.name
-        })),
-        credentials,
-        currentSource
-      );
-    }
+    credentials?: any,
+    extra?: { currentContainer?: string | null }
+  ) => 
+    // {
+    // if (credentials && currentSource && files.length > 0) {
+    //   saveSelectionToStorage(
+    //     files.map(f => ({
+    //       name: f.name,
+    //       fullPath: f.fullPath || f.name
+    //     })),
+    //     credentials,
+    //     currentSource
+    //   );  
+    // }
+
+    {if (credentials && currentSource && files.length > 0) {
+  saveSelectionToStorage(
+    files.map(f => {
+      // Start with the best available path
+      let pathToUse = f.fullPath ?? f.id ?? f.name;
+
+      // For Azure: prepend container name if we have it and it's missing
+      if (currentSource === "azure" && extra?.currentContainer) {
+        const containerPrefix = `${extra.currentContainer}/`;
+        if (!pathToUse.startsWith(containerPrefix)) {
+          pathToUse = containerPrefix + pathToUse;
+        }
+      }
+
+      return {
+        name: f.name,
+        fullPath: pathToUse   // ← explicit key, no shorthand confusion
+      };
+    }),
+    credentials,
+    currentSource
+  );
+}
 
     const newItems: SelectedItem[] = files.map(file => {
       let icon: "file" | "table" | "folder" = "file";

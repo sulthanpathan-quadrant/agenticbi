@@ -349,7 +349,8 @@ const AutoMLJobs1 = () => {
 
       const userData = JSON.parse(userDataString);
       const userEmail = userData.email;
-      const agentName = userData.agent_name || userData.name || "default";
+    //   const agentName = userData.agent_name || userData.name || "default";
+     const agentName = "build_model";
       const userId = userData.user_id || userData.id || "";
 
       // ✅ If features are not loaded, fetch them now

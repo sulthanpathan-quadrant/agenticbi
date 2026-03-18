@@ -1,4 +1,3 @@
-
 // import { useState, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
@@ -17,6 +16,7 @@
 //   Edit,
 //   Trash,
 //   Loader2,
+//   X,
 // } from "lucide-react";
 // import { Badge } from "@/components/ui/badge";
 // import { Checkbox } from "@/components/ui/checkbox";
@@ -33,15 +33,9 @@
 //   status: string;
 // }
 
-// interface ValidationResult {
-//   passed_rules: number;
-//   failed_rules: number;
-//   details: Record<string, { passed_count: number; failed_count: number }>;
-// }
-
 // interface Dataset {
 //   filename: string;
-//   last_modified: string;
+//   date_modified: string;
 // }
 
 // export default function BusinessLogic() {
@@ -55,50 +49,71 @@
 //   const [validating, setValidating] = useState(false);
 //   const [jobInfo, setJobInfo] = useState<{ correlation_id?: string; databricks_run_id?: string; message?: string } | null>(null);
 
-//   // Dynamic datasets from API
 //   const [datasets, setDatasets] = useState<Dataset[]>([]);
 //   const [loadingDatasets, setLoadingDatasets] = useState(true);
 
-//   // Get dynamic userId and jobId from localStorage
-//   const userId = localStorage.getItem("user")
-//     ? JSON.parse(localStorage.getItem("user") || "{}").id
-//     : null;
+//   const user = localStorage.getItem("user");
+//   const userId = user ? JSON.parse(user).id : null;
 //   const jobId = localStorage.getItem("current_job_id");
 
-//   // Fetch available datasets on mount
+//   // Reusable close button for all toasts (Sonner style)
+//   const closeToastButton = (
+//     <button
+//       onClick={() => toast.dismiss()}
+//       className="absolute top-2 right-2 rounded-full p-1 hover:bg-muted/50 transition-colors"
+//       aria-label="Close toast"
+//     >
+//       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+//     </button>
+//   );
+
+//   // Fetch available datasets
 //   useEffect(() => {
 //     if (!userId || !jobId) {
-//       toast.error("Missing user or job information. Please log in again.");
+//       toast.error("Missing user or job information. Please log in again.", {
+//         duration: 3000,
+//         action: closeToastButton,
+//       });
 //       setLoadingDatasets(false);
 //       return;
 //     }
+
 //     const fetchDatasets = async () => {
 //       setLoadingDatasets(true);
 //       try {
-//         const url = `https://20.81.213.147/list-datasets?user_id=${userId}&job_id=${jobId}`;
+//         const url = `https://api.veriton.ai/api/service2/list-datasets?user_id=${userId}&job_id=${jobId}`;
 //         const res = await fetch(url, {
 //           headers: {
 //             accept: "application/json",
 //           },
 //         });
+
 //         if (!res.ok) {
 //           throw new Error(`Failed to load datasets: ${res.status}`);
 //         }
+
 //         const data = await res.json();
-//         console.log(data.datasets)
+
 //         if (data.datasets && Array.isArray(data.datasets)) {
 //           setDatasets(data.datasets);
 //         } else {
 //           setDatasets([]);
-//           toast.info(data.message || "No datasets available");
+//           toast.info(data.message || "No datasets available", {
+//             duration: 3000,
+//             action: closeToastButton,
+//           });
 //         }
 //       } catch (err) {
 //         console.error("Error fetching datasets:", err);
-//         toast.error("Could not load available datasets");
+//         toast.error("Could not load available datasets", {
+//           duration: 4000,
+//           action: closeToastButton,
+//         });
 //       } finally {
 //         setLoadingDatasets(false);
 //       }
 //     };
+
 //     fetchDatasets();
 //   }, [userId, jobId]);
 
@@ -110,16 +125,163 @@
 //     );
 //   };
 
+//   const updateBusinessLogicOptions = async () => {
+//     if (!userId || !jobId) {
+//       console.warn("Cannot update business logic options — missing userId or jobId");
+//       return false;
+//     }
+
+  
+//     const rulesPayload: Record<string, string> = {};
+//     rules.forEach((rule, index) => {
+//       rulesPayload[rule.name] = rule.logic;
+//     });
+
+//     const payload = {
+//       user_id: userId,
+//       job_id: jobId,
+//       business_logic: {
+//         business_logic: true,
+//         rules: rulesPayload,
+//       },
+//     };
+
+//     console.log(payload)
+
+//     try {
+//       const response = await fetch("https://api.veriton.ai/api/service2/set-job-options", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(payload),
+//       });
+
+//       if (!response.ok) {
+//         const errorText = await response.text();
+//         throw new Error(`Failed to update business logic options: ${response.status} - ${errorText}`);
+//       }
+
+//       const result = await response.json();
+
+//       if (result.status === "success") {
+//         console.log("Successfully updated business_logic + rules in job options");
+//         return true;
+//       } else {
+//         throw new Error(result.message || "Failed to update job options");
+//       }
+//     } catch (err) {
+//       console.error("Error updating business logic options:", err);
+//       return false;
+//     }
+//   };
+
+//   const handleRunAllRules = async () => {
+//     if (rules.length === 0) {
+//       toast.error("No rules to run", {
+//         duration: 3000,
+//         action: closeToastButton,
+//       });
+//       return;
+//     }
+//     if (selectedFiles.length === 0) {
+//       toast.error("Please select at least one file", {
+//         duration: 3000,
+//         action: closeToastButton,
+//       });
+//       return;
+//     }
+
+//     const selectedFilename = selectedFiles[0];
+//     let filename = selectedFilename;
+//     if (!filename.toLowerCase().endsWith(".csv")) {
+//       filename += ".csv";
+//     }
+
+//     const blobPath = `${userId}/${jobId}/${filename}`;
+
+//     const rulesPayloadForProcess: Record<string, string> = {};
+//     rules.forEach((rule) => {
+//       rulesPayloadForProcess[rule.name] = rule.logic;
+//     });
+
+//     const processPayload = {
+//       blob_path: blobPath,
+//       rules: rulesPayloadForProcess,
+//       mode: "auto",
+//       overwrite_source: true,
+//       output_blob_path: "processed/Book1_1_filtered.csv",
+//     };
+
+//     console.log("Process payload:", processPayload);
+
+//     setValidating(true);
+//     setShowValidationDialog(true);
+//     setJobInfo(null);
+
+//     try {
+//       await updateBusinessLogicOptions();
+
+//       const response = await fetch("https://api.veriton.ai/api/service2/api/v1/business-rules/process", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Accept: "application/json",
+//         },
+//         body: JSON.stringify(processPayload),
+//       });
+
+//       if (!response.ok) {
+//         const errorData = await response.json().catch(() => ({}));
+//         throw new Error(errorData.message || `API error: ${response.status}`);
+//       }
+
+//       const result = await response.json();
+
+//       if (result.status === "job_submitted") {
+//         setJobInfo({
+//           correlation_id: result.correlation_id,
+//           databricks_run_id: result.databricks_run_id,
+//           message: result.message,
+//         });
+//         toast.success("Business rules processing job submitted successfully!", {
+//           duration: 3000,
+//           action: closeToastButton,
+//         });
+//       } else {
+//         throw new Error(result.message || "Unexpected response");
+//       }
+//     } catch (error: any) {
+//       toast.error(error.message || "Failed to submit business rules job", {
+//         duration: 4000,
+//         action: closeToastButton,
+//       });
+//       setJobInfo(null);
+//     } finally {
+//       setValidating(false);
+//       setTimeout(() => {
+//         setShowValidationDialog(false);
+//         setShowCompleteDialog(true);
+//       }, 1200);
+//     }
+//   };
+
 //   const handleAddRule = (rule: any) => {
 //     if (editingRule !== null) {
 //       const updatedRules = [...rules];
 //       updatedRules[editingRule] = { ...rule, status: "testing" };
 //       setRules(updatedRules);
 //       setEditingRule(null);
-//       toast.success("Rule Updated Successfully");
+//       toast.success("Rule Updated Successfully", {
+//         duration: 2500,
+//         action: closeToastButton,
+//       });
 //     } else {
 //       setRules([...rules, { ...rule, status: "testing" }]);
-//       toast.success("Rule Added Successfully");
+//       toast.success("Rule Added Successfully", {
+//         duration: 2500,
+//         action: closeToastButton,
+//       });
 //     }
 //     setShowAddRuleDialog(false);
 //   };
@@ -131,7 +293,10 @@
 
 //   const handleDeleteRule = (index: number) => {
 //     setRules(rules.filter((_, i) => i !== index));
-//     toast.success("Rule Deleted Successfully");
+//     toast.success("Rule Deleted Successfully", {
+//       duration: 2500,
+//       action: closeToastButton,
+//     });
 //   };
 
 //   const handleDownloadCSV = () => {
@@ -148,92 +313,16 @@
 //     a.download = "business_rules.csv";
 //     a.click();
 //     window.URL.revokeObjectURL(url);
-//     toast.success("Business rules exported to CSV");
-//   };
-
-//   const handleRunAllRules = async () => {
-//     if (rules.length === 0) {
-//       toast.error("No rules to run");
-//       return;
-//     }
-//     if (selectedFiles.length === 0) {
-//       toast.error("Please select at least one file");
-//       return;
-//     }
-
-//     const selectedFilename = selectedFiles[0];
-//     let filename = selectedFilename;
-//     if (!filename.toLowerCase().endsWith(".csv")) {
-//       filename += ".csv";
-//     }
-
-//     const blobPath = `${userId}/${jobId}/${filename}`;
-
-//     // Build rules object: key = name, value = logic (as business logic)
-//     const rulesPayload: Record<string, string> = {};
-//     rules.forEach((rule) => {
-//       rulesPayload[rule.name] = rule.logic; // or rule.description if that's the intent
+//     toast.success("Business rules exported to CSV", {
+//       duration: 3000,
+//       action: closeToastButton,
 //     });
-
-//     const payload = {
-//       blob_path: blobPath,
-//       rules: rulesPayload,
-//       mode: "auto",
-//       overwrite_source: false,
-//       output_blob_path: "processed/Book1_1_filtered.csv",
-//     };
-    
-//     console.log(payload)
-
-
-//     setValidating(true);
-//     setShowValidationDialog(true);
-//     setJobInfo(null);
-
-//     try {
-//       const response = await fetch("https://20.81.213.147/api/v1/business-rules/process", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Accept: "application/json",
-//         },
-//         body: JSON.stringify(payload),
-//       });
-
-//       if (!response.ok) {
-//         const errorData = await response.json().catch(() => ({}));
-//         throw new Error("Success");
-//       }
-
-//       const result = await response.json();
-
-//       if (result.status === "job_submitted") {
-//         setJobInfo({
-//           correlation_id: result.correlation_id,
-//           databricks_run_id: result.databricks_run_id,
-//           message: result.message,
-//         });
-//         toast.success("Business rules processing job submitted successfully!");
-//       } else {
-//         throw new Error(result.message || "Unexpected response");
-//       }
-//     } catch (error: any) {
-//       toast.error(error.message || "Failed to submit business rules job");
-//       setJobInfo(null);
-//     } finally {
-//       setValidating(false);
-//       setTimeout(() => {
-//         setShowValidationDialog(false);
-//         setShowCompleteDialog(true);
-//       }, 1200);
-//     }
 //   };
 
 //   const stats = {
 //     activeRules: rules.filter((r) => r.status === "active").length,
 //     testing: rules.filter((r) => r.status === "testing").length,
 //     totalRules: rules.length,
-//     // No real validation stats anymore → hide or show N/A
 //     successRate: "N/A",
 //   };
 
@@ -281,7 +370,7 @@
 //           </div>
 //         </div>
 
-//         {/* Stats Cards – success rate now N/A */}
+//         {/* Stats Cards */}
 //         <div className="grid grid-cols-4 gap-4 mb-6">
 //           <div className="border border-border rounded-lg p-6 bg-card">
 //             <div className="flex items-center justify-between mb-2">
@@ -313,7 +402,7 @@
 //           </div>
 //         </div>
 
-//         {/* File Selection – unchanged */}
+//         {/* File Selection */}
 //         <div className="mb-6">
 //           <div className="flex items-center justify-between mb-3">
 //             <h2 className="text-lg font-semibold text-foreground">
@@ -362,7 +451,7 @@
 //                         </TableCell>
 //                         <TableCell className="font-medium">{file.filename}</TableCell>
 //                         <TableCell className="text-sm text-muted-foreground">
-//                           {file.last_modified}
+//                           {file.date_modified}
 //                         </TableCell>
 //                       </TableRow>
 //                     );
@@ -373,7 +462,7 @@
 //           </div>
 //         </div>
 
-//         {/* Rules List – unchanged */}
+//         {/* Rules List */}
 //         <div className="border border-border rounded-lg p-6 bg-card mb-6">
 //           {rules.length === 0 ? (
 //             <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-lg">
@@ -400,11 +489,11 @@
 //                       </span>
 //                     </div>
 //                     <div className="flex gap-2">
-//                       <Button variant="outline" size="sm" onClick={() => handleEditRule(index)}>
+//                       <Button variant="outline" size="sm" className="h-8" onClick={() => handleEditRule(index)}>
 //                         <Edit className="h-4 w-4 mr-2" />
 //                         Edit
 //                       </Button>
-//                       <Button variant="outline" size="sm" onClick={() => handleDeleteRule(index)}>
+//                       <Button variant="outline" size="sm" className="h-8" onClick={() => handleDeleteRule(index)}>
 //                         <Trash className="h-4 w-4" />
 //                       </Button>
 //                     </div>
@@ -419,7 +508,7 @@
 //           )}
 //         </div>
 
-//         {/* Bottom Navigation – unchanged */}
+//         {/* Bottom Navigation */}
 //         <div className="flex items-center justify-between">
 //           <Button variant="outline" onClick={() => navigate("/workflow/ner")}>
 //             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -451,7 +540,6 @@
 //       <BusinessRuleValidationDialog
 //         open={showValidationDialog}
 //         onOpenChange={setShowValidationDialog}
-//         progress={validating ? 75 : 100}
 //         rulesCount={rules.length}
 //       />
 
@@ -459,14 +547,11 @@
 //         open={showCompleteDialog}
 //         onOpenChange={setShowCompleteDialog}
 //         onContinue={() => navigate("/workflow/path-selection")}
-//         jobInfo={jobInfo}  // <-- pass job info to dialog
+//         jobInfo={jobInfo}
 //       />
 //     </WorkflowLayout>
 //   );
 // }
-
-
-
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -495,6 +580,9 @@ import { BusinessRuleValidationDialog } from "@/components/BusinessRuleValidatio
 import { BusinessRuleCompleteDialog } from "@/components/BusinessRuleCompleteDialog";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Rule {
   name: string;
@@ -521,6 +609,12 @@ export default function BusinessLogic() {
 
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loadingDatasets, setLoadingDatasets] = useState(true);
+
+  // Add near other state declarations
+const [previewFile, setPreviewFile] = useState<string | null>(null);
+const [previewData, setPreviewData] = useState<Record<string, any>[]>([]);
+const [previewLoading, setPreviewLoading] = useState(false);
+const [previewColumns, setPreviewColumns] = useState<string[]>([]);
 
   const user = localStorage.getItem("user");
   const userId = user ? JSON.parse(user).id : null;
@@ -784,10 +878,78 @@ export default function BusinessLogic() {
     a.click();
     window.URL.revokeObjectURL(url);
     toast.success("Business rules exported to CSV", {
-      duration: 3000,
+      duration: 1000,
       action: closeToastButton,
     });
   };
+
+   const fetchPreview = async (filename: string) => {
+  if (!userId || !jobId) {
+    toast.error("Missing user/job info", { duration: 1000 });
+    return;
+  }
+
+  setPreviewLoading(true);
+  setPreviewFile(filename);
+  setPreviewData([]);
+  setPreviewColumns([]);
+
+  try {
+    // Normalize filename (add .csv if missing)
+    
+    const datasetName = filename;
+
+    // Optional: log what you're sending (for debugging)
+    console.log("Preview request:", { 
+      userId, 
+      jobId, 
+      datasetname: datasetName 
+    });
+
+    const url = `https://api.veriton.ai/api/service2/preview-dataset?user_id=${userId}&job_id=${jobId}&datasetname=${encodeURIComponent(datasetName)}`;
+
+    const res = await fetch(url, {
+      headers: { accept: "application/json" },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Preview failed: ${res.status}`);
+    }
+
+    const json = await res.json();
+
+    // Handle different possible response shapes
+    let rows: any[] = [];
+    if (Array.isArray(json)) {
+      rows = json;
+    } else if (json.preview_rows) {
+      rows = json.preview_rows;
+    } else if (json.rows) {
+      rows = json.rows;
+    } else if (json.data) {
+      rows = json.data;
+    }
+
+    if (rows.length === 0) {
+      toast.info("No preview data available", { duration: 2000 });
+      return;
+    }
+
+    // Extract columns from first row (or use known schema if available)
+    const columns = Object.keys(rows[0] || {});
+    setPreviewColumns(columns);
+    setPreviewData(rows.slice(0, 50)); // limit to avoid performance issues
+
+  } catch (err: any) {
+    console.error("Preview error:", err);
+    toast.error(err.message || "Failed to load data preview", {
+      duration: 2000,
+    });
+  } finally {
+    setPreviewLoading(false);
+  }
+};
+
 
   const stats = {
     activeRules: rules.filter((r) => r.status === "active").length,
@@ -899,35 +1061,99 @@ export default function BusinessLogic() {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50 border-b border-border">
-                    <TableHead className="w-12"></TableHead>
-                    <TableHead className="font-medium">File Name</TableHead>
-                    <TableHead className="font-medium">Last Modified</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {datasets.map((file) => {
-                    const isSelected = selectedFiles.includes(file.filename);
-                    return (
-                      <TableRow
-                        key={file.filename}
-                        className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-                        onClick={() => toggleFileSelection(file.filename)}
-                      >
-                        <TableCell>
-                          <Checkbox checked={isSelected} />
-                        </TableCell>
-                        <TableCell className="font-medium">{file.filename}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {file.date_modified}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+          //     <Table>
+          //       <TableHeader>
+          //         <TableRow className="bg-muted/50 border-b border-border">
+          //           <TableHead className="w-12"></TableHead>
+          //           <TableHead className="font-medium">File Name</TableHead>
+          //           <TableHead className="font-medium">Last Modified</TableHead>
+          //           <TableHead className="w-16 text-center">Preview</TableHead>
+          //         </TableRow>
+          //       </TableHeader>
+          //       <TableBody>
+          //         {datasets.map((file) => {
+          //           const isSelected = selectedFiles.includes(file.filename);
+          //           return (
+          //             <TableRow
+          //               key={file.filename}
+          //               className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+          //               onClick={() => toggleFileSelection(file.filename)}
+          //             >
+          //               <TableCell>
+          //                 <Checkbox checked={isSelected} />
+          //               </TableCell>
+          //               <TableCell className="font-medium">{file.filename}</TableCell>
+          //               <TableCell className="text-sm text-muted-foreground">
+          //                 {file.date_modified}
+          //               </TableCell>
+          //               <TableCell className="text-center">
+          //   <Button
+          //     variant="ghost"
+          //     size="icon"
+          //     className="h-8 w-8"
+          //     onClick={(e) => {
+          //       e.stopPropagation();           // ← important!
+          //       fetchPreview(file.filename);
+          //     }}
+          //   >
+          //     <Eye className="h-4 w-4" />
+          //   </Button>
+          // </TableCell>
+          //             </TableRow>
+          //           );
+          //         })}
+          //       </TableBody>
+          //     </Table>
+          <Table>
+  <TableHeader>
+    <TableRow className="bg-muted/60 border-b">
+      <TableHead className="w-10 text-center"> {/* checkbox */}
+        <span className="sr-only">Select</span>
+      </TableHead>
+      <TableHead className="font-medium pl-4 min-w-[160px]">File Name</TableHead>
+      <TableHead className="font-medium pr-10 min-w-[180px]">Last Modified</TableHead>
+      <TableHead className="w-12 text-center">Preview</TableHead> {/* ← fixed width, centered */}
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {datasets.map((file) => {
+      const isSelected = selectedFiles.includes(file.filename);
+      return (
+        <TableRow
+          key={file.filename}
+          className="hover:bg-muted/40 transition-colors cursor-pointer border-b last:border-b-0"
+          onClick={() => toggleFileSelection(file.filename)}
+        >
+          <TableCell className="text-center">
+            <Checkbox 
+              checked={isSelected} 
+              onClick={(e) => e.stopPropagation()}
+              className="mx-auto"
+            />
+          </TableCell>
+          <TableCell className="font-medium pl-4">{file.filename}</TableCell>
+          <TableCell className="text-sm text-muted-foreground pr-10">
+            {file.date_modified}
+          </TableCell>
+          <TableCell className="text-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 "
+              onClick={(e) => {
+                e.stopPropagation();
+                fetchPreview(file.filename);
+              }}
+              title="Preview data"
+            >
+              <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+            </Button>
+          </TableCell>
+        </TableRow>
+      );
+    })}
+  </TableBody>
+</Table>
             )}
           </div>
         </div>
@@ -977,7 +1203,103 @@ export default function BusinessLogic() {
             </div>
           )}
         </div>
+        
+        <Dialog open={previewFile !== null} onOpenChange={(open) => {
+  if (!open) {
+    setPreviewFile(null);
+    setPreviewData([]);
+    setPreviewColumns([]);
+  }
+}}>
+  <DialogContent className="max-w-5xl max-h-[85vh] p-0 flex flex-col">   {/* ← reduced from max-w-6xl */}
+    <DialogHeader className="px-5 py-4 border-b">
+      <div className="flex items-center justify-between">
+        <div>
+          <DialogTitle className="text-lg font-semibold">
+            Preview: {previewFile}
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            First {previewData.length} rows shown
+          </p>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 w-8 p-0"
+          onClick={() => setPreviewFile(null)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    </DialogHeader>
 
+    <div className="flex-1 overflow-hidden bg-background">
+      {previewLoading ? (
+        <div className="flex flex-col items-center justify-center h-full gap-3">
+          <Loader2 className="h-9 w-9 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading preview...</p>
+        </div>
+      ) : previewData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
+          <FileText className="h-12 w-12 text-muted-foreground/70" />
+          <div>
+            <h3 className="text-base font-medium">No data to preview</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              File might be empty or still processing.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <ScrollArea className="h-full px-1">
+          <div className="min-w-full">
+            <Table>
+              <TableHeader className="sticky top-0 bg-muted/90 backdrop-blur-sm z-10">
+                <TableRow className="border-b hover:bg-transparent">
+                  {previewColumns.map((col) => (
+                    <TableHead 
+                      key={col} 
+                      className="h-10 px-3 text-xs font-medium text-muted-foreground whitespace-nowrap"
+                    >
+                      {col}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {previewData.map((row, rowIndex) => (
+                  <TableRow 
+                    key={rowIndex}
+                    className="hover:bg-muted/50 border-b last:border-0"
+                  >
+                    {previewColumns.map((col) => (
+                      <TableCell 
+                        key={col}
+                        className="px-3 py-2 text-sm whitespace-nowrap"
+                      >
+                        {row[col] != null ? String(row[col]) : "—"}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </ScrollArea>
+      )}
+    </div>
+
+    <div className="px-5 py-3 border-t flex justify-end bg-muted/30">
+      {/* <Button 
+        variant="outline" 
+        size="sm"
+        onClick={() => setPreviewFile(null)}
+      >
+        Close
+      </Button> */}
+    </div>
+  </DialogContent>
+</Dialog>
+        
         {/* Bottom Navigation */}
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => navigate("/workflow/ner")}>

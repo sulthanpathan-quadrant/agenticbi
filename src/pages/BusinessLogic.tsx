@@ -131,7 +131,6 @@
 //       return false;
 //     }
 
-  
 //     const rulesPayload: Record<string, string> = {};
 //     rules.forEach((rule, index) => {
 //       rulesPayload[rule.name] = rule.logic;
@@ -579,9 +578,21 @@ import { AddBusinessRuleDialog } from "@/components/AddBusinessRuleDialog";
 import { BusinessRuleValidationDialog } from "@/components/BusinessRuleValidationDialog";
 import { BusinessRuleCompleteDialog } from "@/components/BusinessRuleCompleteDialog";
 import { toast } from "sonner";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Eye } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Rule {
@@ -605,16 +616,20 @@ export default function BusinessLogic() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [editingRule, setEditingRule] = useState<number | null>(null);
   const [validating, setValidating] = useState(false);
-  const [jobInfo, setJobInfo] = useState<{ correlation_id?: string; databricks_run_id?: string; message?: string } | null>(null);
+  const [jobInfo, setJobInfo] = useState<{
+    correlation_id?: string;
+    databricks_run_id?: string;
+    message?: string;
+  } | null>(null);
 
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loadingDatasets, setLoadingDatasets] = useState(true);
 
   // Add near other state declarations
-const [previewFile, setPreviewFile] = useState<string | null>(null);
-const [previewData, setPreviewData] = useState<Record<string, any>[]>([]);
-const [previewLoading, setPreviewLoading] = useState(false);
-const [previewColumns, setPreviewColumns] = useState<string[]>([]);
+  const [previewFile, setPreviewFile] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<Record<string, any>[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewColumns, setPreviewColumns] = useState<string[]>([]);
 
   const user = localStorage.getItem("user");
   const userId = user ? JSON.parse(user).id : null;
@@ -685,17 +700,18 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
     setSelectedFiles((prev) =>
       prev.includes(fileName)
         ? prev.filter((f) => f !== fileName)
-        : [...prev, fileName]
+        : [...prev, fileName],
     );
   };
 
   const updateBusinessLogicOptions = async () => {
     if (!userId || !jobId) {
-      console.warn("Cannot update business logic options — missing userId or jobId");
+      console.warn(
+        "Cannot update business logic options — missing userId or jobId",
+      );
       return false;
     }
 
-  
     const rulesPayload: Record<string, string> = {};
     rules.forEach((rule, index) => {
       rulesPayload[rule.name] = rule.logic;
@@ -710,26 +726,33 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
       },
     };
 
-    console.log(payload)
+    console.log(payload);
 
     try {
-      const response = await fetch("https://api.veriton.ai/api/service2/set-job-options", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        "https://api.veriton.ai/api/service2/set-job-options",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to update business logic options: ${response.status} - ${errorText}`);
+        throw new Error(
+          `Failed to update business logic options: ${response.status} - ${errorText}`,
+        );
       }
 
       const result = await response.json();
 
       if (result.status === "success") {
-        console.log("Successfully updated business_logic + rules in job options");
+        console.log(
+          "Successfully updated business_logic + rules in job options",
+        );
         return true;
       } else {
         throw new Error(result.message || "Failed to update job options");
@@ -786,14 +809,17 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
     try {
       await updateBusinessLogicOptions();
 
-      const response = await fetch("https://api.veriton.ai/api/service2/api/v1/business-rules/process", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
+      const response = await fetch(
+        "https://api.veriton.ai/api/service2/api/v1/business-rules/process",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(processPayload),
         },
-        body: JSON.stringify(processPayload),
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -866,7 +892,12 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
   const handleDownloadCSV = () => {
     const csvContent = [
       ["Rule Name", "Description", "Logic", "Status"],
-      ...rules.map((rule) => [rule.name, rule.description, rule.logic, rule.status]),
+      ...rules.map((rule) => [
+        rule.name,
+        rule.description,
+        rule.logic,
+        rule.status,
+      ]),
     ]
       .map((row) => row.join(","))
       .join("\n");
@@ -883,73 +914,71 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
     });
   };
 
-   const fetchPreview = async (filename: string) => {
-  if (!userId || !jobId) {
-    toast.error("Missing user/job info", { duration: 1000 });
-    return;
-  }
-
-  setPreviewLoading(true);
-  setPreviewFile(filename);
-  setPreviewData([]);
-  setPreviewColumns([]);
-
-  try {
-    // Normalize filename (add .csv if missing)
-    
-    const datasetName = filename;
-
-    // Optional: log what you're sending (for debugging)
-    console.log("Preview request:", { 
-      userId, 
-      jobId, 
-      datasetname: datasetName 
-    });
-
-    const url = `https://api.veriton.ai/api/service2/preview-dataset?user_id=${userId}&job_id=${jobId}&datasetname=${encodeURIComponent(datasetName)}`;
-
-    const res = await fetch(url, {
-      headers: { accept: "application/json" },
-    });
-
-    if (!res.ok) {
-      throw new Error(`Preview failed: ${res.status}`);
-    }
-
-    const json = await res.json();
-
-    // Handle different possible response shapes
-    let rows: any[] = [];
-    if (Array.isArray(json)) {
-      rows = json;
-    } else if (json.preview_rows) {
-      rows = json.preview_rows;
-    } else if (json.rows) {
-      rows = json.rows;
-    } else if (json.data) {
-      rows = json.data;
-    }
-
-    if (rows.length === 0) {
-      toast.info("No preview data available", { duration: 2000 });
+  const fetchPreview = async (filename: string) => {
+    if (!userId || !jobId) {
+      toast.error("Missing user/job info", { duration: 1000 });
       return;
     }
 
-    // Extract columns from first row (or use known schema if available)
-    const columns = Object.keys(rows[0] || {});
-    setPreviewColumns(columns);
-    setPreviewData(rows.slice(0, 50)); // limit to avoid performance issues
+    setPreviewLoading(true);
+    setPreviewFile(filename);
+    setPreviewData([]);
+    setPreviewColumns([]);
 
-  } catch (err: any) {
-    console.error("Preview error:", err);
-    toast.error(err.message || "Failed to load data preview", {
-      duration: 2000,
-    });
-  } finally {
-    setPreviewLoading(false);
-  }
-};
+    try {
+      // Normalize filename (add .csv if missing)
 
+      const datasetName = filename;
+
+      // Optional: log what you're sending (for debugging)
+      console.log("Preview request:", {
+        userId,
+        jobId,
+        datasetname: datasetName,
+      });
+
+      const url = `https://api.veriton.ai/api/service2/preview-dataset?user_id=${userId}&job_id=${jobId}&datasetname=${encodeURIComponent(datasetName)}`;
+
+      const res = await fetch(url, {
+        headers: { accept: "application/json" },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Preview failed: ${res.status}`);
+      }
+
+      const json = await res.json();
+
+      // Handle different possible response shapes
+      let rows: any[] = [];
+      if (Array.isArray(json)) {
+        rows = json;
+      } else if (json.preview_rows) {
+        rows = json.preview_rows;
+      } else if (json.rows) {
+        rows = json.rows;
+      } else if (json.data) {
+        rows = json.data;
+      }
+
+      if (rows.length === 0) {
+        toast.info("No preview data available", { duration: 2000 });
+        return;
+      }
+
+      // Extract columns from first row (or use known schema if available)
+      const columns = Object.keys(rows[0] || {});
+      setPreviewColumns(columns);
+      setPreviewData(rows.slice(0, 50)); // limit to avoid performance issues
+    } catch (err: any) {
+      console.error("Preview error:", err);
+      toast.error(err.message || "Failed to load data preview", {
+        duration: 2000,
+      });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const stats = {
     activeRules: rules.filter((r) => r.status === "active").length,
@@ -970,11 +999,16 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
               Business Logic Rules
             </h1>
             <p className="text-muted-foreground">
-              Define and manage custom business rules for data processing and validation
+              Define and manage custom business rules for data processing and
+              validation
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={handleDownloadCSV} disabled={rules.length === 0}>
+            <Button
+              variant="outline"
+              onClick={handleDownloadCSV}
+              disabled={rules.length === 0}
+            >
               <Download className="h-4 w-4 mr-2" />
               Download CSV
             </Button>
@@ -995,7 +1029,12 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
                 </>
               )}
             </Button>
-            <Button onClick={() => { setEditingRule(null); setShowAddRuleDialog(true); }}>
+            <Button
+              onClick={() => {
+                setEditingRule(null);
+                setShowAddRuleDialog(true);
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add New Rule
             </Button>
@@ -1006,31 +1045,43 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="border border-border rounded-lg p-6 bg-card">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Active Rules</span>
+              <span className="text-sm text-muted-foreground">
+                Active Rules
+              </span>
               <CheckCircle className="h-5 w-5 text-green-500" />
             </div>
-            <div className="text-3xl font-bold text-foreground">{stats.activeRules}</div>
+            <div className="text-3xl font-bold text-foreground">
+              {stats.activeRules}
+            </div>
           </div>
           <div className="border border-border rounded-lg p-6 bg-card">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">Testing</span>
               <AlertTriangle className="h-5 w-5 text-yellow-500" />
             </div>
-            <div className="text-3xl font-bold text-foreground">{stats.testing}</div>
+            <div className="text-3xl font-bold text-foreground">
+              {stats.testing}
+            </div>
           </div>
           <div className="border border-border rounded-lg p-6 bg-card">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">Total Rules</span>
               <Code className="h-5 w-5 text-primary" />
             </div>
-            <div className="text-3xl font-bold text-foreground">{stats.totalRules}</div>
+            <div className="text-3xl font-bold text-foreground">
+              {stats.totalRules}
+            </div>
           </div>
           <div className="border border-border rounded-lg p-6 bg-card">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Success Rate</span>
+              <span className="text-sm text-muted-foreground">
+                Success Rate
+              </span>
               <CheckCircle className="h-5 w-5 text-green-500" />
             </div>
-            <div className="text-3xl font-bold text-foreground">{stats.successRate}</div>
+            <div className="text-3xl font-bold text-foreground">
+              {stats.successRate}
+            </div>
           </div>
         </div>
 
@@ -1048,7 +1099,9 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
             {loadingDatasets ? (
               <div className="flex flex-col items-center justify-center h-64">
                 <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                <p className="text-muted-foreground">Loading available datasets...</p>
+                <p className="text-muted-foreground">
+                  Loading available datasets...
+                </p>
               </div>
             ) : datasets.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-center px-6">
@@ -1061,99 +1114,108 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
                 </p>
               </div>
             ) : (
-          //     <Table>
-          //       <TableHeader>
-          //         <TableRow className="bg-muted/50 border-b border-border">
-          //           <TableHead className="w-12"></TableHead>
-          //           <TableHead className="font-medium">File Name</TableHead>
-          //           <TableHead className="font-medium">Last Modified</TableHead>
-          //           <TableHead className="w-16 text-center">Preview</TableHead>
-          //         </TableRow>
-          //       </TableHeader>
-          //       <TableBody>
-          //         {datasets.map((file) => {
-          //           const isSelected = selectedFiles.includes(file.filename);
-          //           return (
-          //             <TableRow
-          //               key={file.filename}
-          //               className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-          //               onClick={() => toggleFileSelection(file.filename)}
-          //             >
-          //               <TableCell>
-          //                 <Checkbox checked={isSelected} />
-          //               </TableCell>
-          //               <TableCell className="font-medium">{file.filename}</TableCell>
-          //               <TableCell className="text-sm text-muted-foreground">
-          //                 {file.date_modified}
-          //               </TableCell>
-          //               <TableCell className="text-center">
-          //   <Button
-          //     variant="ghost"
-          //     size="icon"
-          //     className="h-8 w-8"
-          //     onClick={(e) => {
-          //       e.stopPropagation();           // ← important!
-          //       fetchPreview(file.filename);
-          //     }}
-          //   >
-          //     <Eye className="h-4 w-4" />
-          //   </Button>
-          // </TableCell>
-          //             </TableRow>
-          //           );
-          //         })}
-          //       </TableBody>
-          //     </Table>
-          <Table>
-  <TableHeader>
-    <TableRow className="bg-muted/60 border-b">
-      <TableHead className="w-10 text-center"> {/* checkbox */}
-        <span className="sr-only">Select</span>
-      </TableHead>
-      <TableHead className="font-medium pl-4 min-w-[160px]">File Name</TableHead>
-      <TableHead className="font-medium pr-10 min-w-[180px]">Last Modified</TableHead>
-      <TableHead className="w-12 text-center">Preview</TableHead> {/* ← fixed width, centered */}
-    </TableRow>
-  </TableHeader>
-  <TableBody>
-    {datasets.map((file) => {
-      const isSelected = selectedFiles.includes(file.filename);
-      return (
-        <TableRow
-          key={file.filename}
-          className="hover:bg-muted/40 transition-colors cursor-pointer border-b last:border-b-0"
-          onClick={() => toggleFileSelection(file.filename)}
-        >
-          <TableCell className="text-center">
-            <Checkbox 
-              checked={isSelected} 
-              onClick={(e) => e.stopPropagation()}
-              className="mx-auto"
-            />
-          </TableCell>
-          <TableCell className="font-medium pl-4">{file.filename}</TableCell>
-          <TableCell className="text-sm text-muted-foreground pr-10">
-            {file.date_modified}
-          </TableCell>
-          <TableCell className="text-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 "
-              onClick={(e) => {
-                e.stopPropagation();
-                fetchPreview(file.filename);
-              }}
-              title="Preview data"
-            >
-              <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-            </Button>
-          </TableCell>
-        </TableRow>
-      );
-    })}
-  </TableBody>
-</Table>
+              //     <Table>
+              //       <TableHeader>
+              //         <TableRow className="bg-muted/50 border-b border-border">
+              //           <TableHead className="w-12"></TableHead>
+              //           <TableHead className="font-medium">File Name</TableHead>
+              //           <TableHead className="font-medium">Last Modified</TableHead>
+              //           <TableHead className="w-16 text-center">Preview</TableHead>
+              //         </TableRow>
+              //       </TableHeader>
+              //       <TableBody>
+              //         {datasets.map((file) => {
+              //           const isSelected = selectedFiles.includes(file.filename);
+              //           return (
+              //             <TableRow
+              //               key={file.filename}
+              //               className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+              //               onClick={() => toggleFileSelection(file.filename)}
+              //             >
+              //               <TableCell>
+              //                 <Checkbox checked={isSelected} />
+              //               </TableCell>
+              //               <TableCell className="font-medium">{file.filename}</TableCell>
+              //               <TableCell className="text-sm text-muted-foreground">
+              //                 {file.date_modified}
+              //               </TableCell>
+              //               <TableCell className="text-center">
+              //   <Button
+              //     variant="ghost"
+              //     size="icon"
+              //     className="h-8 w-8"
+              //     onClick={(e) => {
+              //       e.stopPropagation();           // ← important!
+              //       fetchPreview(file.filename);
+              //     }}
+              //   >
+              //     <Eye className="h-4 w-4" />
+              //   </Button>
+              // </TableCell>
+              //             </TableRow>
+              //           );
+              //         })}
+              //       </TableBody>
+              //     </Table>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/60 border-b">
+                    <TableHead className="w-10 text-center">
+                      {" "}
+                      {/* checkbox */}
+                      <span className="sr-only">Select</span>
+                    </TableHead>
+                    <TableHead className="font-medium pl-4 min-w-[160px]">
+                      File Name
+                    </TableHead>
+                    <TableHead className="font-medium pr-10 min-w-[180px]">
+                      Last Modified
+                    </TableHead>
+                    <TableHead className="w-12 text-center">Preview</TableHead>{" "}
+                    {/* ← fixed width, centered */}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {datasets.map((file) => {
+                    const isSelected = selectedFiles.includes(file.filename);
+                    return (
+                      <TableRow
+                        key={file.filename}
+                        className="hover:bg-muted/40 transition-colors cursor-pointer border-b last:border-b-0"
+                        onClick={() => toggleFileSelection(file.filename)}
+                      >
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mx-auto"
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium pl-4">
+                          {file.filename}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground pr-10">
+                          {file.date_modified}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 "
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetchPreview(file.filename);
+                            }}
+                            title="Preview data"
+                          >
+                            <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             )}
           </div>
         </div>
@@ -1179,127 +1241,149 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-semibold text-foreground">{rule.name}</h3>
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {rule.name}
+                      </h3>
                       <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-500/10 text-yellow-500">
                         {rule.status}
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="h-8" onClick={() => handleEditRule(index)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => handleEditRule(index)}
+                      >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
-                      <Button variant="outline" size="sm" className="h-8" onClick={() => handleDeleteRule(index)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => handleDeleteRule(index)}
+                      >
                         <Trash className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">{rule.description}</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {rule.description}
+                  </p>
                   <div className="bg-muted/50 rounded-lg p-3">
-                    <pre className="text-sm text-foreground font-mono">{rule.logic}</pre>
+                    <pre className="text-sm text-foreground font-mono">
+                      {rule.logic}
+                    </pre>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-        
-        <Dialog open={previewFile !== null} onOpenChange={(open) => {
-  if (!open) {
-    setPreviewFile(null);
-    setPreviewData([]);
-    setPreviewColumns([]);
-  }
-}}>
-  <DialogContent className="max-w-5xl max-h-[85vh] p-0 flex flex-col">   {/* ← reduced from max-w-6xl */}
-    <DialogHeader className="px-5 py-4 border-b">
-      <div className="flex items-center justify-between">
-        <div>
-          <DialogTitle className="text-lg font-semibold">
-            Preview: {previewFile}
-          </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            First {previewData.length} rows shown
-          </p>
-        </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0"
-          onClick={() => setPreviewFile(null)}
+        <Dialog
+          open={previewFile !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPreviewFile(null);
+              setPreviewData([]);
+              setPreviewColumns([]);
+            }
+          }}
         >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-    </DialogHeader>
-
-    <div className="flex-1 overflow-hidden bg-background">
-      {previewLoading ? (
-        <div className="flex flex-col items-center justify-center h-full gap-3">
-          <Loader2 className="h-9 w-9 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading preview...</p>
-        </div>
-      ) : previewData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
-          <FileText className="h-12 w-12 text-muted-foreground/70" />
-          <div>
-            <h3 className="text-base font-medium">No data to preview</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              File might be empty or still processing.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <ScrollArea className="h-full px-1">
-          <div className="min-w-full">
-            <Table>
-              <TableHeader className="sticky top-0 bg-muted/90 backdrop-blur-sm z-10">
-                <TableRow className="border-b hover:bg-transparent">
-                  {previewColumns.map((col) => (
-                    <TableHead 
-                      key={col} 
-                      className="h-10 px-3 text-xs font-medium text-muted-foreground whitespace-nowrap"
-                    >
-                      {col}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {previewData.map((row, rowIndex) => (
-                  <TableRow 
-                    key={rowIndex}
-                    className="hover:bg-muted/50 border-b last:border-0"
-                  >
-                    {previewColumns.map((col) => (
-                      <TableCell 
-                        key={col}
-                        className="px-3 py-2 text-sm whitespace-nowrap"
-                      >
-                        {row[col] != null ? String(row[col]) : "—"}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </ScrollArea>
-      )}
-    </div>
-
-    <div className="px-5 py-3 border-t flex justify-end bg-muted/30">
-      {/* <Button 
+          <DialogContent className="max-w-5xl max-h-[85vh] p-0 flex flex-col">
+            {" "}
+            {/* ← reduced from max-w-6xl */}
+            <DialogHeader className="px-5 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <DialogTitle className="text-lg font-semibold">
+                    Preview: {previewFile}
+                  </DialogTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    First {previewData.length} rows shown
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setPreviewFile(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </DialogHeader>
+            <div className="flex-1 overflow-hidden bg-background">
+              {previewLoading ? (
+                <div className="flex flex-col items-center justify-center h-full gap-3">
+                  <Loader2 className="h-9 w-9 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    Loading preview...
+                  </p>
+                </div>
+              ) : previewData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
+                  <FileText className="h-12 w-12 text-muted-foreground/70" />
+                  <div>
+                    <h3 className="text-base font-medium">
+                      No data to preview
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      File might be empty or still processing.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <ScrollArea className="h-full px-1">
+                  <div className="min-w-full">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-muted/90 backdrop-blur-sm z-10">
+                        <TableRow className="border-b hover:bg-transparent">
+                          {previewColumns.map((col) => (
+                            <TableHead
+                              key={col}
+                              className="h-10 px-3 text-xs font-medium text-muted-foreground whitespace-nowrap"
+                            >
+                              {col}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {previewData.map((row, rowIndex) => (
+                          <TableRow
+                            key={rowIndex}
+                            className="hover:bg-muted/50 border-b last:border-0"
+                          >
+                            {previewColumns.map((col) => (
+                              <TableCell
+                                key={col}
+                                className="px-3 py-2 text-sm whitespace-nowrap"
+                              >
+                                {row[col] != null ? String(row[col]) : "—"}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+            <div className="px-5 py-3 border-t flex justify-end bg-muted/30">
+              {/* <Button 
         variant="outline" 
         size="sm"
         onClick={() => setPreviewFile(null)}
       >
         Close
       </Button> */}
-    </div>
-  </DialogContent>
-</Dialog>
-        
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Bottom Navigation */}
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => navigate("/workflow/ner")}>
@@ -1307,7 +1391,10 @@ const [previewColumns, setPreviewColumns] = useState<string[]>([]);
             Back
           </Button>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => navigate("/workflow/path-selection")}>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/workflow/path-selection")}
+            >
               <SkipForward className="h-4 w-4 mr-2" />
               Skip
             </Button>

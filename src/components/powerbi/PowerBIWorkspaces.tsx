@@ -454,7 +454,7 @@ export function PowerBIWorkspaces({ onBack, onMigrate, fileName, isMigrating }: 
                     >
                       <FolderOpen className="w-6 h-6 text-primary mb-3" />
                       <p className="font-semibold text-foreground text-sm truncate">{ws.name}</p>
-                      <p className="text-xs text-muted-foreground mt-1 font-mono truncate opacity-60">{ws.id}</p>
+                      {/* <p className="text-xs text-muted-foreground mt-1 font-mono truncate opacity-60">{ws.id}</p> */}
                     </button>
                   ))}
                 </div>

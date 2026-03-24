@@ -582,12 +582,12 @@ const Auth = () => {
       console.log("API call successful:", result);
  
       // Store token and user
-      if (result.access_token) {
-        localStorage.setItem("access_token", result.access_token);
-      }
-      if (result.user) {
-        localStorage.setItem("user", JSON.stringify(result.user));
-      }
+      // if (result.access_token) {
+      //   localStorage.setItem("access_token", result.access_token);
+      // }
+      // if (result.user) {
+      //   localStorage.setItem("user", JSON.stringify(result.user));
+      // }
  
       // ══════════════════════════════════════════════════════════
       // SUCCESS TOASTS
@@ -596,24 +596,47 @@ const Auth = () => {
         console.log("Showing SUCCESS toast for signup");
         toast({
           title: "Account Created Successfully! 🎉",
-          description: "Welcome! You're all set to get started.",
+          // description: "Welcome! You're all set to get started.",
+          description: "You can now sign in with your new account.",
           variant: "default",
           duration: 1000,
         });
-      } else {
-        console.log("Showing SUCCESS toast for login");
-        toast({
-          title: "Welcome Back!",
-          description: "You've been successfully signed in.",
-          variant: "default",
-          duration: 1000,
-        });
+        
+        setIsLogin(true);
+        setName(""); 
+        setEmail("");         // clear name
+        setPassword("");
+        return;
+      }
+
+      // } else {
+      //   console.log("Showing SUCCESS toast for login");
+      //   toast({
+      //     title: "Welcome Back!",
+      //     description: "You've been successfully signed in.",
+      //     variant: "default",
+      //     duration: 1000,
+      //   });
+      // }
+ 
+   if (result.access_token) {
+        localStorage.setItem("access_token", result.access_token);
+      }
+      if (result.user) {
+        localStorage.setItem("user", JSON.stringify(result.user));
       }
  
+      toast({
+        title: "Welcome Back!",
+        description: "You've been successfully signed in.",
+        variant: "default",
+        duration: 1000,
+      });
+
       // Navigate after short delay so user can see the toast
       setTimeout(() => {
         navigate("/jobs");
-      }, 1400);
+      }, 1200);
  
     } catch (err: any) {
       console.error("Authentication error:", err);
@@ -823,4 +846,4 @@ const Auth = () => {
  
 export default Auth;
  
- 
+  

@@ -1281,108 +1281,100 @@ export default function BusinessLogic() {
             </div>
           )}
         </div>
-        <Dialog
-          open={previewFile !== null}
-          onOpenChange={(open) => {
-            if (!open) {
-              setPreviewFile(null);
-              setPreviewData([]);
-              setPreviewColumns([]);
-            }
-          }}
+       <Dialog
+  open={previewFile !== null}
+  onOpenChange={(open) => {
+    if (!open) {
+      setPreviewFile(null);
+      setPreviewData([]);
+      setPreviewColumns([]);
+    }
+  }}
+>
+  <DialogContent className="max-w-6xl max-h-[85vh] p-0 flex flex-col">   {/* Increased width to max-w-6xl */}
+    <DialogHeader className="px-5 py-4 border-b">
+      <div className="flex items-center justify-between">
+        <div>
+          <DialogTitle className="text-lg font-semibold">
+            Preview: {previewFile}
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            First {previewData.length} rows shown
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setPreviewFile(null)}
         >
-          <DialogContent className="max-w-5xl max-h-[85vh] p-0 flex flex-col">
-            {" "}
-            {/* ← reduced from max-w-6xl */}
-            <DialogHeader className="px-5 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <div>
-                  <DialogTitle className="text-lg font-semibold">
-                    Preview: {previewFile}
-                  </DialogTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    First {previewData.length} rows shown
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => setPreviewFile(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </DialogHeader>
-            <div className="flex-1 overflow-hidden bg-background">
-              {previewLoading ? (
-                <div className="flex flex-col items-center justify-center h-full gap-3">
-                  <Loader2 className="h-9 w-9 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">
-                    Loading preview...
-                  </p>
-                </div>
-              ) : previewData.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
-                  <FileText className="h-12 w-12 text-muted-foreground/70" />
-                  <div>
-                    <h3 className="text-base font-medium">
-                      No data to preview
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      File might be empty or still processing.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <ScrollArea className="h-full px-1">
-                  <div className="min-w-full">
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-muted/90 backdrop-blur-sm z-10">
-                        <TableRow className="border-b hover:bg-transparent">
-                          {previewColumns.map((col) => (
-                            <TableHead
-                              key={col}
-                              className="h-10 px-3 text-xs font-medium text-muted-foreground whitespace-nowrap"
-                            >
-                              {col}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {previewData.map((row, rowIndex) => (
-                          <TableRow
-                            key={rowIndex}
-                            className="hover:bg-muted/50 border-b last:border-0"
-                          >
-                            {previewColumns.map((col) => (
-                              <TableCell
-                                key={col}
-                                className="px-3 py-2 text-sm whitespace-nowrap"
-                              >
-                                {row[col] != null ? String(row[col]) : "—"}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </ScrollArea>
-              )}
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    </DialogHeader>
+
+    <div className="flex-1 overflow-hidden bg-background flex flex-col">
+      {previewLoading ? (
+        <div className="flex flex-col items-center justify-center h-full gap-3">
+          <Loader2 className="h-9 w-9 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading preview...</p>
+        </div>
+      ) : previewData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
+          <FileText className="h-12 w-12 text-muted-foreground/70" />
+          <div>
+            <h3 className="text-base font-medium">No data to preview</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              File might be empty or still processing.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto">
+          <ScrollArea className="h-full w-full">
+            <div className="inline-block min-w-full p-2">   {/* Changed to inline-block */}
+              <Table>
+                <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10">
+                  <TableRow className="hover:bg-transparent border-b">
+                    {previewColumns.map((col) => (
+                      <TableHead
+                        key={col}
+                        className="h-10 px-4 text-xs font-medium text-muted-foreground whitespace-nowrap"
+                      >
+                        {col}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {previewData.map((row, rowIndex) => (
+                    <TableRow
+                      key={rowIndex}
+                      className="hover:bg-muted/50 border-b last:border-0"
+                    >
+                      {previewColumns.map((col) => (
+                        <TableCell
+                          key={col}
+                          className="px-4 py-2 text-sm whitespace-nowrap"
+                        >
+                          {row[col] != null ? String(row[col]) : "—"}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-            <div className="px-5 py-3 border-t flex justify-end bg-muted/30">
-              {/* <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => setPreviewFile(null)}
-      >
-        Close
-      </Button> */}
-            </div>
-          </DialogContent>
-        </Dialog>
+          </ScrollArea>
+        </div>
+      )}
+    </div>
+
+    <div className="px-5 py-3 border-t flex justify-end bg-muted/30 shrink-0">
+      {/* Footer buttons if needed */}
+    </div>
+  </DialogContent>
+</Dialog>
 
         {/* Bottom Navigation */}
         <div className="flex items-center justify-between">

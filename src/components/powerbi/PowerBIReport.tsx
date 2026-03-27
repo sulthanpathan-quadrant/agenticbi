@@ -406,7 +406,7 @@ export function PowerBIReport({
             </Button>
           )}
 
-           <ThemeToggle />
+           {/* <ThemeToggle /> */}
           <button onClick={onBack}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors ml-2">
             <ArrowLeft className="w-4 h-4" /> Back

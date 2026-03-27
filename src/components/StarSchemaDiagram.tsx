@@ -1587,9 +1587,6 @@ function DeletableEdge({
   );
 }
 
-
-
-// ── Fact Node ─────────────────────────────────────────────────
 // ── Fact Node ─────────────────────────────────────────────────
 function FactNode({ data, selected }: NodeProps) {
   const typedData = data as {
@@ -1634,6 +1631,7 @@ function FactNode({ data, selected }: NodeProps) {
             {col.is_primary_key && <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 shrink-0">PK</Badge>}
             {col.is_foreign_key && <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 shrink-0">FK</Badge>}
           </div>
+                
         ))}
       </div>
     </div>
@@ -1684,6 +1682,7 @@ function DimNode({ data, selected }: NodeProps) {
             {col.is_primary_key && <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 shrink-0">PK</Badge>}
             {col.is_foreign_key && <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 shrink-0">FK</Badge>}
           </div>
+                   
         ))}
       </div>
     </div>
@@ -1979,7 +1978,7 @@ export default function StarSchemaDiagram({
           onDelete: handleDeleteEdge,
           onHover: (id: string | null) => setHoveredEdgeId(id),
           isHovered: hoveredEdgeId === relId,
-
+        
         },
       };
     });

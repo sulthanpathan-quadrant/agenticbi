@@ -1,13 +1,23 @@
 // import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
+ 
 // // ChatContext.tsx (top / near other types)
 // export interface BuildData {
 //   buildId: string;
 //   dataset?: string | null;
+ 
 //   task_type?: string;
 //   target?: string;
+ 
 //   modelsCount?: number;
+ 
+//   // model info
 //   bestModel?: string;
+//   best_model?: string;
+ 
+//   // metrics
+//   primary_metric?: string;
+//   primary_score?: number;
+ 
 //   metrics?: {
 //     [k: string]: any;
 //     accuracy?: number | string;
@@ -17,11 +27,17 @@
 //     rmse?: number | string;
 //     auc?: number | string;
 //   } | null;
+ 
+//   // ⭐ ADD THESE TWO
+//   analysis?: string;
+//   suggestions?: string[];
+ 
 //   rows?: number | null;
 //   columns?: number | null;
-//   results?: any; // ADD THIS LINE - stores the full results object from process_task_query
+ 
+//   results?: any;
 // }
-
+ 
 // export interface Message {
 //   id: string;
 //   role: 'user' | 'assistant';
@@ -35,18 +51,18 @@
 //   columnCount: number;
 // }
 // }
-
-
+ 
+ 
 // interface ChatSession {
 //   id: string;
 //   title: string;
 //   messages: Message[];
 //   createdAt: Date;
 //   modalBuildId?: string; // Link session to a modal build
-//   sessionId?: string;     
-//   agentId?: string;       
+//   sessionId?: string;    
+//   agentId?: string;      
 // }
-
+ 
 // interface ChatContextType {
 //   isOpen: boolean;
 //   setIsOpen: (open: boolean) => void;
@@ -61,11 +77,11 @@
 //   openChatWithSession: (sessionId: string) => void;
 //   getSessionByBuildId: (buildId: string) => ChatSession | undefined;
 // }
-
+ 
 // const ChatContext = createContext<ChatContextType | undefined>(undefined);
-
+ 
 // const STORAGE_KEY = 'ai-volve-chat-sessions';
-
+ 
 // export function ChatProvider({ children }: { children: ReactNode }) {
 //   const [isOpen, setIsOpen] = useState(false);
 //   const [chatSessions, setChatSessions] = useState<ChatSession[]>(() => {
@@ -98,12 +114,12 @@
 //     }
 //   ]);
 //   const [currentBuildData, setCurrentBuildData] = useState<BuildData | null>(null);
-
+ 
 //   // Persist chat sessions to localStorage
 //   useEffect(() => {
 //     localStorage.setItem(STORAGE_KEY, JSON.stringify(chatSessions));
 //   }, [chatSessions]);
-
+ 
 //   const openChatWithSession = (sessionId: string) => {
 //     const session = chatSessions.find(s => s.id === sessionId);
 //     if (session) {
@@ -117,11 +133,11 @@
 //     }
 //     setIsOpen(true);
 //   };
-
+ 
 //   const getSessionByBuildId = (buildId: string) => {
 //     return chatSessions.find(s => s.modalBuildId === buildId);
 //   };
-
+ 
 //   return (
 //     <ChatContext.Provider value={{
 //       isOpen,
@@ -141,7 +157,7 @@
 //     </ChatContext.Provider>
 //   );
 // }
-
+ 
 // export function useChatContext() {
 //   const context = useContext(ChatContext);
 //   if (context === undefined) {
@@ -149,9 +165,8 @@
 //   }
 //   return context;
 // }
-
  
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+ import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
  
 // ChatContext.tsx (top / near other types)
 export interface BuildData {
@@ -213,7 +228,8 @@ interface ChatSession {
   createdAt: Date;
   modalBuildId?: string; // Link session to a modal build
   sessionId?: string;    
-  agentId?: string;      
+  agentId?: string;
+  lastUpdated: Date;      
 }
  
 interface ChatContextType {

@@ -15,6 +15,7 @@
 // import { useLocation } from "react-router-dom";
 // import Header from "../layout/Header";
 // import { toast } from "sonner";
+// import Header1 from "../layout/Header1";
 
 // interface CompareTabProps {
 //   dataset?: ImportedDataset | null;
@@ -166,6 +167,9 @@
 //   return obj;
 // }
 
+// const TRAINING_STATUS_API =
+//   "https://api.veriton.ai/api/service3/training-status";
+
 // const CompareTab = ({}: CompareTabProps) => {
 //   const navigate = useNavigate();
 //   const [selectedTask, setSelectedTask] = useState(""); // previously selectedFunction
@@ -191,8 +195,12 @@
 //   const filePath = (location.state as any)?.filePath || "";
 //   const registerAbortRef = useRef<AbortController | null>(null);
 //   const datasetName = (location.state as any)?.datasetName || "";
-
+//   const cameFromJobs1 = location.state?.origin === "jobs1";
 //   const cameFromHub = location.state?.origin === "automlhub";
+//   const [jobId, setJobId] = useState<string | null>(null);
+//   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+//   const pollingRef = useRef(false);
+//   const trainingToastRef = useRef<string | number | null>(null);
 
 //   // ✅ add this ref at top of component if not already added
 //   // const registerAbortRef = useRef<AbortController | null>(null);
@@ -284,6 +292,14 @@
 //     setSelectedFeature("all");
 //   }, [selectedTask]);
 
+//   useEffect(() => {
+//     return () => {
+//       if (pollIntervalRef.current) {
+//         clearInterval(pollIntervalRef.current);
+//       }
+//     };
+//   }, []);
+
 //   const availableModels = useMemo(() => {
 //     return selectedTask ? modelsByTask[selectedTask] || [] : [];
 //   }, [selectedTask]);
@@ -372,6 +388,20 @@
 //       }
 
 //       const json = await res.json();
+//       if (json.status === "model has started running") {
+//         const jobId = json.job_id;
+
+//         setJobId(jobId);
+//         setIsComparing(true);
+
+//         trainingToastRef.current = toast.loading(
+//           "Model comparison started. This may take a few minutes...",
+//         );
+
+//         pollTrainingStatus(jobId);
+
+//         return;
+//       }
 //       setApiResponseRaw(json);
 
 //       const allModels = json?.all_models ?? {};
@@ -406,6 +436,86 @@
 //       console.error("Compare API error", err);
 //       setErrorMessage(err?.message || "Error calling compare API.");
 //     } finally {
+//       setIsComparing(false);
+//     }
+//   };
+
+//   const pollTrainingStatus = async (jobId: string) => {
+//     const userEmail = getUserEmailFromLocal();
+//     if (!userEmail) return;
+
+//     if (pollingRef.current) return;
+//     pollingRef.current = true;
+
+//     try {
+//       while (true) {
+//         const res = await fetch(
+//           `${TRAINING_STATUS_API}/${jobId}?user_email=${encodeURIComponent(userEmail)}`,
+//           {
+//             method: "GET",
+//             headers: { accept: "application/json" },
+//           },
+//         );
+
+//         if (!res.ok) {
+//           throw new Error("Failed to fetch training status");
+//         }
+
+//         const json = await res.json();
+
+//         if (json.status === "success") {
+//           pollingRef.current = false;
+//           setIsComparing(false);
+
+//           if (trainingToastRef.current) {
+//             toast.success("Model comparison completed!", {
+//               id: trainingToastRef.current,
+//             });
+//           }
+
+//           const allModels = json.all_models ?? {};
+
+//           const findKey = (k: string | null) => {
+//             if (!k) return null;
+//             if (allModels[k]) return k;
+
+//             const lower = k.toLowerCase();
+//             const candidate = Object.keys(allModels).find(
+//               (c) => c.toLowerCase() === lower,
+//             );
+
+//             if (candidate) return candidate;
+
+//             const candidate2 = Object.keys(allModels).find((c) =>
+//               c.toLowerCase().includes(lower),
+//             );
+
+//             if (candidate2) return candidate2;
+
+//             return null;
+//           };
+
+//           const real1 = findKey(modelNameToApiKey(selectedModel1));
+//           const real2 = findKey(modelNameToApiKey(selectedModel2));
+
+//           const pickMetrics = (obj: any) => {
+//             if (!obj) return null;
+//             return { train: obj.train ?? null, test: obj.test ?? null };
+//           };
+
+//           setModel1Metrics(real1 ? pickMetrics(allModels[real1]) : null);
+//           setModel2Metrics(real2 ? pickMetrics(allModels[real2]) : null);
+
+//           setComparisonComplete(true);
+
+//           break;
+//         }
+
+//         await new Promise((resolve) => setTimeout(resolve, 30000));
+//       }
+//     } catch (err) {
+//       console.error("Polling error:", err);
+//       pollingRef.current = false;
 //       setIsComparing(false);
 //     }
 //   };
@@ -475,7 +585,7 @@
 
 //   return (
 //     <div className="min-h-screen bg-background">
-//       <Header />
+//       {cameFromJobs1 ? <Header1 /> : <Header />}
 
 //       <main className="pt-6 px-8 pb-16 max-w-[1400px] mx-auto">
 //         {/* Back button + title */}
@@ -496,18 +606,26 @@
 //             <Button
 //               variant="outline"
 //               onClick={() => {
+//                 // ✅ STOP the API first
 //                 if (registerAbortRef.current) {
 //                   registerAbortRef.current.abort();
 //                 }
 
-//                 if (cameFromHub) {
+//                 // ✅ THEN navigate based on origin
+//                 if (cameFromJobs1) {
+//                   navigate("/workflow/automl/jobs1");
+//                 } else if (cameFromHub) {
 //                   navigate("/workflow/automl/automlhub");
 //                 } else {
 //                   navigate("/workflow/automl");
 //                 }
 //               }}
 //             >
-//               {cameFromHub ? "Back to Preview" : "Back to Jobs"}
+//               {cameFromJobs1
+//                 ? "Back to Auto AI/ML"
+//                 : cameFromHub
+//                   ? "Back to Preview"
+//                   : "Back to Jobs"}
 //             </Button>
 //           </div>
 //         </div>
@@ -859,7 +977,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, GitCompare } from "lucide-react";
+import { ArrowLeft, ChevronDown, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -897,6 +1015,7 @@ const modelsByTask: Record<string, string[]> = {
     "Local Outlier Factor (LOF)",
     "Elliptic Envelope",
   ],
+  Multi_Step_Forecasting: ["XGBoost", "CatBoost", "LightGBM"],
 };
 
 const metricsByTask: Record<string, MetricSpec[]> = {
@@ -949,6 +1068,12 @@ const metricsByTask: Record<string, MetricSpec[]> = {
     { key: "min_anomaly_score", label: "Min Anomaly Score" },
     { key: "max_anomaly_score", label: "Max Anomaly Score" },
   ],
+  Multi_Step_Forecasting: [
+    { key: "avg_rmse", label: "Avg RMSE", isLowerBetter: true },
+    { key: "avg_mae", label: "Avg MAE", isLowerBetter: true },
+    { key: "avg_r2", label: "Avg R²" },
+    { key: "avg_mape", label: "Avg MAPE", isLowerBetter: true },
+  ],
 };
 
 // Best-effort mapping from human model name -> API key (extendable)
@@ -978,52 +1103,6 @@ function modelNameToApiKey(name: string) {
 }
 
 // Generates mock values appropriate for given task + metric
-function generateMockMetricsForTask(task: string) {
-  const specs = metricsByTask[task] || [];
-  const obj: Record<string, string> = {};
-  specs.forEach((spec) => {
-    // realistic ranges:
-    if (
-      spec.key === "accuracy" ||
-      spec.key === "auc" ||
-      spec.key === "f1_score" ||
-      spec.key === "precision" ||
-      spec.key === "recall" ||
-      spec.key === "roc_auc" ||
-      spec.key === "precision_recall_auc"
-    ) {
-      const val = 0.7 + Math.random() * 0.3; // 0.7 - 1.0
-      obj[spec.key] = (val * 100).toFixed(1) + "%";
-    } else if (
-      spec.key === "rmse" ||
-      spec.key === "mae" ||
-      spec.key === "mse" ||
-      spec.key === "std_residual"
-    ) {
-      obj[spec.key] = (0.05 + Math.random() * 1.0).toFixed(4);
-    } else if (spec.key === "r2") {
-      obj[spec.key] = (Math.random() * 1).toFixed(4);
-    } else if (spec.key === "mape") {
-      obj[spec.key] = (5 + Math.random() * 50).toFixed(2) + "%";
-    } else if (spec.key === "mean_residual") {
-      obj[spec.key] = ((Math.random() - 0.5) * 0.1).toFixed(6);
-    } else if (spec.key === "pred_mean" || spec.key === "pred_std") {
-      obj[spec.key] = (Math.random() * 0.5).toFixed(4);
-    } else if (spec.key === "silhouette") {
-      obj[spec.key] = (0.2 + Math.random() * 0.8).toFixed(3);
-    } else if (spec.key === "davies_bouldin") {
-      obj[spec.key] = (0.2 + Math.random() * 3.0).toFixed(3);
-    } else if (spec.key === "calinski_harabasz") {
-      obj[spec.key] = Math.round(50 + Math.random() * 2000).toString();
-    } else if (spec.key === "anomaly_score") {
-      obj[spec.key] = (Math.random() * 1).toFixed(4);
-    } else {
-      // default numeric
-      obj[spec.key] = (Math.random() * 1).toFixed(4);
-    }
-  });
-  return obj;
-}
 
 const TRAINING_STATUS_API =
   "https://api.veriton.ai/api/service3/training-status";
@@ -1059,9 +1138,21 @@ const CompareTab = ({}: CompareTabProps) => {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollingRef = useRef(false);
   const trainingToastRef = useRef<string | number | null>(null);
+  const [analysisMetadata, setAnalysisMetadata] = useState<any>(null);
+  const [needsTransformation, setNeedsTransformation] = useState(false);
+  const [selectedDimensions, setSelectedDimensions] = useState<string[]>([]);
+  const [selectedMeasures, setSelectedMeasures] = useState<string[]>([]);
+  const [yearColumn, setYearColumn] = useState("");
+  const [horizon, setHorizon] = useState(12);
+  const featureToastRef = useRef<string | number | null>(null);
 
-  // ✅ add this ref at top of component if not already added
-  // const registerAbortRef = useRef<AbortController | null>(null);
+  const dimensions = analysisMetadata?.dataset_structure?.dimensions || [];
+
+  const measures = analysisMetadata?.dataset_structure?.measures || [];
+
+  const [showDimensions, setShowDimensions] = useState(false);
+  const [showMeasures, setShowMeasures] = useState(false);
+  const [hasConfigChanged, setHasConfigChanged] = useState(true);
 
   useEffect(() => {
     if (!filePath) return;
@@ -1088,6 +1179,10 @@ const CompareTab = ({}: CompareTabProps) => {
         params.append("time_budget", "180");
         params.append("horizon", "12");
 
+        featureToastRef.current = toast.loading(
+  "Fetching dataset features..."
+);
+
         const res = await fetch(
           "https://api.veriton.ai/api/service3/build_ml_model_v",
           {
@@ -1111,11 +1206,31 @@ const CompareTab = ({}: CompareTabProps) => {
 
         setBlobPath(json.blob_path);
 
+        if (json.analysis_metadata) {
+          setAnalysisMetadata(json.analysis_metadata); // ✅ MISSING
+
+          const needsTransform =
+            json.analysis_metadata?.dataset_structure?.needs_transformation ||
+            false;
+
+          setNeedsTransformation(needsTransform); // ✅ MISSING
+
+          if (needsTransform) {
+            setSelectedTask("Multi_Step_Forecasting");
+          }
+        }
         if (json.features?.tasks) {
           setAllTaskFeatures(json.features.tasks);
         }
 
         setBlobPathReady(true);
+        if (featureToastRef.current) {
+  toast.success("Features fetched successfully!", {
+    id: featureToastRef.current,
+    duration: 3000,
+  });
+
+        }
       } catch (err: any) {
         // ✅ IMPORTANT: ignore abort error
         if (err.name === "AbortError") {
@@ -1135,8 +1250,34 @@ const CompareTab = ({}: CompareTabProps) => {
       if (registerAbortRef.current) {
         registerAbortRef.current.abort();
       }
+      toast.dismiss();
     };
   }, [filePath]);
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowDimensions(false);
+      setShowMeasures(false);
+    };
+
+    window.addEventListener("click", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isComparing) return;
+
+    setHasConfigChanged(true); // ✅ unlock when user changes anything
+  }, [
+    selectedModel1,
+    selectedModel2,
+    selectedDimensions,
+    selectedMeasures,
+    selectedTask,
+  ]);
 
   // Reset models & results when task changes
   useEffect(() => {
@@ -1179,12 +1320,24 @@ const CompareTab = ({}: CompareTabProps) => {
     }
   };
 
-  const canCompare = !!(
-    selectedTask &&
-    selectedModel1 &&
-    selectedModel2 &&
-    selectedModel1 !== selectedModel2
-  );
+  const canCompare = useMemo(() => {
+    if (!selectedTask || !selectedModel1 || !selectedModel2) return false;
+
+    if (selectedModel1 === selectedModel2) return false;
+
+    if (needsTransformation) {
+      return selectedDimensions.length > 0 && selectedMeasures.length > 0;
+    }
+
+    return true;
+  }, [
+    selectedTask,
+    selectedModel1,
+    selectedModel2,
+    selectedDimensions,
+    selectedMeasures,
+    needsTransformation,
+  ]);
 
   const fetchAndCompare = async () => {
     setErrorMessage(null);
@@ -1193,6 +1346,8 @@ const CompareTab = ({}: CompareTabProps) => {
     setModel1Metrics(null);
     setModel2Metrics(null);
     setApiResponseRaw(null);
+    setHasConfigChanged(false); // 🔒 lock after clicking compare
+    let startedPolling = false;
 
     const userEmail = getUserEmailFromLocal();
     if (!userEmail) {
@@ -1209,13 +1364,51 @@ const CompareTab = ({}: CompareTabProps) => {
       return;
     }
 
+    if (needsTransformation) {
+      if (selectedDimensions.length === 0) {
+        setErrorMessage("Please select at least one dimension");
+        setIsComparing(false);
+        return;
+      }
+
+      if (selectedMeasures.length === 0) {
+        setErrorMessage("Please select at least one measure");
+        setIsComparing(false);
+        return;
+      }
+    }
+
     try {
       const params = new URLSearchParams();
       params.append("file_path", filePath);
       params.append("upload_file_path", "false");
       params.append("user_email", userEmail);
-      params.append("task", selectedTask.toLowerCase().replace(/\s+/g, "_"));
-      params.append("target", selectedFeature === "all" ? "" : selectedFeature);
+      if (needsTransformation) {
+        params.append("task", "multistep_forecasting");
+        params.append("target", "target");
+
+        const transformConfig = {
+          group_by: selectedDimensions,
+          measures: selectedMeasures,
+          year_column: yearColumn,
+          horizon: horizon,
+          needs_transformation: true,
+        };
+
+        params.append("transformation_config", JSON.stringify(transformConfig));
+      } else {
+        params.append(
+          "task",
+          selectedTask === "Multi_Step_Forecasting"
+            ? "multistep_forecasting"
+            : selectedTask.toLowerCase().replace(/\s+/g, "_"),
+        );
+
+        params.append(
+          "target",
+          selectedFeature === "all" ? "" : selectedFeature,
+        );
+      }
       const model1Key = modelNameToApiKey(selectedModel1);
       const model2Key = modelNameToApiKey(selectedModel2);
       params.append("models", `${model1Key} , ${model2Key}`);
@@ -1251,6 +1444,8 @@ const CompareTab = ({}: CompareTabProps) => {
 
         setJobId(jobId);
         setIsComparing(true);
+
+        startedPolling = true; // ✅ IMPORTANT
 
         trainingToastRef.current = toast.loading(
           "Model comparison started. This may take a few minutes...",
@@ -1294,11 +1489,14 @@ const CompareTab = ({}: CompareTabProps) => {
       console.error("Compare API error", err);
       setErrorMessage(err?.message || "Error calling compare API.");
     } finally {
-      setIsComparing(false);
+      if (!startedPolling) {
+        setIsComparing(false); // ✅ only reset if NOT polling
+      }
     }
   };
 
   const pollTrainingStatus = async (jobId: string) => {
+    setHasConfigChanged(false); // 🔒 keep disabled after results
     const userEmail = getUserEmailFromLocal();
     if (!userEmail) return;
 
@@ -1328,6 +1526,7 @@ const CompareTab = ({}: CompareTabProps) => {
           if (trainingToastRef.current) {
             toast.success("Model comparison completed!", {
               id: trainingToastRef.current,
+              duration: 3000,
             });
           }
 
@@ -1495,13 +1694,21 @@ const CompareTab = ({}: CompareTabProps) => {
             Comparison Setup
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+          <div
+            className={`grid gap-5 ${
+              needsTransformation ? "md:grid-cols-5" : "md:grid-cols-4"
+            }`}
+          >
             {/* Task */}
             <div>
               <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
                 Function
               </label>
-              <Select value={selectedTask} onValueChange={setSelectedTask}>
+              <Select
+                value={selectedTask}
+                onValueChange={setSelectedTask}
+                disabled={needsTransformation}
+              >
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select task" />
                 </SelectTrigger>
@@ -1578,66 +1785,165 @@ const CompareTab = ({}: CompareTabProps) => {
             </div>
 
             {/* Target Feature */}
-            <div>
-              <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
-                Target Column
-              </label>
-              <Select
-                value={selectedFeature === "all" ? "all" : selectedFeature}
-                onValueChange={(v) => setSelectedFeature(v as "all" | string)}
-                disabled={!selectedTask || !blobPathReady}
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue
-                    placeholder={
-                      !blobPathReady
-                        ? "Loading targets..."
-                        : selectedTask
-                          ? "Select target"
-                          : "Select task first"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent className="max-h-64">
-                  <SelectItem value="all">All features (auto)</SelectItem>
-                  {!blobPathReady ? (
-                    <div className="px-3 py-2 text-sm text-muted-foreground flex items-center gap-2">
-                      <svg
-                        className="animate-spin h-3 w-3"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8z"
-                        ></path>
-                      </svg>
-                      Loading targets...
+            {needsTransformation ? (
+              <>
+                {/* Dimensions */}
+                {/* Dimensions */}
+                <div className="relative">
+                  <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
+                    Dimensions
+                  </label>
+
+                  {/* Trigger */}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDimensions(!showDimensions);
+                      setShowMeasures(false);
+                    }}
+                    className="border border-input rounded-md px-3 py-2 bg-background cursor-pointer flex justify-between items-center"
+                  >
+                    <span className="text-sm">
+                      {selectedDimensions.length > 0
+                        ? `${selectedDimensions.length} selected`
+                        : "Select dimensions"}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  </div>
+
+                  {/* Dropdown */}
+                  {showDimensions && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute z-10 mt-1 w-full border border-input rounded-md bg-background shadow-lg max-h-40 overflow-y-auto"
+                    >
+                      {dimensions.map((dim: string) => {
+                        const isSelected = selectedDimensions.includes(dim);
+
+                        return (
+                          <div
+                            key={dim}
+                            onClick={() => {
+                              const updated = isSelected
+                                ? selectedDimensions.filter((d) => d !== dim)
+                                : [...selectedDimensions, dim];
+
+                              setSelectedDimensions(updated);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              readOnly
+                            />
+                            <span className="text-sm">{dim}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ) : taskSpecificFeatures.length > 0 ? (
-                    taskSpecificFeatures.map((col) => (
+                  )}
+                </div>
+
+                {/* Measures */}
+                <div className="relative">
+                  <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
+                    Measures
+                  </label>
+
+                  {/* Trigger */}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMeasures(!showMeasures);
+                      setShowDimensions(false);
+                    }}
+                    className="border border-input rounded-md px-3 py-2 bg-background cursor-pointer flex justify-between items-center"
+                  >
+                    <span className="text-sm">
+                      {selectedMeasures.length > 0
+                        ? `${selectedMeasures.length} selected`
+                        : "Select measures"}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  </div>
+
+                  {/* Dropdown */}
+                  {showMeasures && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute z-10 mt-1 w-full border border-input rounded-md bg-background shadow-lg max-h-40 overflow-y-auto"
+                    >
+                      {measures.map((m: string) => {
+                        const isSelected = selectedMeasures.includes(m);
+
+                        return (
+                          <div
+                            key={m}
+                            onClick={() => {
+                              const updated = isSelected
+                                ? selectedMeasures.filter((d) => d !== m)
+                                : [...selectedMeasures, m];
+
+                              setSelectedMeasures(updated);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              readOnly
+                            />
+                            <span className="text-sm">{m}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {/* Horizon */}
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
+                    Horizon
+                  </label>
+
+                  <input
+                    type="number"
+                    value={horizon}
+                    min={1}
+                    onChange={(e) => setHorizon(Number(e.target.value))}
+                    className="w-full border border-input rounded-md px-3 py-2 bg-background"
+                  />
+                </div>
+              </>
+            ) : (
+              /* OLD TARGET DROPDOWN */
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block font-medium">
+                  Target Column
+                </label>
+
+                <Select
+                  value={selectedFeature === "all" ? "all" : selectedFeature}
+                  onValueChange={(v) => setSelectedFeature(v as "all" | string)}
+                  disabled={!selectedTask || !blobPathReady}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Select target" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="all">All features</SelectItem>
+
+                    {taskSpecificFeatures.map((col) => (
                       <SelectItem key={col} value={col}>
                         {col}
                       </SelectItem>
-                    ))
-                  ) : (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                      No targets available
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {errorMessage && (
@@ -1649,7 +1955,12 @@ const CompareTab = ({}: CompareTabProps) => {
           <div className="mt-6">
             <Button
               onClick={fetchAndCompare}
-              disabled={!canCompare || isComparing || !blobPathReady}
+              disabled={
+                !canCompare ||
+                isComparing ||
+                !blobPathReady ||
+                !hasConfigChanged // ✅ IMPORTANT
+              }
               size="lg"
             >
               {isComparing ? "Comparing..." : "Compare Models"}

@@ -192,6 +192,7 @@ import { JobsProvider } from "./components/contexts/JobsContext";
 import { ChatProvider } from "./components/contexts/ChatContext";
 import PowerBIDashboard1 from "./pages/PowerBIDashboard1";
 import PowerBIPage from "./pages/PowerBIPage";
+import Chatbot from "./components/chatbot/Chatbot";
 
 // ── Inline AuthSuccess — no separate file needed ──────────────────────────────
 // The OAuth popup redirects here → sets flag → closes itself

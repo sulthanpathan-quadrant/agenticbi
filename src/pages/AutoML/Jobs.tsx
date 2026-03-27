@@ -29,10 +29,9 @@
 // import { Job } from "@/components/types/jobs";
 // import JobViewModal from "@/components/modals/JobViewModal";
 // import JobEditModal from "@/components/modals/JobEditModal";
-// import { prepareDataset } from "@/components/utils/preparedDataset";
 // import { toast } from "sonner";
 // import { cn } from "@/lib/utils";
- 
+
 // // ─── Add these new interfaces ───
 // interface GlobalDataset {
 //   id: string;
@@ -46,12 +45,12 @@
 //   isScheduled: boolean;
 //   job_id?: string;
 // }
- 
+
 // interface JobSpecificDataset {
 //   filename: string;
 //   date_modified: string;
 // }
- 
+
 // interface PreviewData {
 //   columns: string[];
 //   preview_rows: Record<string, any>[];
@@ -59,7 +58,7 @@
 //   preview_row_count: number;
 //   // add more fields if your API returns them
 // }
- 
+
 // // Map UI feature names to API task names
 // const featureToTaskMap: Record<string, string> = {
 //   Classification: "classification",
@@ -68,7 +67,7 @@
 //   Clustering: "clustering",
 //   "Anomaly Detection": "anomaly_detection",
 // };
- 
+
 // // Map UI model names to API model names
 // const modelNameToAPI: Record<string, string> = {
 //   "Logistic Regression": "logistic_regression",
@@ -89,7 +88,7 @@
 //   "Local Outlier Factor (LOF)": "lof",
 //   "Elliptic Envelope": "elliptic_envelope",
 // };
- 
+
 // // Reverse mapping: API names to UI names
 // const apiModelToUI: Record<string, string> = {
 //   logistic_regression: "Logistic Regression",
@@ -110,7 +109,7 @@
 //   lof: "Local Outlier Factor (LOF)",
 //   elliptic_envelope: "Elliptic Envelope",
 // };
- 
+
 // const AutoMLJobs = () => {
 //   const navigate = useNavigate();
 //   const { isAuthenticated, user } = useAuth();
@@ -124,7 +123,7 @@
 //     updateJob,
 //     setCurrentPage,
 //   } = useJobs();
- 
+
 //   const [statusFilter, setStatusFilter] = useState("all");
 //   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 //   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -143,49 +142,49 @@
 //   const [dsLoading, setDsLoading] = useState(true);
 //   const [activeDsTab, setActiveDsTab] = useState<"global" | "job">("global");
 //   const [previewLoading, setPreviewLoading] = useState(false);
-//   const [selectedFilePath, setSelectedFilePath] = useState<string>('')
- 
+//   const [selectedFilePath, setSelectedFilePath] = useState<string>("");
+
 //   const itemsPerPage = 10;
 //   const totalPages = Math.ceil(totalCount / itemsPerPage);
- 
+
 //   // Replace or add this useEffect (make sure it's separate from the dataset loading one)
 //   // (status filtering is done client-side on the loaded jobs — no need to send status to backend yet)
 //   useEffect(() => {
 //     fetchJobs(currentPage);
 //   }, [currentPage]); // ← add fetchJobs to deps if it's from context
- 
+
 //   useEffect(() => {
 //     if (statusFilter !== "all") {
 //       setCurrentPage(1);
 //     }
 //   }, [statusFilter]);
- 
+
 //   // Add this complete useEffect block
 //   useEffect(() => {
 //     const loadDatasets = async () => {
 //       setDsLoading(true);
- 
+
 //       const userRaw = localStorage.getItem("user");
 //       if (!userRaw) {
 //         toast.error("User information not found");
 //         setDsLoading(false);
 //         return;
 //       }
- 
+
 //       const userData = JSON.parse(userRaw);
 //       const userId = userData.user_id || userData.id;
- 
+
 //       if (!userId) {
-//   toast.error("User ID not found")
-//   setDsLoading(false)
-//   return
-// }
+//         toast.error("User ID not found");
+//         setDsLoading(false);
+//         return;
+//       }
 
-// let fetchedGlobal: GlobalDataset[] = []
-// let fetchedJob: JobSpecificDataset[] = []
+//       let fetchedGlobal: GlobalDataset[] = [];
+//       let fetchedJob: JobSpecificDataset[] = [];
 
-// // A. Global datasets
- 
+//       // A. Global datasets
+
 //       // A. Global datasets
 //       try {
 //         const res = await fetch(
@@ -207,13 +206,13 @@
 //             isScheduled: item.is_scheduled || false,
 //             job_id: item.job_id,
 //           }));
-//           fetchedGlobal = mapped
-// setGlobalDatasets(mapped)
+//           fetchedGlobal = mapped;
+//           setGlobalDatasets(mapped);
 //         }
 //       } catch (err) {
 //         console.error("Global datasets fetch failed", err);
 //       }
- 
+
 //       // B. Job-specific datasets
 //       const currentJobId = localStorage.getItem("current_job_id");
 //       if (currentJobId) {
@@ -223,42 +222,42 @@
 //           );
 //           if (res.ok) {
 //             const data = await res.json();
-//            fetchedJob = data.datasets || []
-// setJobDatasets(fetchedJob)
+//             fetchedJob = data.datasets || [];
+//             setJobDatasets(fetchedJob);
 //           }
 //         } catch (err) {
 //           console.error("Job-specific datasets fetch failed", err);
 //         }
 //       }
- 
-// setDsLoading(false)
 
-// // Auto-select first dataset directly from fetched local variables
-// const allFetched = [...fetchedJob, ...fetchedGlobal]
-// if (allFetched.length > 0) {
-//   handleSelectDataset(allFetched[0])
-// }
+//       setDsLoading(false);
+
+//       // Auto-select first dataset directly from fetched local variables
+//       const allFetched = [...fetchedJob, ...fetchedGlobal];
+//       if (allFetched.length > 0) {
+//         handleSelectDataset(allFetched[0]);
+//       }
 //     };
- 
+
 //     loadDatasets();
 //   }, []);
- 
+
 //   const filteredJobs = useMemo(() => {
 //     if (statusFilter === "all") return jobs;
- 
+
 //     return jobs.filter(
 //       (job) => job.status.toLowerCase() === statusFilter.toLowerCase(),
 //     );
 //   }, [jobs, statusFilter]);
- 
+
 //   const paginatedJobs = useMemo(() => {
 //     const start = (currentPage - 1) * itemsPerPage;
- 
+
 //     const end = start + itemsPerPage;
- 
+
 //     return filteredJobs.slice(start, end);
 //   }, [filteredJobs, currentPage]);
- 
+
 //   const formatDate = (date: Date | null) => {
 //     if (!date) return "—";
 //     return new Intl.DateTimeFormat("en-US", {
@@ -269,7 +268,7 @@
 //       .format(date)
 //       .replace(/\//g, "-");
 //   };
- 
+
 //   const getStatusBadge = (status: Job["status"]) => {
 //     const styles = {
 //       completed: "bg-emerald-100 text-emerald-700",
@@ -277,14 +276,14 @@
 //       running: "bg-amber-100 text-amber-700",
 //       failed: "bg-red-100 text-red-700",
 //     };
- 
+
 //     const labels = {
 //       completed: "Completed",
 //       pending: "Running",
 //       running: "Running",
 //       failed: "Failed",
 //     };
- 
+
 //     return (
 //       <span
 //         className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}
@@ -293,7 +292,7 @@
 //       </span>
 //     );
 //   };
- 
+
 //   const handleRun = async (job: Job) => {
 //     // Check if job has basic configuration
 //     console.log("Job config:", {
@@ -302,91 +301,92 @@
 //       target: job.target,
 //       datasetName: job.datasetName,
 //     });
- 
+
 //     if (!job.category && !job.feature) {
 //       alert("Job is missing task type (category). Please edit the job first.");
 //       return;
 //     }
- 
+
 //     if (!job.target) {
 //       alert("Job is missing target column. Please edit the job first.");
 //       return;
 //     }
- 
+
 //     if (!job.datasetName) {
 //       alert("Job is missing dataset. Please edit the job first.");
 //       return;
 //     }
- 
+
 //     setRunningJobId(job.id);
 //     setRunningMessage("Preparing dataset...");
- 
+
 //     try {
 //       const userDataString = localStorage.getItem("aivolve_user");
 //       if (!userDataString) {
 //         throw new Error("User not found");
 //       }
- 
+
 //       const userData = JSON.parse(userDataString);
 //       const userEmail = userData.email;
-//       const agentName = userData.agent_name || userData.name || "default";
+//       // const agentName = userData.agent_name || userData.name || "default";
+//       const agentName = "build_model";
 //       const userId = userData.user_id || userData.id || "";
- 
+
 //       // ✅ If features are not loaded, fetch them now
 //       let features = job.features || [];
- 
+
 //       if (features.length === 0) {
 //         setRunningMessage("Loading dataset features...");
- 
+
 //         const blobPath = `${userId}/${agentName}/${job.datasetName}`;
 //         const previewUrl = `https://api.veriton.ai/api/service3/data_preview?blob_path=${encodeURIComponent(blobPath)}&user_email=${encodeURIComponent(userEmail)}`;
- 
+
 //         const previewResponse = await fetch(previewUrl, {
 //           method: "GET",
 //           headers: { accept: "application/json" },
 //         });
- 
+
 //         if (!previewResponse.ok) {
 //           throw new Error(
 //             `Failed to fetch dataset features: ${previewResponse.status}`,
 //           );
 //         }
- 
+
 //         const previewData = await previewResponse.json();
- 
+
 //         if (!previewData.preview?.columns) {
 //           throw new Error("Invalid dataset preview");
 //         }
- 
+
 //         // Get all columns except target
 //         features = previewData.preview.columns.filter(
 //           (col: string) => col !== job.target,
 //         );
- 
+
 //         if (features.length === 0) {
 //           throw new Error("No features available for training.");
 //         }
- 
+
 //         console.log("Fetched features:", features);
 //       }
- 
+
 //       // Step 1: Download file from blob storage
 //       setRunningMessage("Downloading dataset...");
 //       const blobPath = `${userId}/${agentName}/${job.datasetName}`;
 //       const downloadUrl = `https://api.veriton.ai/api/service3/download_predictions?blob_path=${encodeURIComponent(blobPath)}&user_email=${encodeURIComponent(userEmail)}`;
- 
+
 //       const downloadResponse = await fetch(downloadUrl, {
 //         method: "GET",
 //         headers: { accept: "application/json" },
 //       });
- 
+
 //       if (!downloadResponse.ok) {
 //         throw new Error(`Failed to download file: ${downloadResponse.status}`);
 //       }
- 
+
 //       const csvText = await downloadResponse.text();
 //       const fileBlob = new Blob([csvText], { type: "text/csv" });
- 
+
 //       // Step 2: Prepare FormData for training
 //       setRunningMessage("Training model... This may take a few minutes.");
 //       const formData = new FormData();
@@ -397,7 +397,7 @@
 //       );
 //       formData.append("target", job.target);
 //       formData.append("user_email", userEmail);
- 
+
 //       const apiModelName = job.model
 //         ? modelNameToAPI[job.model] ||
 //           job.model.toLowerCase().replace(/\s+/g, "_")
@@ -412,7 +412,7 @@
 //       formData.append("time_budget", "180");
 //       formData.append("test_size", "0.2");
 //       formData.append("test_file", "");
- 
+
 //       // Step 3: Call build_ml_model API
 //       const buildResponse = await fetch(
 //         "https://api.veriton.ai/api/service3/build_ml_model",
@@ -421,21 +421,21 @@
 //           body: formData,
 //         },
 //       );
- 
+
 //       if (!buildResponse.ok) {
 //         const errorData = await buildResponse.json().catch(() => ({}));
 //         throw new Error(
 //           errorData.detail || `API failed: ${buildResponse.status}`,
 //         );
 //       }
- 
+
 //       const result = await buildResponse.json();
 //       console.log("Model trained successfully:", result);
- 
+
 //       // Convert API model name back to UI format
 //       const uiModelName =
 //         apiModelToUI[result.best_model?.toLowerCase()] || result.best_model;
- 
+
 //       // Update job with new results
 //       updateJob(job.id, {
 //         id: result.model_id,
@@ -449,12 +449,12 @@
 //         testAccuracy: result.primary_score?.toString(),
 //         lastRun: new Date(),
 //       });
- 
+
 //       setRunningMessage("Training complete! Opening results...");
- 
+
 //       // Wait a bit for the update to propagate
 //       await new Promise((resolve) => setTimeout(resolve, 500));
- 
+
 //       // Step 4: Open JobViewModal with updated job
 //       const updatedJob = {
 //         ...job,
@@ -463,7 +463,7 @@
 //         status: "completed" as const,
 //         lastRun: new Date(),
 //       };
- 
+
 //       setSelectedJob(updatedJob);
 //       setIsViewModalOpen(true);
 //     } catch (err) {
@@ -476,7 +476,7 @@
 //       setRunningMessage("");
 //     }
 //   };
- 
+
 //   // Add these two functions (e.g. after handleRun or before return)
 //   const handleSelectDataset = async (
 //     ds: GlobalDataset | JobSpecificDataset,
@@ -484,21 +484,21 @@
 //     setSelectedDataset(ds);
 //     setPreviewData(null);
 //     setPreviewLoading(true);
- 
+
 //     const userRaw = localStorage.getItem("user");
 //     const user = userRaw ? JSON.parse(userRaw) : null;
 //     const userId = user?.user_id || user?.id;
- 
+
 //     if (!userId) {
 //       toast.error("User ID not found");
 //       setPreviewLoading(false);
 //       return;
 //     }
- 
+
 //     // ─── This is the important change ───
 //     let jobId: string | undefined;
 //     let datasetName: string;
- 
+
 //     if ("job_id" in ds && ds.job_id) {
 //       // Global dataset from /datasets API → use its own job_id
 //       jobId = ds.job_id;
@@ -508,26 +508,26 @@
 //       jobId = localStorage.getItem("current_job_id") || undefined;
 //       datasetName = ds.filename;
 //     }
- 
+
 //     if (!jobId) {
 //       toast.error("Cannot preview: no job ID associated with this dataset");
 //       setPreviewLoading(false);
 //       return;
 //     }
- 
+
 //     try {
 //       const url = `https://api.veriton.ai/api/service2/preview-dataset?user_id=${userId}&job_id=${jobId}&datasetname=${encodeURIComponent(datasetName)}`;
- 
+
 //       const res = await fetch(url);
 //       if (!res.ok) {
 //         const errText = await res.text().catch(() => "");
 //         throw new Error(`Preview failed (${res.status}): ${errText}`);
 //       }
- 
+
 //       const data = await res.json();
 //       setPreviewData(data);
-//       const filePath = `Files/Datasets/${data.user_id}/${data.job_id}/${data.dataset}.csv`
-//       setSelectedFilePath(filePath)
+//       const filePath = `Files/Datasets/${data.user_id}/${data.job_id}/${data.dataset}.csv`;
+//       setSelectedFilePath(filePath);
 //     } catch (err: any) {
 //       console.error("Preview error:", err);
 //       toast.error(err.message || "Failed to load dataset preview");
@@ -535,17 +535,17 @@
 //       setPreviewLoading(false);
 //     }
 //   };
- 
+
 //   const startWorkflow = async (mode: "build" | "compare") => {
 //     if (!selectedDataset) return;
- 
+
 //     const userRaw = localStorage.getItem("user");
 //     const user = userRaw ? JSON.parse(userRaw) : null;
 //     const userId = user?.user_id || user?.id;
- 
+
 //     let jobId: string | undefined;
 //     let filename: string;
- 
+
 //     if ("job_id" in selectedDataset && selectedDataset.job_id) {
 //       jobId = selectedDataset.job_id;
 //       filename = selectedDataset.datasetName;
@@ -553,40 +553,40 @@
 //       jobId = localStorage.getItem("current_job_id") || undefined;
 //       filename = selectedDataset.filename;
 //     }
- 
+
 //     if (!userId || !jobId || !filename) {
 //       toast.error("Cannot start: missing job ID or filename");
 //       return;
 //     }
- 
+
 //     try {
 //       navigate(
-//   mode === "compare"
-//     ? "/workflow/automl/compare"
-//     : "/workflow/automl/build-model",
-//   {
-//     state: {
-//       filePath: selectedFilePath,
-//       datasetName: filename,
-//       mode: mode === "compare" ? "compare" : undefined,
-//     },
-//   },
-// )
+//         mode === "compare"
+//           ? "/workflow/automl/compare"
+//           : "/workflow/automl/build-model",
+//         {
+//           state: {
+//             filePath: selectedFilePath,
+//             datasetName: filename,
+//             mode: mode === "compare" ? "compare" : undefined,
+//           },
+//         },
+//       );
 //     } catch (err: any) {
 //       toast.error(`Preparation failed for "${filename}": ${err.message}`);
 //     }
 //   };
- 
+
 //   const handleView = (job: Job) => {
 //     setSelectedJob(job);
 //     setIsViewModalOpen(true);
 //   };
- 
+
 //   const handleEdit = (job: Job) => {
 //     setSelectedJob(job);
 //     setIsEditModalOpen(true);
 //   };
- 
+
 //   const handleCreateJob = () => {
 //     if (jobName.trim()) {
 //       navigate("/workflow/automl/select-dataset", {
@@ -596,19 +596,554 @@
 //       setJobName("");
 //     }
 //   };
- 
+
 //   const handleRefresh = async () => {
 //     await fetchJobs(currentPage);
 //   };
- 
+
 //   //   if (!isAuthenticated) return null;
+
+// //   return (
+// //     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
+// //       <Header />
+
+// //       <div className="flex-1 flex flex-col overflow-auto">
+// //         <main className="px-6 py-6">
+// //           <div className="max-w-7xl mx-auto w-full">
+// //             {/* ================= AutoML Intro ================= */}
+
+// //             <div className="mb-10 flex items-start justify-between">
+// //               <div>
+// //                 <h1 className="text-3xl font-bold text-foreground">
+// //                   AutoML Workspace
+// //                 </h1>
+
+// //                 <p className="text-muted-foreground mt-2 max-w-2xl">
+// //                   Build, compare, and test machine learning models automatically
+// //                   using your datasets. Manage all trained models below.
+// //                 </p>
+// //               </div>
+
+// //               <div className="flex items-center gap-3">
+// //                 <Button
+// //                   variant="outline"
+// //                   onClick={() =>
+// //                     navigate("/workflow/automl/test", {
+// //                       state: { initialTab: "test" },
+// //                     })
+// //                   } // ← your test flow path
+// //                 >
+// //                   Test Model
+// //                 </Button>
+// //               </div>
+// //             </div>
+// //             {/* ─── NEW: Dataset Selection Section ─── */}
+// //             {/* ================= DATASET SECTION ================= */}
+
+// // <div className="bg-card border border-border rounded-xl shadow-sm mb-10 overflow-hidden h-[480px]">
+// //               {/* Header */}
+// //               <div className="px-6 py-4 border-b">
+// //                 <h2 className="text-lg font-semibold">Select Dataset</h2>
+// //               </div>
  
-//   return (
+// //               <div className="flex h-[calc(480px-1px)]">
+// //                 {" "}
+// //                 {/* subtract border if needed */}
+// //                 {/* ================= Sidebar – Datasets List ================= */}
+// //                 <div className="w-[300px] border-r bg-muted/20">
+// //                   <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/50 scrollbar-track-transparent">
+// //                     {dsLoading ? (
+// //                       <div className="p-6 text-sm text-muted-foreground">
+// //                         Loading datasets...
+// //                       </div>
+// //                     ) : globalDatasets.length === 0 &&
+// //                       jobDatasets.length === 0 ? (
+// //                       <div className="p-6 text-sm text-muted-foreground">
+// //                         No datasets available
+// //                       </div>
+// //                     ) : (
+// //                       // Flat combined list: job-specific + global
+// //                       [...jobDatasets, ...globalDatasets].map((ds) => {
+// //                         const isGlobal = "datasetName" in ds;
+// //                         const name = isGlobal ? ds.datasetName : ds.filename;
+ 
+// //                         const rows = isGlobal ? ds.rows : null;
+// //                         const columns = isGlobal ? ds.columns : null;
+// //                         const dateInfo = isGlobal
+// //                           ? ds.lastRun
+// //                           : ds.date_modified;
+ 
+// //                         const isSelected =
+// //                           selectedDataset &&
+// //                           ((isGlobal &&
+// //                             "datasetName" in selectedDataset &&
+// //                             selectedDataset.datasetName === name) ||
+// //                             (!isGlobal &&
+// //                               "filename" in selectedDataset &&
+// //                               selectedDataset.filename === name));
+ 
+// //                         return (
+// //                           <button
+// //                             key={`${isGlobal ? "g" : "j"}-${name}`}
+// //                             onClick={() => handleSelectDataset(ds)}
+// //                             className={cn(
+// //                               "w-full text-left px-5 py-4 border-l-2 transition-all duration-200",
+// //                               isSelected
+// //                                 ? "border-primary bg-background"
+// //                                 : "border-transparent hover:bg-background/60",
+// //                             )}
+// //                           >
+// //                             <div className="font-medium text-sm truncate">
+// //                               {name}
+// //                             </div>
+ 
+// //                             <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2">
+// //                               {rows != null && (
+// //                                 <>
+// //                                   {rows} rows<span className="mx-1">•</span>
+// //                                 </>
+// //                               )}
+// //                               {columns != null && (
+// //                                 <>
+// //                                   {columns} columns
+// //                                   <span className="mx-1">•</span>
+// //                                 </>
+// //                               )}
+// //                               {dateInfo && (
+// //                                 <span>
+// //                                   {isGlobal ? "Last run: " : "Modified: "}
+// //                                   {dateInfo}
+// //                                 </span>
+// //                               )}
+// //                             </div>
+// //                           </button>
+// //                         );
+// //                       })
+// //                     )}
+// //                   </div>
+// //                 </div>
+// //                 {/* ================= Preview Panel ================= */}
+// //                 <div className="flex-1 bg-background p-0 overflow-hidden">
+// //                   {selectedDataset ? (
+// //                     <div className="h-full flex flex-col">
+// //                       {/* Header */}
+// //                       <div className="px-6 py-4 border-b flex items-center justify-between bg-background">
+// //                         <div>
+// //                           <h3 className="font-semibold">
+// //                             {"datasetName" in selectedDataset
+// //                               ? selectedDataset.datasetName
+// //                               : "filename" in selectedDataset
+// //                                 ? selectedDataset.filename
+// //                                 : "Unnamed Dataset"}
+// //                           </h3>
+// //                           <p className="text-xs text-muted-foreground">
+// //                             Dataset Preview •{" "}
+// //                             {previewData
+// //                               ? `${previewData.preview_row_count} / ${previewData.total_rows} rows shown`
+// //                               : ""}
+// //                           </p>
+// //                         </div>
+ 
+// //                         <div className="flex gap-2">
+// //                           <Button
+// //                             size="sm"
+// //                             onClick={() => startWorkflow("build")}
+// //                             disabled={!previewData || previewLoading}
+// //                           >
+// //                             Build Model
+// //                           </Button>
+ 
+// //                           <Button
+// //                             size="sm"
+// //                             variant="outline"
+// //                             onClick={() => startWorkflow("compare")}
+// //                             disabled={!previewData || previewLoading}
+// //                           >
+// //                             Compare
+// //                           </Button>
+// //                         </div>
+// //                       </div>
+ 
+// //                       {/* Scrollable Table Container */}
+// //                       <div className="flex-1 min-w-0 overflow-auto relative">
+// //                         {/* Optional hint for wide tables */}
+// //                         {previewData && previewData.columns.length > 6 && (
+// //                           <div className="sticky top-0 left-0 right-0 z-20 px-4 py-1.5 text-xs text-muted-foreground bg-background/90 border-b backdrop-blur-sm">
+// //                             Scroll horizontally →
+// //                           </div>
+// //                         )}
+ 
+// //                         {previewLoading ? (
+// //                           <div className="flex justify-center items-center h-full text-muted-foreground">
+// //                             Loading preview...
+// //                           </div>
+// //                         ) : previewData &&
+// //                           previewData.preview_rows?.length > 0 ? (
+// //                           <div className="inline-block min-w-max">
+// //                             <table className="min-w-max w-full border-collapse table-auto">
+// //                               {/* NO sticky anymore */}
+// //                               <thead className="bg-muted/30">
+// //                                 <tr>
+// //                                   {previewData.columns.map((col) => (
+// //                                     <th
+// //                                       key={col}
+// //                                       className="px-5 py-3 text-left text-sm font-medium border-b whitespace-nowrap"
+// //                                     >
+// //                                       {col}
+// //                                     </th>
+// //                                   ))}
+// //                                 </tr>
+// //                               </thead>
+ 
+// //                               <tbody>
+// //                                 {previewData.preview_rows.map((row, index) => (
+// //                                   <tr
+// //                                     key={index}
+// //                                     className="hover:bg-muted/50 transition-colors even:bg-muted/10"
+// //                                   >
+// //                                     {previewData.columns.map((col) => (
+// //                                       <td
+// //                                         key={col}
+// //                                         className="px-5 py-3 text-sm border-b whitespace-nowrap"
+// //                                       >
+// //                                         {row[col] ?? "—"}
+// //                                       </td>
+// //                                     ))}
+// //                                   </tr>
+// //                                 ))}
+// //                               </tbody>
+// //                             </table>
+// //                           </div>
+// //                         ) : (
+// //                           <div className="flex justify-center items-center h-full text-muted-foreground">
+// //                             No preview rows available
+// //                           </div>
+// //                         )}
+// //                       </div>
+// //                     </div>
+// //                   ) : (
+// //                     <div className="flex justify-center items-center h-full text-muted-foreground italic">
+// //                       Select a dataset to preview
+// //                     </div>
+// //                   )}
+// //                 </div>
+// //               </div>
+// //             </div>
+ 
+
+// //             {/* Header */}
+// //             <div className="flex items-start justify-between mb-8">
+// //               <div>
+// //                 <h1 className="text-3xl font-bold text-foreground mb-1">
+// //                   Trained Models
+// //                 </h1>
+// //                 {/* <p className="text-muted-foreground">All machine learning models created using AutoML.</p> */}
+// //               </div>
+// //               <div className="flex items-center gap-3"></div>
+// //             </div>
+
+// //             {/* Error Display */}
+// //             {error && (
+// //               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+// //                 <p className="text-red-700 text-sm">{error}</p>
+// //                 <Button variant="outline" size="sm" onClick={handleRefresh}>
+// //                   Try Again
+// //                 </Button>
+// //               </div>
+// //             )}
+
+// //             {/* Running Job Status */}
+// //             {runningJobId && (
+// //               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+// //                 <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+// //                 <div>
+// //                   <p className="text-blue-800 font-medium text-sm">
+// //                     Training in progress...
+// //                   </p>
+// //                   <p className="text-blue-600 text-xs mt-0.5">
+// //                     {runningMessage}
+// //                   </p>
+// //                 </div>
+// //               </div>
+// //             )}
+
+// //             {/* Filters Row */}
+// //             <div className="flex items-center justify-between mb-6">
+// //               <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
+// //                 {["all", "completed", "running", "failed"].map((status) => (
+// //                   <button
+// //                     key={status}
+// //                     onClick={() => setStatusFilter(status)}
+// //                     className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+// //                       statusFilter === status
+// //                         ? "bg-primary text-primary-foreground"
+// //                         : "text-muted-foreground hover:text-foreground"
+// //                     }`}
+// //                   >
+// //                     {status === "all"
+// //                       ? "All"
+// //                       : status.charAt(0).toUpperCase() + status.slice(1)}
+// //                   </button>
+// //                 ))}
+// //               </div>
+// //             </div>
+
+// //             {/* Jobs Table */}
+// //             <motion.div
+// //               initial={{ opacity: 0, y: 20 }}
+// //               animate={{ opacity: 1, y: 0 }}
+// //               className="bg-card rounded-xl border border-border overflow-hidden"
+// //             >
+// //               <div className="overflow-x-auto">
+// //                 <table className="w-full">
+// //                   <thead>
+// //                     <tr className="border-b border-border">
+// //                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+// //                         Job
+// //                       </th>
+// //                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+// //                         Category
+// //                       </th>
+// //                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+// //                         Model
+// //                       </th>
+// //                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+// //                         Created At
+// //                       </th>
+// //                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+// //                         Last Run
+// //                       </th>
+// //                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
+// //                         Status
+// //                       </th>
+// //                       <th className="px-6 py-4 text-left text-sm font-medium text-primary">
+// //                         Actions
+// //                       </th>
+// //                     </tr>
+// //                   </thead>
+// //                   <tbody>
+// //                     {loading ? (
+// //                       <tr>
+// //                         <td colSpan={7} className="px-6 py-12 text-center">
+// //                           <div className="flex items-center justify-center gap-2">
+// //                             <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+// //                             <span className="text-muted-foreground">
+// //                               Loading jobs...
+// //                             </span>
+// //                           </div>
+// //                         </td>
+// //                       </tr>
+// //                     ) : filteredJobs.length === 0 ? (
+// //                       <tr>
+// //                         <td colSpan={7} className="px-6 py-16 text-center">
+// //                           <h3 className="text-lg font-semibold mb-2">
+// //                             No models created yet
+// //                           </h3>
+// //                           <p className="text-sm text-muted-foreground mb-4">
+// //                             Start by building your first AutoML model.
+// //                           </p>
+// //                           <Button
+// //                             onClick={() =>
+// //                               navigate("/workflow/automl/select-dataset")
+// //                             }
+// //                           >
+// //                             Build Your First Model
+// //                           </Button>
+// //                         </td>
+// //                       </tr>
+// //                     ) : (
+// //                       filteredJobs.map((job, index) => {
+// //                         const jobNumber =
+// //                           (currentPage - 1) * itemsPerPage + index + 1;
+// //                         return (
+// //                           <motion.tr
+// //                             key={job.id}
+// //                             initial={{ opacity: 0 }}
+// //                             animate={{ opacity: 1 }}
+// //                             transition={{ delay: index * 0.03 }}
+// //                             className="border-b border-border/50 hover:bg-muted/20"
+// //                           >
+// //                             <td className="px-6 py-4 font-medium text-foreground">
+// //                               Job_{jobNumber}
+// //                             </td>
+// //                             <td className="px-6 py-4 text-primary">
+// //                               {job.category || "Unknown"}
+// //                             </td>
+// //                             <td className="px-6 py-4 text-muted-foreground">
+// //                               {job.model}
+// //                             </td>
+// //                             <td className="px-6 py-4 text-muted-foreground">
+// //                               {formatDate(job.createdAt)}
+// //                             </td>
+// //                             <td className="px-6 py-4 text-muted-foreground">
+// //                               {formatDate(job.lastRun)}
+// //                             </td>
+// //                             <td className="px-6 py-4">
+// //                               {getStatusBadge(job.status)}
+// //                             </td>
+// //                             <td className="px-6 py-4">
+// //                               <div className="flex items-center gap-3">
+// //                                 <button
+// //                                   onClick={() => handleRun(job)}
+// //                                   disabled={runningJobId === job.id}
+// //                                   className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+// //                                   title="Run job"
+// //                                 >
+// //                                   {runningJobId === job.id ? (
+// //                                     <Loader2 className="w-5 h-5 animate-spin" />
+// //                                   ) : (
+// //                                     <Play className="w-5 h-5" />
+// //                                   )}
+// //                                 </button>
+// //                                 <button
+// //                                   onClick={() => handleView(job)}
+// //                                   className="text-muted-foreground hover:text-foreground transition-colors"
+// //                                   title="View details"
+// //                                 >
+// //                                   <Eye className="w-5 h-5" />
+// //                                 </button>
+// //                                 <button
+// //                                   onClick={() => handleEdit(job)}
+// //                                   className="text-muted-foreground hover:text-foreground transition-colors"
+// //                                   title="Edit job"
+// //                                 >
+// //                                   <Edit className="w-5 h-5" />
+// //                                 </button>
+// //                               </div>
+// //                             </td>
+// //                           </motion.tr>
+// //                         );
+// //                       })
+// //                     )}
+// //                   </tbody>
+// //                 </table>
+// //               </div>
+// //             </motion.div>
+
+// //             {/* Pagination */}
+// //             {totalPages > 1 && (
+// //               <div className="flex items-center justify-center gap-2 mt-6">
+// //                 <button
+// //                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+// //                   disabled={currentPage === 1}
+// //                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
+// //                 >
+// //                   ‹
+// //                 </button>
+// //                 {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
+// //                   const page = i + 1;
+// //                   if (
+// //                     totalPages <= 10 ||
+// //                     page <= 3 ||
+// //                     page > totalPages - 2 ||
+// //                     Math.abs(page - currentPage) <= 1
+// //                   ) {
+// //                     return (
+// //                       <button
+// //                         key={page}
+// //                         onClick={() => setCurrentPage(page)}
+// //                         className={`w-10 h-10 rounded-full text-sm font-medium transition-colors ${
+// //                           currentPage === page
+// //                             ? "bg-primary text-primary-foreground"
+// //                             : "text-muted-foreground hover:text-foreground"
+// //                         }`}
+// //                       >
+// //                         {page}
+// //                       </button>
+// //                     );
+// //                   } else if (page === 4 && currentPage > 5) {
+// //                     return (
+// //                       <span key="dots1" className="text-muted-foreground">
+// //                         ...
+// //                       </span>
+// //                     );
+// //                   } else if (
+// //                     page === totalPages - 2 &&
+// //                     currentPage < totalPages - 4
+// //                   ) {
+// //                     return (
+// //                       <span key="dots2" className="text-muted-foreground">
+// //                         ...
+// //                       </span>
+// //                     );
+// //                   }
+// //                   return null;
+// //                 })}
+// //                 <button
+// //                   onClick={() =>
+// //                     setCurrentPage((p) => Math.min(totalPages, p + 1))
+// //                   }
+// //                   disabled={currentPage === totalPages}
+// //                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
+// //                 >
+// //                   ›
+// //                 </button>
+// //               </div>
+// //             )}
+// //           </div>
+// //         </main>
+
+// //         {/* Create Job Modal */}
+// //         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+// //           <DialogContent className="sm:max-w-md">
+// //             <DialogHeader>
+// //               <DialogTitle>Create New Job</DialogTitle>
+// //             </DialogHeader>
+// //             <div className="space-y-4 py-4">
+// //               <div className="space-y-2">
+// //                 <Label htmlFor="job-name">Job Name</Label>
+// //                 <Input
+// //                   id="job-name"
+// //                   placeholder="Enter job name..."
+// //                   value={jobName}
+// //                   onChange={(e) => setJobName(e.target.value)}
+// //                   onKeyDown={(e) => {
+// //                     if (e.key === "Enter") handleCreateJob();
+// //                   }}
+// //                   autoFocus
+// //                 />
+// //               </div>
+// //             </div>
+// //             <DialogFooter>
+// //               <Button
+// //                 variant="outline"
+// //                 onClick={() => setIsCreateModalOpen(false)}
+// //               >
+// //                 Cancel
+// //               </Button>
+// //               <Button onClick={handleCreateJob} disabled={!jobName.trim()}>
+// //                 Next: Select Datasource
+// //               </Button>
+// //             </DialogFooter>
+// //           </DialogContent>
+// //         </Dialog>
+
+// //         {/* Modals */}
+// //         <JobViewModal
+// //           isOpen={isViewModalOpen}
+// //           onClose={() => setIsViewModalOpen(false)}
+// //           job={selectedJob}
+// //         />
+
+// //         <JobEditModal
+// //           isOpen={isEditModalOpen}
+// //           onClose={() => setIsEditModalOpen(false)}
+// //           job={selectedJob}
+// //         />
+
+// //         {/* Chatbot */}
+// //         <Chatbot />
+// //       </div>
+// //     </div>
+// //   );
+
+    
+//      return (
 //     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
 //       <Header />
  
-//       <div className="flex-1 flex flex-col overflow-auto">
-//         <main className="px-6 py-6">
+//       <div className="flex-1 overflow-hidden">
+//         <main className="h-full overflow-auto px-6 py-6">
 //           <div className="max-w-7xl mx-auto w-full">
 //             {/* ================= AutoML Intro ================= */}
  
@@ -640,98 +1175,107 @@
 //             {/* ─── NEW: Dataset Selection Section ─── */}
 //             {/* ================= DATASET SECTION ================= */}
  
-//             <div className="bg-card border border-border rounded-xl shadow-sm mb-10 overflow-hidden">
+//             <div className="bg-card border border-border rounded-xl shadow-sm mb-10 h-[480px] flex flex-col shrink-0">
 //               {/* Header */}
 //               <div className="px-6 py-4 border-b">
 //                 <h2 className="text-lg font-semibold">Select Dataset</h2>
 //               </div>
  
-//               <div className="flex h-[480px]">
-//                 {/* ================= Sidebar – all datasets in one list ================= */}
-//                 <div className="w-[300px] border-r bg-muted/20 overflow-y-auto">
-//                   {dsLoading ? (
-//                     <div className="p-6 text-sm text-muted-foreground">
-//                       Loading datasets...
-//                     </div>
-//                   ) : globalDatasets.length === 0 &&
-//                     jobDatasets.length === 0 ? (
-//                     <div className="p-6 text-sm text-muted-foreground">
-//                       No datasets available
-//                     </div>
-//                   ) : (
-//                     // ─── Flat combined list: global + job-specific ───
-//                     [...jobDatasets, ...globalDatasets].map((ds) => {
-//                       const isGlobal = "datasetName" in ds;
-//                       const name = isGlobal ? ds.datasetName : ds.filename;
+//               <div className="flex flex-1 overflow-hidden">
+//                 {" "}
+//                 {/* subtract border if needed */}
+//                 {/* ================= Sidebar – Datasets List ================= */}
+//                 <div className="w-[300px] border-r bg-muted/20">
+//                   <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/50 scrollbar-track-transparent">
+//                     {dsLoading ? (
+//                       <div className="p-6 text-sm text-muted-foreground">
+//                         Loading datasets...
+//                       </div>
+//                     ) : globalDatasets.length === 0 &&
+//                       jobDatasets.length === 0 ? (
+//                       <div className="p-6 text-sm text-muted-foreground">
+//                         No datasets available
+//                       </div>
+//                     ) : (
+//                       // Flat combined list: job-specific + global
+//                       [...jobDatasets, ...globalDatasets].map((ds) => {
+//                         const isGlobal = "datasetName" in ds;
+//                         const name = isGlobal ? ds.datasetName : ds.filename;
  
-//                       const rows = isGlobal ? ds.rows : null;
-//                       const columns = isGlobal ? ds.columns : null;
-//                       const dateInfo = isGlobal ? ds.lastRun : ds.date_modified;
+//                         const rows = isGlobal ? ds.rows : null;
+//                         const columns = isGlobal ? ds.columns : null;
+//                         const dateInfo = isGlobal
+//                           ? ds.lastRun
+//                           : ds.date_modified;
  
-//                       const isSelected =
-//                         selectedDataset &&
-//                         ((isGlobal &&
-//                           "datasetName" in selectedDataset &&
-//                           selectedDataset.datasetName === name) ||
-//                           (!isGlobal &&
-//                             "filename" in selectedDataset &&
-//                             selectedDataset.filename === name));
+//                         const isSelected =
+//                           selectedDataset &&
+//                           ((isGlobal &&
+//                             "datasetName" in selectedDataset &&
+//                             selectedDataset.datasetName === name) ||
+//                             (!isGlobal &&
+//                               "filename" in selectedDataset &&
+//                               selectedDataset.filename === name));
  
-//                       return (
-//                         <button
-//                           key={`${isGlobal ? "g" : "j"}-${name}`}
-//                           onClick={() => handleSelectDataset(ds)}
-//                           className={cn(
-//                             "w-full text-left px-5 py-4 border-l-2 transition-all duration-200",
-//                             isSelected
-//                               ? "border-primary bg-background"
-//                               : "border-transparent hover:bg-background",
-//                           )}
-//                         >
-//                           <div className="font-medium text-sm truncate">
-//                             {name}
-//                           </div>
- 
-//                           <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2">
-//                             {rows != null && (
-//                               <>
-//                                 {rows} rows<span className="mx-1">•</span>
-//                               </>
+//                         return (
+//                           <button
+//                             key={`${isGlobal ? "g" : "j"}-${name}`}
+//                             onClick={() => handleSelectDataset(ds)}
+//                             className={cn(
+//                               "w-full text-left px-5 py-4 border-l-2 transition-all duration-200",
+//                               isSelected
+//                                 ? "border-primary bg-background"
+//                                 : "border-transparent hover:bg-background/60",
 //                             )}
-//                             {columns != null && (
-//                               <>
-//                                 {columns} columns<span className="mx-1">•</span>
-//                               </>
-//                             )}
-//                             {dateInfo && (
-//                               <span>
-//                                 {isGlobal ? "Last run: " : "Modified: "}
-//                                 {dateInfo}
-//                               </span>
-//                             )}
-//                           </div>
-//                         </button>
-//                       );
-//                     })
-//                   )}
+//                           >
+//                             <div className="font-medium text-sm truncate">
+//                               {name}
+//                             </div>
+ 
+//                             <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2">
+//                               {rows != null && (
+//                                 <>
+//                                   {rows} rows<span className="mx-1">•</span>
+//                                 </>
+//                               )}
+//                               {columns != null && (
+//                                 <>
+//                                   {columns} columns
+//                                   <span className="mx-1">•</span>
+//                                 </>
+//                               )}
+//                               {dateInfo && (
+//                                 <span>
+//                                   {isGlobal ? "Last run: " : "Modified: "}
+//                                   {dateInfo}
+//                                 </span>
+//                               )}
+//                             </div>
+//                           </button>
+//                         );
+//                       })
+//                     )}
+//                   </div>
 //                 </div>
- 
 //                 {/* ================= Preview Panel ================= */}
- 
-//                 <div className="flex-1 flex flex-col bg-background">
+//                 <div className="flex-1 bg-background overflow-hidden flex flex-col min-h-0">
 //                   {selectedDataset ? (
-//                     <>
-//                       {/* Preview Header */}
- 
-//                       <div className="px-6 py-4 border-b flex items-center justify-between">
+//                     <div className="h-full flex flex-col">
+//                       {/* Header */}
+//                       <div className="px-6 py-4 border-b flex items-center justify-between bg-background">
 //                         <div>
 //                           <h3 className="font-semibold">
-//                             {"datasetName" in selectedDataset &&
-//                               selectedDataset.datasetName}
+//                             {"datasetName" in selectedDataset
+//                               ? selectedDataset.datasetName
+//                               : "filename" in selectedDataset
+//                                 ? selectedDataset.filename
+//                                 : "Unnamed Dataset"}
 //                           </h3>
- 
 //                           <p className="text-xs text-muted-foreground">
-//                             Dataset Preview
+//                             Dataset Preview •{" "}
+//                             {previewData
+//                               ? `${previewData.preview_row_count} / ${previewData.total_rows} rows shown`
+//                               : ""}
 //                           </p>
 //                         </div>
  
@@ -739,7 +1283,7 @@
 //                           <Button
 //                             size="sm"
 //                             onClick={() => startWorkflow("build")}
-//                             disabled={!previewData}
+//                             disabled={!previewData || previewLoading}
 //                           >
 //                             Build Model
 //                           </Button>
@@ -748,59 +1292,72 @@
 //                             size="sm"
 //                             variant="outline"
 //                             onClick={() => startWorkflow("compare")}
-//                             disabled={!previewData}
+//                             disabled={!previewData || previewLoading}
 //                           >
 //                             Compare
 //                           </Button>
 //                         </div>
 //                       </div>
  
-//                       {/* Preview Table */}
+//                       {/* Scrollable Table Container */}
+//                       <div className="flex-1 min-h-0 min-w-0 overflow-auto relative ">
+//                         {/* Optional hint for wide tables */}
+//                         {previewData && previewData.columns.length > 6 && (
+//                           <div className="sticky top-0 left-0 right-0 z-20 px-4 py-1.5 text-xs text-muted-foreground bg-background/90 border-b backdrop-blur-sm">
+//                             Scroll horizontally →
+//                           </div>
+//                         )}
  
-//                       <div className="flex-1 overflow-auto">
 //                         {previewLoading ? (
-//                           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+//                           <div className="flex justify-center items-center h-full text-muted-foreground">
 //                             Loading preview...
 //                           </div>
-//                         ) : previewData ? (
-//                           <table className="w-full text-sm">
-//                             <thead className="bg-muted sticky top-0">
-//                               <tr>
-//                                 {previewData.columns.map((col) => (
-//                                   <th
-//                                     key={col}
-//                                     className="px-4 py-3 text-left border-b"
-//                                   >
-//                                     {col}
-//                                   </th>
-//                                 ))}
-//                               </tr>
-//                             </thead>
- 
-//                             <tbody>
-//                               {previewData.preview_rows.map((row, i) => (
-//                                 <tr key={i} className="hover:bg-muted/30">
+//                         ) : previewData &&
+//                           previewData.preview_rows?.length > 0 ? (
+//                           <div className="inline-block min-w-max">
+//                             <table className="min-w-max w-full border-collapse table-auto">
+//                               {/* NO sticky anymore */}
+//                               <thead className="bg-muted/30">
+//                                 <tr>
 //                                   {previewData.columns.map((col) => (
-//                                     <td
+//                                     <th
 //                                       key={col}
-//                                       className="px-4 py-2 border-b"
+//                                       className="px-5 py-3 text-left text-sm font-medium border-b whitespace-nowrap"
 //                                     >
-//                                       {row[col] ?? "—"}
-//                                     </td>
+//                                       {col}
+//                                     </th>
 //                                   ))}
 //                                 </tr>
-//                               ))}
-//                             </tbody>
-//                           </table>
+//                               </thead>
+ 
+//                               <tbody>
+//                                 {previewData.preview_rows.map((row, index) => (
+//                                   <tr
+//                                     key={index}
+//                                     className="hover:bg-muted/50 transition-colors even:bg-muted/10"
+//                                   >
+//                                     {previewData.columns.map((col) => (
+//                                       <td
+//                                         key={col}
+//                                         className="px-5 py-3 text-sm border-b whitespace-nowrap"
+//                                       >
+//                                         {row[col] ?? "—"}
+//                                       </td>
+//                                     ))}
+//                                   </tr>
+//                                 ))}
+//                               </tbody>
+//                             </table>
+//                           </div>
 //                         ) : (
-//                           <div className="flex items-center justify-center h-full text-muted-foreground">
-//                             Preview not available
+//                           <div className="flex justify-center items-center h-full text-muted-foreground">
+//                             No preview rows available
 //                           </div>
 //                         )}
 //                       </div>
-//                     </>
+//                     </div>
 //                   ) : (
-//                     <div className="flex items-center justify-center h-full text-muted-foreground">
+//                     <div className="flex justify-center items-center h-full text-muted-foreground italic">
 //                       Select a dataset to preview
 //                     </div>
 //                   )}
@@ -910,7 +1467,8 @@
 //                           </div>
 //                         </td>
 //                       </tr>
-//                     ) : filteredJobs.length === 0 ? (
+//                     ) : jobs.length === 0 ? (
+//                       // No jobs at all
 //                       <tr>
 //                         <td colSpan={7} className="px-6 py-16 text-center">
 //                           <h3 className="text-lg font-semibold mb-2">
@@ -926,6 +1484,18 @@
 //                           >
 //                             Build Your First Model
 //                           </Button>
+//                         </td>
+//                       </tr>
+//                     ) : filteredJobs.length === 0 ? (
+//                       // Jobs exist but none match filter
+//                       <tr>
+//                         <td colSpan={7} className="px-6 py-16 text-center">
+//                           <h3 className="text-lg font-semibold mb-2">
+//                             No {statusFilter} models found
+//                           </h3>
+//                           <p className="text-sm text-muted-foreground">
+//                             There are no models with status "{statusFilter}".
+//                           </p>
 //                         </td>
 //                       </tr>
 //                     ) : (
@@ -1114,7 +1684,6 @@
 //     </div>
 //   );
 // };
- 
 // export default AutoMLJobs;
 
 
@@ -1244,7 +1813,7 @@ const AutoMLJobs = () => {
     setCurrentPage,
   } = useJobs();
 
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("completed");
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -1363,11 +1932,7 @@ const AutoMLJobs = () => {
   }, []);
 
   const filteredJobs = useMemo(() => {
-    if (statusFilter === "all") return jobs;
-
-    return jobs.filter(
-      (job) => job.status.toLowerCase() === statusFilter.toLowerCase(),
-    );
+    return jobs.filter((job) => job.status === statusFilter);
   }, [jobs, statusFilter]);
 
   const paginatedJobs = useMemo(() => {
@@ -1413,6 +1978,11 @@ const AutoMLJobs = () => {
     );
   };
 
+  const extractFileName = (path: string) => {
+    if (!path) return "";
+    return path.split("/").pop() || path;
+  };
+
   const handleRun = async (job: Job) => {
     // Check if job has basic configuration
     console.log("Job config:", {
@@ -1448,7 +2018,6 @@ const AutoMLJobs = () => {
 
       const userData = JSON.parse(userDataString);
       const userEmail = userData.email;
-      // const agentName = userData.agent_name || userData.name || "default";
       const agentName = "build_model";
       const userId = userData.user_id || userData.id || "";
 
@@ -1458,7 +2027,7 @@ const AutoMLJobs = () => {
       if (features.length === 0) {
         setRunningMessage("Loading dataset features...");
 
-        const blobPath = `${userId}/${agentName}/${job.datasetName}`;
+        const blobPath = job.veriton_file_path;
         const previewUrl = `https://api.veriton.ai/api/service3/data_preview?blob_path=${encodeURIComponent(blobPath)}&user_email=${encodeURIComponent(userEmail)}`;
 
         const previewResponse = await fetch(previewUrl, {
@@ -1561,13 +2130,17 @@ const AutoMLJobs = () => {
         id: result.model_id,
         feature: job.category,
         model: uiModelName,
-        features: features, // ✅ Save the features we used
+        features: features,
         category: job.category,
         target: job.target,
         status: "completed",
         task_type: result.task_type,
         testAccuracy: result.primary_score?.toString(),
         lastRun: new Date(),
+
+        // ✅ ADD THESE TWO LINES
+        datasetName: job.datasetName || extractFileName(selectedFilePath),
+        veriton_file_path: selectedFilePath,
       });
 
       setRunningMessage("Training complete! Opening results...");
@@ -1698,7 +2271,10 @@ const AutoMLJobs = () => {
   };
 
   const handleView = (job: Job) => {
-    setSelectedJob(job);
+    setSelectedJob({
+      ...job,
+      error_message: (job as any).error_message || null,
+    });
     setIsViewModalOpen(true);
   };
 
@@ -1721,564 +2297,27 @@ const AutoMLJobs = () => {
     await fetchJobs(currentPage);
   };
 
-  //   if (!isAuthenticated) return null;
-
-//   return (
-//     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
-//       <Header />
-
-//       <div className="flex-1 flex flex-col overflow-auto">
-//         <main className="px-6 py-6">
-//           <div className="max-w-7xl mx-auto w-full">
-//             {/* ================= AutoML Intro ================= */}
-
-//             <div className="mb-10 flex items-start justify-between">
-//               <div>
-//                 <h1 className="text-3xl font-bold text-foreground">
-//                   AutoML Workspace
-//                 </h1>
-
-//                 <p className="text-muted-foreground mt-2 max-w-2xl">
-//                   Build, compare, and test machine learning models automatically
-//                   using your datasets. Manage all trained models below.
-//                 </p>
-//               </div>
-
-//               <div className="flex items-center gap-3">
-//                 <Button
-//                   variant="outline"
-//                   onClick={() =>
-//                     navigate("/workflow/automl/test", {
-//                       state: { initialTab: "test" },
-//                     })
-//                   } // ← your test flow path
-//                 >
-//                   Test Model
-//                 </Button>
-//               </div>
-//             </div>
-//             {/* ─── NEW: Dataset Selection Section ─── */}
-//             {/* ================= DATASET SECTION ================= */}
-
-// <div className="bg-card border border-border rounded-xl shadow-sm mb-10 overflow-hidden h-[480px]">
-//               {/* Header */}
-//               <div className="px-6 py-4 border-b">
-//                 <h2 className="text-lg font-semibold">Select Dataset</h2>
-//               </div>
- 
-//               <div className="flex h-[calc(480px-1px)]">
-//                 {" "}
-//                 {/* subtract border if needed */}
-//                 {/* ================= Sidebar – Datasets List ================= */}
-//                 <div className="w-[300px] border-r bg-muted/20">
-//                   <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/50 scrollbar-track-transparent">
-//                     {dsLoading ? (
-//                       <div className="p-6 text-sm text-muted-foreground">
-//                         Loading datasets...
-//                       </div>
-//                     ) : globalDatasets.length === 0 &&
-//                       jobDatasets.length === 0 ? (
-//                       <div className="p-6 text-sm text-muted-foreground">
-//                         No datasets available
-//                       </div>
-//                     ) : (
-//                       // Flat combined list: job-specific + global
-//                       [...jobDatasets, ...globalDatasets].map((ds) => {
-//                         const isGlobal = "datasetName" in ds;
-//                         const name = isGlobal ? ds.datasetName : ds.filename;
- 
-//                         const rows = isGlobal ? ds.rows : null;
-//                         const columns = isGlobal ? ds.columns : null;
-//                         const dateInfo = isGlobal
-//                           ? ds.lastRun
-//                           : ds.date_modified;
- 
-//                         const isSelected =
-//                           selectedDataset &&
-//                           ((isGlobal &&
-//                             "datasetName" in selectedDataset &&
-//                             selectedDataset.datasetName === name) ||
-//                             (!isGlobal &&
-//                               "filename" in selectedDataset &&
-//                               selectedDataset.filename === name));
- 
-//                         return (
-//                           <button
-//                             key={`${isGlobal ? "g" : "j"}-${name}`}
-//                             onClick={() => handleSelectDataset(ds)}
-//                             className={cn(
-//                               "w-full text-left px-5 py-4 border-l-2 transition-all duration-200",
-//                               isSelected
-//                                 ? "border-primary bg-background"
-//                                 : "border-transparent hover:bg-background/60",
-//                             )}
-//                           >
-//                             <div className="font-medium text-sm truncate">
-//                               {name}
-//                             </div>
- 
-//                             <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2">
-//                               {rows != null && (
-//                                 <>
-//                                   {rows} rows<span className="mx-1">•</span>
-//                                 </>
-//                               )}
-//                               {columns != null && (
-//                                 <>
-//                                   {columns} columns
-//                                   <span className="mx-1">•</span>
-//                                 </>
-//                               )}
-//                               {dateInfo && (
-//                                 <span>
-//                                   {isGlobal ? "Last run: " : "Modified: "}
-//                                   {dateInfo}
-//                                 </span>
-//                               )}
-//                             </div>
-//                           </button>
-//                         );
-//                       })
-//                     )}
-//                   </div>
-//                 </div>
-//                 {/* ================= Preview Panel ================= */}
-//                 <div className="flex-1 bg-background p-0 overflow-hidden">
-//                   {selectedDataset ? (
-//                     <div className="h-full flex flex-col">
-//                       {/* Header */}
-//                       <div className="px-6 py-4 border-b flex items-center justify-between bg-background">
-//                         <div>
-//                           <h3 className="font-semibold">
-//                             {"datasetName" in selectedDataset
-//                               ? selectedDataset.datasetName
-//                               : "filename" in selectedDataset
-//                                 ? selectedDataset.filename
-//                                 : "Unnamed Dataset"}
-//                           </h3>
-//                           <p className="text-xs text-muted-foreground">
-//                             Dataset Preview •{" "}
-//                             {previewData
-//                               ? `${previewData.preview_row_count} / ${previewData.total_rows} rows shown`
-//                               : ""}
-//                           </p>
-//                         </div>
- 
-//                         <div className="flex gap-2">
-//                           <Button
-//                             size="sm"
-//                             onClick={() => startWorkflow("build")}
-//                             disabled={!previewData || previewLoading}
-//                           >
-//                             Build Model
-//                           </Button>
- 
-//                           <Button
-//                             size="sm"
-//                             variant="outline"
-//                             onClick={() => startWorkflow("compare")}
-//                             disabled={!previewData || previewLoading}
-//                           >
-//                             Compare
-//                           </Button>
-//                         </div>
-//                       </div>
- 
-//                       {/* Scrollable Table Container */}
-//                       <div className="flex-1 min-w-0 overflow-auto relative">
-//                         {/* Optional hint for wide tables */}
-//                         {previewData && previewData.columns.length > 6 && (
-//                           <div className="sticky top-0 left-0 right-0 z-20 px-4 py-1.5 text-xs text-muted-foreground bg-background/90 border-b backdrop-blur-sm">
-//                             Scroll horizontally →
-//                           </div>
-//                         )}
- 
-//                         {previewLoading ? (
-//                           <div className="flex justify-center items-center h-full text-muted-foreground">
-//                             Loading preview...
-//                           </div>
-//                         ) : previewData &&
-//                           previewData.preview_rows?.length > 0 ? (
-//                           <div className="inline-block min-w-max">
-//                             <table className="min-w-max w-full border-collapse table-auto">
-//                               {/* NO sticky anymore */}
-//                               <thead className="bg-muted/30">
-//                                 <tr>
-//                                   {previewData.columns.map((col) => (
-//                                     <th
-//                                       key={col}
-//                                       className="px-5 py-3 text-left text-sm font-medium border-b whitespace-nowrap"
-//                                     >
-//                                       {col}
-//                                     </th>
-//                                   ))}
-//                                 </tr>
-//                               </thead>
- 
-//                               <tbody>
-//                                 {previewData.preview_rows.map((row, index) => (
-//                                   <tr
-//                                     key={index}
-//                                     className="hover:bg-muted/50 transition-colors even:bg-muted/10"
-//                                   >
-//                                     {previewData.columns.map((col) => (
-//                                       <td
-//                                         key={col}
-//                                         className="px-5 py-3 text-sm border-b whitespace-nowrap"
-//                                       >
-//                                         {row[col] ?? "—"}
-//                                       </td>
-//                                     ))}
-//                                   </tr>
-//                                 ))}
-//                               </tbody>
-//                             </table>
-//                           </div>
-//                         ) : (
-//                           <div className="flex justify-center items-center h-full text-muted-foreground">
-//                             No preview rows available
-//                           </div>
-//                         )}
-//                       </div>
-//                     </div>
-//                   ) : (
-//                     <div className="flex justify-center items-center h-full text-muted-foreground italic">
-//                       Select a dataset to preview
-//                     </div>
-//                   )}
-//                 </div>
-//               </div>
-//             </div>
- 
-
-//             {/* Header */}
-//             <div className="flex items-start justify-between mb-8">
-//               <div>
-//                 <h1 className="text-3xl font-bold text-foreground mb-1">
-//                   Trained Models
-//                 </h1>
-//                 {/* <p className="text-muted-foreground">All machine learning models created using AutoML.</p> */}
-//               </div>
-//               <div className="flex items-center gap-3"></div>
-//             </div>
-
-//             {/* Error Display */}
-//             {error && (
-//               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
-//                 <p className="text-red-700 text-sm">{error}</p>
-//                 <Button variant="outline" size="sm" onClick={handleRefresh}>
-//                   Try Again
-//                 </Button>
-//               </div>
-//             )}
-
-//             {/* Running Job Status */}
-//             {runningJobId && (
-//               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
-//                 <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-//                 <div>
-//                   <p className="text-blue-800 font-medium text-sm">
-//                     Training in progress...
-//                   </p>
-//                   <p className="text-blue-600 text-xs mt-0.5">
-//                     {runningMessage}
-//                   </p>
-//                 </div>
-//               </div>
-//             )}
-
-//             {/* Filters Row */}
-//             <div className="flex items-center justify-between mb-6">
-//               <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
-//                 {["all", "completed", "running", "failed"].map((status) => (
-//                   <button
-//                     key={status}
-//                     onClick={() => setStatusFilter(status)}
-//                     className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-//                       statusFilter === status
-//                         ? "bg-primary text-primary-foreground"
-//                         : "text-muted-foreground hover:text-foreground"
-//                     }`}
-//                   >
-//                     {status === "all"
-//                       ? "All"
-//                       : status.charAt(0).toUpperCase() + status.slice(1)}
-//                   </button>
-//                 ))}
-//               </div>
-//             </div>
-
-//             {/* Jobs Table */}
-//             <motion.div
-//               initial={{ opacity: 0, y: 20 }}
-//               animate={{ opacity: 1, y: 0 }}
-//               className="bg-card rounded-xl border border-border overflow-hidden"
-//             >
-//               <div className="overflow-x-auto">
-//                 <table className="w-full">
-//                   <thead>
-//                     <tr className="border-b border-border">
-//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                         Job
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                         Category
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                         Model
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                         Created At
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                         Last Run
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground">
-//                         Status
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-sm font-medium text-primary">
-//                         Actions
-//                       </th>
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {loading ? (
-//                       <tr>
-//                         <td colSpan={7} className="px-6 py-12 text-center">
-//                           <div className="flex items-center justify-center gap-2">
-//                             <RefreshCw className="w-5 h-5 animate-spin text-primary" />
-//                             <span className="text-muted-foreground">
-//                               Loading jobs...
-//                             </span>
-//                           </div>
-//                         </td>
-//                       </tr>
-//                     ) : filteredJobs.length === 0 ? (
-//                       <tr>
-//                         <td colSpan={7} className="px-6 py-16 text-center">
-//                           <h3 className="text-lg font-semibold mb-2">
-//                             No models created yet
-//                           </h3>
-//                           <p className="text-sm text-muted-foreground mb-4">
-//                             Start by building your first AutoML model.
-//                           </p>
-//                           <Button
-//                             onClick={() =>
-//                               navigate("/workflow/automl/select-dataset")
-//                             }
-//                           >
-//                             Build Your First Model
-//                           </Button>
-//                         </td>
-//                       </tr>
-//                     ) : (
-//                       filteredJobs.map((job, index) => {
-//                         const jobNumber =
-//                           (currentPage - 1) * itemsPerPage + index + 1;
-//                         return (
-//                           <motion.tr
-//                             key={job.id}
-//                             initial={{ opacity: 0 }}
-//                             animate={{ opacity: 1 }}
-//                             transition={{ delay: index * 0.03 }}
-//                             className="border-b border-border/50 hover:bg-muted/20"
-//                           >
-//                             <td className="px-6 py-4 font-medium text-foreground">
-//                               Job_{jobNumber}
-//                             </td>
-//                             <td className="px-6 py-4 text-primary">
-//                               {job.category || "Unknown"}
-//                             </td>
-//                             <td className="px-6 py-4 text-muted-foreground">
-//                               {job.model}
-//                             </td>
-//                             <td className="px-6 py-4 text-muted-foreground">
-//                               {formatDate(job.createdAt)}
-//                             </td>
-//                             <td className="px-6 py-4 text-muted-foreground">
-//                               {formatDate(job.lastRun)}
-//                             </td>
-//                             <td className="px-6 py-4">
-//                               {getStatusBadge(job.status)}
-//                             </td>
-//                             <td className="px-6 py-4">
-//                               <div className="flex items-center gap-3">
-//                                 <button
-//                                   onClick={() => handleRun(job)}
-//                                   disabled={runningJobId === job.id}
-//                                   className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-//                                   title="Run job"
-//                                 >
-//                                   {runningJobId === job.id ? (
-//                                     <Loader2 className="w-5 h-5 animate-spin" />
-//                                   ) : (
-//                                     <Play className="w-5 h-5" />
-//                                   )}
-//                                 </button>
-//                                 <button
-//                                   onClick={() => handleView(job)}
-//                                   className="text-muted-foreground hover:text-foreground transition-colors"
-//                                   title="View details"
-//                                 >
-//                                   <Eye className="w-5 h-5" />
-//                                 </button>
-//                                 <button
-//                                   onClick={() => handleEdit(job)}
-//                                   className="text-muted-foreground hover:text-foreground transition-colors"
-//                                   title="Edit job"
-//                                 >
-//                                   <Edit className="w-5 h-5" />
-//                                 </button>
-//                               </div>
-//                             </td>
-//                           </motion.tr>
-//                         );
-//                       })
-//                     )}
-//                   </tbody>
-//                 </table>
-//               </div>
-//             </motion.div>
-
-//             {/* Pagination */}
-//             {totalPages > 1 && (
-//               <div className="flex items-center justify-center gap-2 mt-6">
-//                 <button
-//                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-//                   disabled={currentPage === 1}
-//                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
-//                 >
-//                   ‹
-//                 </button>
-//                 {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
-//                   const page = i + 1;
-//                   if (
-//                     totalPages <= 10 ||
-//                     page <= 3 ||
-//                     page > totalPages - 2 ||
-//                     Math.abs(page - currentPage) <= 1
-//                   ) {
-//                     return (
-//                       <button
-//                         key={page}
-//                         onClick={() => setCurrentPage(page)}
-//                         className={`w-10 h-10 rounded-full text-sm font-medium transition-colors ${
-//                           currentPage === page
-//                             ? "bg-primary text-primary-foreground"
-//                             : "text-muted-foreground hover:text-foreground"
-//                         }`}
-//                       >
-//                         {page}
-//                       </button>
-//                     );
-//                   } else if (page === 4 && currentPage > 5) {
-//                     return (
-//                       <span key="dots1" className="text-muted-foreground">
-//                         ...
-//                       </span>
-//                     );
-//                   } else if (
-//                     page === totalPages - 2 &&
-//                     currentPage < totalPages - 4
-//                   ) {
-//                     return (
-//                       <span key="dots2" className="text-muted-foreground">
-//                         ...
-//                       </span>
-//                     );
-//                   }
-//                   return null;
-//                 })}
-//                 <button
-//                   onClick={() =>
-//                     setCurrentPage((p) => Math.min(totalPages, p + 1))
-//                   }
-//                   disabled={currentPage === totalPages}
-//                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
-//                 >
-//                   ›
-//                 </button>
-//               </div>
-//             )}
-//           </div>
-//         </main>
-
-//         {/* Create Job Modal */}
-//         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-//           <DialogContent className="sm:max-w-md">
-//             <DialogHeader>
-//               <DialogTitle>Create New Job</DialogTitle>
-//             </DialogHeader>
-//             <div className="space-y-4 py-4">
-//               <div className="space-y-2">
-//                 <Label htmlFor="job-name">Job Name</Label>
-//                 <Input
-//                   id="job-name"
-//                   placeholder="Enter job name..."
-//                   value={jobName}
-//                   onChange={(e) => setJobName(e.target.value)}
-//                   onKeyDown={(e) => {
-//                     if (e.key === "Enter") handleCreateJob();
-//                   }}
-//                   autoFocus
-//                 />
-//               </div>
-//             </div>
-//             <DialogFooter>
-//               <Button
-//                 variant="outline"
-//                 onClick={() => setIsCreateModalOpen(false)}
-//               >
-//                 Cancel
-//               </Button>
-//               <Button onClick={handleCreateJob} disabled={!jobName.trim()}>
-//                 Next: Select Datasource
-//               </Button>
-//             </DialogFooter>
-//           </DialogContent>
-//         </Dialog>
-
-//         {/* Modals */}
-//         <JobViewModal
-//           isOpen={isViewModalOpen}
-//           onClose={() => setIsViewModalOpen(false)}
-//           job={selectedJob}
-//         />
-
-//         <JobEditModal
-//           isOpen={isEditModalOpen}
-//           onClose={() => setIsEditModalOpen(false)}
-//           job={selectedJob}
-//         />
-
-//         {/* Chatbot */}
-//         <Chatbot />
-//       </div>
-//     </div>
-//   );
-
-    
-     return (
+  return (
     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
       <Header />
- 
+
       <div className="flex-1 overflow-hidden">
         <main className="h-full overflow-auto px-6 py-6">
           <div className="max-w-7xl mx-auto w-full">
             {/* ================= AutoML Intro ================= */}
- 
+
             <div className="mb-10 flex items-start justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
                   AutoML Workspace
                 </h1>
- 
+
                 <p className="text-muted-foreground mt-2 max-w-2xl">
                   Build, compare, and test machine learning models automatically
                   using your datasets. Manage all trained models below.
                 </p>
               </div>
- 
+
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
@@ -2294,13 +2333,13 @@ const AutoMLJobs = () => {
             </div>
             {/* ─── NEW: Dataset Selection Section ─── */}
             {/* ================= DATASET SECTION ================= */}
- 
+
             <div className="bg-card border border-border rounded-xl shadow-sm mb-10 h-[480px] flex flex-col shrink-0">
               {/* Header */}
               <div className="px-6 py-4 border-b">
                 <h2 className="text-lg font-semibold">Select Dataset</h2>
               </div>
- 
+
               <div className="flex flex-1 overflow-hidden">
                 {" "}
                 {/* subtract border if needed */}
@@ -2321,13 +2360,13 @@ const AutoMLJobs = () => {
                       [...jobDatasets, ...globalDatasets].map((ds) => {
                         const isGlobal = "datasetName" in ds;
                         const name = isGlobal ? ds.datasetName : ds.filename;
- 
+
                         const rows = isGlobal ? ds.rows : null;
                         const columns = isGlobal ? ds.columns : null;
                         const dateInfo = isGlobal
                           ? ds.lastRun
                           : ds.date_modified;
- 
+
                         const isSelected =
                           selectedDataset &&
                           ((isGlobal &&
@@ -2336,7 +2375,7 @@ const AutoMLJobs = () => {
                             (!isGlobal &&
                               "filename" in selectedDataset &&
                               selectedDataset.filename === name));
- 
+
                         return (
                           <button
                             key={`${isGlobal ? "g" : "j"}-${name}`}
@@ -2351,7 +2390,7 @@ const AutoMLJobs = () => {
                             <div className="font-medium text-sm truncate">
                               {name}
                             </div>
- 
+
                             <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2">
                               {rows != null && (
                                 <>
@@ -2398,7 +2437,7 @@ const AutoMLJobs = () => {
                               : ""}
                           </p>
                         </div>
- 
+
                         <div className="flex gap-2">
                           <Button
                             size="sm"
@@ -2407,7 +2446,7 @@ const AutoMLJobs = () => {
                           >
                             Build Model
                           </Button>
- 
+
                           <Button
                             size="sm"
                             variant="outline"
@@ -2418,7 +2457,7 @@ const AutoMLJobs = () => {
                           </Button>
                         </div>
                       </div>
- 
+
                       {/* Scrollable Table Container */}
                       <div className="flex-1 min-h-0 min-w-0 overflow-auto relative ">
                         {/* Optional hint for wide tables */}
@@ -2427,7 +2466,7 @@ const AutoMLJobs = () => {
                             Scroll horizontally →
                           </div>
                         )}
- 
+
                         {previewLoading ? (
                           <div className="flex justify-center items-center h-full text-muted-foreground">
                             Loading preview...
@@ -2449,7 +2488,7 @@ const AutoMLJobs = () => {
                                   ))}
                                 </tr>
                               </thead>
- 
+
                               <tbody>
                                 {previewData.preview_rows.map((row, index) => (
                                   <tr
@@ -2484,7 +2523,7 @@ const AutoMLJobs = () => {
                 </div>
               </div>
             </div>
- 
+
             {/* Header */}
             <div className="flex items-start justify-between mb-8">
               <div>
@@ -2495,7 +2534,7 @@ const AutoMLJobs = () => {
               </div>
               <div className="flex items-center gap-3"></div>
             </div>
- 
+
             {/* Error Display */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
@@ -2505,7 +2544,7 @@ const AutoMLJobs = () => {
                 </Button>
               </div>
             )}
- 
+
             {/* Running Job Status */}
             {runningJobId && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
@@ -2520,11 +2559,11 @@ const AutoMLJobs = () => {
                 </div>
               </div>
             )}
- 
+
             {/* Filters Row */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
-                {["all", "completed", "running", "failed"].map((status) => (
+                {["completed", "failed"].map((status) => (
                   <button
                     key={status}
                     onClick={() => setStatusFilter(status)}
@@ -2541,7 +2580,7 @@ const AutoMLJobs = () => {
                 ))}
               </div>
             </div>
- 
+
             {/* Jobs Table */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -2650,18 +2689,21 @@ const AutoMLJobs = () => {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <button
-                                  onClick={() => handleRun(job)}
-                                  disabled={runningJobId === job.id}
-                                  className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  title="Run job"
-                                >
-                                  {runningJobId === job.id ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                  ) : (
-                                    <Play className="w-5 h-5" />
-                                  )}
-                                </button>
+                                {job.status !== "failed" && (
+                                  <button
+                                    onClick={() => handleRun(job)}
+                                    disabled={runningJobId === job.id}
+                                    className="text-muted-foreground hover:text-foreground transition-colors"
+                                    title="Run job"
+                                  >
+                                    {runningJobId === job.id ? (
+                                      <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                      <Play className="w-5 h-5" />
+                                    )}
+                                  </button>
+                                )}
+
                                 <button
                                   onClick={() => handleView(job)}
                                   className="text-muted-foreground hover:text-foreground transition-colors"
@@ -2669,13 +2711,16 @@ const AutoMLJobs = () => {
                                 >
                                   <Eye className="w-5 h-5" />
                                 </button>
-                                <button
-                                  onClick={() => handleEdit(job)}
-                                  className="text-muted-foreground hover:text-foreground transition-colors"
-                                  title="Edit job"
-                                >
-                                  <Edit className="w-5 h-5" />
-                                </button>
+
+                                {job.status !== "failed" && (
+                                  <button
+                                    onClick={() => handleEdit(job)}
+                                    className="text-muted-foreground hover:text-foreground transition-colors"
+                                    title="Edit job"
+                                  >
+                                    <Edit className="w-5 h-5" />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </motion.tr>
@@ -2686,9 +2731,9 @@ const AutoMLJobs = () => {
                 </table>
               </div>
             </motion.div>
- 
+
             {/* Pagination */}
-            {totalPages > 1 && (
+            {statusFilter === "completed" && totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-6">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -2749,7 +2794,7 @@ const AutoMLJobs = () => {
             )}
           </div>
         </main>
- 
+
         {/* Create Job Modal */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogContent className="sm:max-w-md">
@@ -2784,30 +2829,29 @@ const AutoMLJobs = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
- 
+
         {/* Modals */}
         <JobViewModal
           isOpen={isViewModalOpen}
           onClose={() => setIsViewModalOpen(false)}
           job={selectedJob}
         />
- 
+
         <JobEditModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           job={selectedJob}
+          onTrainingComplete={(updatedJob) => {
+            setSelectedJob(updatedJob);
+            setIsViewModalOpen(true);
+          }}
         />
- 
+
         {/* Chatbot */}
         <Chatbot />
       </div>
     </div>
   );
 };
- 
- 
- 
-
-
 
 export default AutoMLJobs;

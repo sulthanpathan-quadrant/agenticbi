@@ -3000,6 +3000,7 @@ const BuildModelTab = () => {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollingRef = useRef(false);
   const trainingToastRef = useRef<string | number | null>(null);
+  const featureToastRef = useRef<string | number | null>(null);
   const cameFromJobs1 = location.state?.origin === "jobs1";
   const [transformationMessage, setTransformationMessage] = useState<
     string | null
@@ -3021,6 +3022,17 @@ const BuildModelTab = () => {
   }, []);
 
   useEffect(() => {
+  return () => {
+    if (featureToastRef.current) {
+      toast.dismiss(featureToastRef.current);
+    }
+    if (trainingToastRef.current) {
+      toast.dismiss(trainingToastRef.current);
+    }
+  };
+}, []);
+
+  useEffect(() => {
     if (!filePath) return;
 
     const registerFile = async () => {
@@ -3030,7 +3042,7 @@ const BuildModelTab = () => {
       try {
         // ✅ create abort controller
         registerAbortRef.current = new AbortController();
-
+        featureToastRef.current = toast.loading("Fetching dataset features...");
         const params = new URLSearchParams();
         params.append("file_path", filePath);
         params.append("upload_file_path", "true");
@@ -3105,6 +3117,12 @@ const BuildModelTab = () => {
         }
 
         setBlobPathReady(true);
+        if (featureToastRef.current) {
+          toast.success("Features fetched successfully!", {
+            id: featureToastRef.current,
+            duration: 3000,
+          });
+        }
       } catch (err: any) {
         // ✅ ignore abort error
         if (err.name === "AbortError") {
@@ -3374,6 +3392,7 @@ const BuildModelTab = () => {
           if (trainingToastRef.current) {
             toast.success("Model training completed. Results are ready!", {
               id: trainingToastRef.current,
+              duration: 3000,
             });
           }
 
@@ -3595,9 +3614,6 @@ const BuildModelTab = () => {
       console.error(err);
       setError(err.message || "An error occurred");
     }
-    // finally {
-    //   setIsBuilding(false);
-    // }
   };
 
   const canBuild = needsTransformation
@@ -3643,9 +3659,17 @@ const BuildModelTab = () => {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    // ✅ STOP the API first
                     if (registerAbortRef.current) {
                       registerAbortRef.current.abort();
+                    }
+
+                    // ✅ ADD THIS
+                    if (featureToastRef.current) {
+                      toast.dismiss(featureToastRef.current);
+                    }
+
+                    if (trainingToastRef.current) {
+                      toast.dismiss(trainingToastRef.current);
                     }
 
                     // ✅ THEN navigate based on origin
@@ -4498,7 +4522,14 @@ const BuildModelTab = () => {
 
                 <Button
                   variant="outline"
-                  onClick={() => navigate("/workflow/automl/select-dataset")}
+                  onClick={() => {
+                    if (featureToastRef.current)
+                      toast.dismiss(featureToastRef.current);
+                    if (trainingToastRef.current)
+                      toast.dismiss(trainingToastRef.current);
+
+                    navigate("/workflow/automl/select-dataset");
+                  }}
                 >
                   Back to Dataset
                 </Button>

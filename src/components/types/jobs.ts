@@ -1,4 +1,4 @@
-// export interface Job {
+//  export interface Job {
 //   target?: string;
 //   id: string;
 //   name: string;
@@ -18,6 +18,7 @@
 //   primary_metric?: string;    
 //   primary_score?: number;      
 //   results?: any[];  
+//    veriton_file_path?: string;
 // }
  
 // export interface TrainTestMetrics {
@@ -50,6 +51,7 @@
   primary_score?: number;      
   results?: any[];  
    veriton_file_path?: string;
+   error_message?: string;
 }
  
 export interface TrainTestMetrics {
@@ -60,6 +62,7 @@ export interface TrainTestMetrics {
   rmse: string;
   auc: string;
 }
+ 
  
  
  

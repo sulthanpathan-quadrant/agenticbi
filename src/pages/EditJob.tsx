@@ -1179,9 +1179,9 @@ const EditJob = () => {
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t">
-            <Button variant="outline" onClick={() => navigate("/jobs")}>
+            {/* <Button variant="outline" onClick={() => navigate("/jobs")}>
               Cancel
-            </Button>
+            </Button> */}
             <Button onClick={saveChanges}>Save Changes</Button>
           </div>
         </div>

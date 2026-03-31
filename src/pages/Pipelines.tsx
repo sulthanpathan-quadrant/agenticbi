@@ -1191,7 +1191,7 @@ const Pipelines = () => {
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Sparkles className="w-4 h-4" />   {/* Perfect icon for datasets */}
-                Auto AI/ML
+                AutoML
               </button>
  
               <div className="flex items-center gap-3">

@@ -2590,7 +2590,7 @@ const AutoMLJobs1 = () => {
                 className="flex items-center gap-2 text-primary font-medium border-b-2 border-primary pb-1"
               >
                 <Sparkles className="w-4 h-4" />
-                Auto AI/ML
+                AutoML
               </button>
 
               <div className="flex items-center gap-3">

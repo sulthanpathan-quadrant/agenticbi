@@ -408,7 +408,7 @@ export default function PathSelection() {
     },
     {
       id: "aiml",
-      title: "Auto AI/ML Model",
+      title: "AutoML Model",
       description: "Use the data to train or run an automated machine learning model.",
       icon: Brain,
       route: "/workflow/automl",

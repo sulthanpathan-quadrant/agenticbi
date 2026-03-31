@@ -1569,7 +1569,7 @@ const Jobs = () => {
                 onClick={() => {
                   // Optional: double-check (but usually not needed)
                   if (!localStorage.getItem("aivolve_user")) {
-                    toast.info("Preparing Auto AI/ML...", { duration: 2000 });
+                    toast.info("Preparing AutoML...", { duration: 2000 });
                   }
                   navigate("/workflow/automl/jobs1");
                   // or window.location.href = "/workflow/automl" if you still prefer hard redirect
@@ -1577,7 +1577,7 @@ const Jobs = () => {
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
-                Auto AI/ML
+                AutoML
               </button>
 
               <div className="flex items-center gap-3">

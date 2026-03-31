@@ -593,7 +593,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface Rule {
   name: string;
@@ -1291,15 +1291,16 @@ export default function BusinessLogic() {
     }
   }}
 >
-  <DialogContent className="max-w-6xl max-h-[85vh] p-0 flex flex-col">   {/* Increased width to max-w-6xl */}
-    <DialogHeader className="px-5 py-4 border-b">
+  <DialogContent className="max-w-5xl h-[75vh] p-0 flex flex-col overflow-hidden">
+    {/* Header */}
+    <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
       <div className="flex items-center justify-between">
         <div>
           <DialogTitle className="text-lg font-semibold">
             Preview: {previewFile}
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-0.5">
-            First {previewData.length} rows shown
+            First {previewData.length} rows • Scroll horizontally to view all columns
           </p>
         </div>
         <Button
@@ -1312,8 +1313,9 @@ export default function BusinessLogic() {
         </Button>
       </div>
     </DialogHeader>
-
-    <div className="flex-1 overflow-hidden bg-background flex flex-col">
+ 
+    {/* Content Area with Scroll */}
+    <div className="flex-1 overflow-hidden flex flex-col min-h-0">
       {previewLoading ? (
         <div className="flex flex-col items-center justify-center h-full gap-3">
           <Loader2 className="h-9 w-9 animate-spin text-primary" />
@@ -1330,52 +1332,50 @@ export default function BusinessLogic() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 overflow-auto">
-          <ScrollArea className="h-full w-full">
-            <div className="inline-block min-w-full p-2">   {/* Changed to inline-block */}
-              <Table>
-                <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10">
-                  <TableRow className="hover:bg-transparent border-b">
+        <ScrollArea className="flex-1 w-full h-full">
+          <div className="p-4">
+            <Table className="min-w-max w-full border-collapse">
+              <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10">
+                <TableRow>
+                  {previewColumns.map((col) => (
+                    <TableHead
+                      key={col}
+                      className="h-11 px-4 text-xs font-medium text-muted-foreground whitespace-nowrap border-r last:border-r-0 bg-muted"
+                    >
+                      {col}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {previewData.map((row, rowIndex) => (
+                  <TableRow
+                    key={rowIndex}
+                    className="hover:bg-muted/50 border-b last:border-b-0"
+                  >
                     {previewColumns.map((col) => (
-                      <TableHead
+                      <TableCell
                         key={col}
-                        className="h-10 px-4 text-xs font-medium text-muted-foreground whitespace-nowrap"
+                        className="px-4 py-3 text-sm whitespace-nowrap border-r last:border-r-0"
                       >
-                        {col}
-                      </TableHead>
+                        {row[col] != null ? String(row[col]) : "—"}
+                      </TableCell>
                     ))}
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {previewData.map((row, rowIndex) => (
-                    <TableRow
-                      key={rowIndex}
-                      className="hover:bg-muted/50 border-b last:border-0"
-                    >
-                      {previewColumns.map((col) => (
-                        <TableCell
-                          key={col}
-                          className="px-4 py-2 text-sm whitespace-nowrap"
-                        >
-                          {row[col] != null ? String(row[col]) : "—"}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </ScrollArea>
-        </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+ 
+          {/* Scrollbars */}
+          <ScrollBar orientation="vertical" className="z-30" />
+          <ScrollBar orientation="horizontal" className="z-30" />
+        </ScrollArea>
       )}
-    </div>
-
-    <div className="px-5 py-3 border-t flex justify-end bg-muted/30 shrink-0">
-      {/* Footer buttons if needed */}
     </div>
   </DialogContent>
 </Dialog>
-
+ 
         {/* Bottom Navigation */}
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => navigate("/workflow/ner")}>

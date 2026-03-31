@@ -475,7 +475,7 @@ export default function DataModeling() {
           if (!statusData.ready_for_preview) {
             const failedList = statusData.failed_tables?.join(", ") || "unknown";
             toast.error(`Materialization completed but some tables failed: ${failedList}`, {
-              duration: 3000,
+              duration: 2000,
               action: closeToastButton,
             });
             return; // ← stay on current page
@@ -493,7 +493,7 @@ export default function DataModeling() {
       toast.dismiss(loadingToastId);
       setIsProcessing(false);
       toast.error(error.message || "Materialization failed", {
-        duration: 4000,
+        duration: 2000,
         action: closeToastButton,
       });
     }

@@ -1136,9 +1136,9 @@ const Jobs = () => {
 
   useEffect(() => {
     // Prevent calling multiple times in the same session
-    if (localStorage.getItem("aivolve_user")) {
-      return; // already have it → skip
-    }
+    // if (localStorage.getItem("aivolve_user")) {
+    //   return; // already have it → skip
+    // }
 
     const warmUpAutoML = async () => {
       try {

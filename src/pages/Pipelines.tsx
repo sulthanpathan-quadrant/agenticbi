@@ -722,6 +722,7 @@ import {
   Clock,
   Loader2,
   X,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -1132,18 +1133,36 @@ const Pipelines = () => {
       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Database className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg">Veritas</h1>
-                <p className="text-sm text-muted-foreground">
-                  Welcome, <span className="text-primary">{userName}</span>
+             <div className="flex items-center gap-3 md:gap-4">
+              {/* Logo */}
+              <a href="/" className="flex-shrink-0">
+                <img
+                  src="/logo2.png"
+                  alt="Veriton"
+                  className="
+                    h-10               /* mobile base size */
+                    sm:h-10
+                    md:h-9 lg:h-10    /* larger on desktop */
+                    w-auto
+                    object-contain
+                    drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+                    transition-transform duration-200
+                    hover:scale-105
+                  "
+                />
+              </a>
+
+              {/* Welcome text – side by side */}
+              <div className="flex flex-col">
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Welcome,{" "}
+                  <span className="text-primary font-medium">
+                    {userName || "User"}
+                  </span>
                 </p>
               </div>
             </div>
- 
+
             <nav className="flex items-center gap-6">
               <button
                 onClick={() => navigate("/jobs")}
@@ -1165,6 +1184,14 @@ const Pipelines = () => {
               >
                 <TableIcon className="w-4 h-4" />
                 Datasets
+              </button>
+               
+               <button
+                onClick={() => navigate("/workflow/automl/jobs1")}  // or any route you prefer
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />   {/* Perfect icon for datasets */}
+                Auto AI/ML
               </button>
  
               <div className="flex items-center gap-3">

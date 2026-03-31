@@ -2949,13 +2949,13 @@ const AutoMLJobs1 = () => {
                           <p className="text-sm text-muted-foreground mb-4">
                             Start by building your first AutoML model.
                           </p>
-                          <Button
+                          {/* <Button
                             onClick={() =>
                               navigate("/workflow/automl/select-dataset")
                             }
                           >
                             Build Your First Model
-                          </Button>
+                          </Button> */}
                         </td>
                       </tr>
                     ) : filteredJobs.length === 0 ? (

@@ -1,4 +1,3 @@
-// // src/components/chatbot/Chatbot.tsx
 // import { useState, useRef, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +24,9 @@
 // import { Input } from "@/components/ui/input";
 // import { useChatContext } from "../contexts/ChatContext";
 // import { Message, BuildData } from "../contexts/ChatContext";
+// import ReactMarkdown from "react-markdown";
+// import remarkGfm from "remark-gfm";
+// import { Trash2 } from "lucide-react";
 
 // interface ChatSession {
 //   id: string;
@@ -32,6 +34,7 @@
 //   messages: Message[];
 //   createdAt: Date;
 //   modalBuildId?: string;
+//   lastUpdated: Date;
 // }
 
 // interface ChatbotProps {
@@ -70,31 +73,46 @@
 //   const [datasetModalOpen, setDatasetModalOpen] = useState(false);
 //   const [datasets, setDatasets] = useState<any[]>([]);
 //   const [datasetsLoading, setDatasetsLoading] = useState(false);
+//   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
+//   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 //   const [showPreviewForMessage, setShowPreviewForMessage] = useState<
 //     string | null
 //   >(null);
 
-//   useEffect(() => {
-//     if (messages.length > 1) {
-//       const sessionTitle =
-//         messages.find((m) => m.role === "user")?.content.slice(0, 30) ||
-//         "Chat Session";
-//       const buildMessage = messages.find((m) => m.type === "build-complete");
+// useEffect(() => {
+//   if (messages.length > 1 && !isLoadingHistory) {
+//     const sessionTitle =
+//       messages.find((m) => m.role === "user")?.content.slice(0, 30) ||
+//       "Chat Session";
 
-//       const currentSession: ChatSession = {
-//         id: currentSessionId,
-//         title: sessionTitle + "...",
-//         messages: [...messages],
-//         createdAt: new Date(),
-//         modalBuildId: buildMessage?.buildData?.buildId,
-//       };
+//     const buildMessage = messages.find((m) => m.type === "build-complete");
 
-//       setChatSessions((prev) => {
-//         const filtered = prev.filter((s) => s.id !== currentSessionId);
-//         return [currentSession, ...filtered];
-//       });
-//     }
-//   }, [messages, currentSessionId]);
+//     const currentSession: ChatSession = {
+//       id: currentSessionId,
+//       title: sessionTitle + "...",
+//       messages: [...messages],
+//       createdAt: new Date(), // (this will be handled in your updated logic)
+//       lastUpdated: new Date(),
+//       modalBuildId: buildMessage?.buildData?.buildId,
+      
+//     };
+
+// setChatSessions((prev) => {
+//   const index = prev.findIndex((s) => s.id === currentSessionId);
+
+//   if (index === -1) return prev;
+
+//   const updated = [...prev];
+
+//   updated[index] = {
+//     ...updated[index],
+//     messages: [...messages],
+//   };
+
+//   return updated;
+// });
+//   }
+// }, [messages, currentSessionId, isLoadingHistory]);
 
 //   useEffect(() => {
 //     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -136,6 +154,22 @@
 //       document.head.removeChild(style);
 //     };
 //   }, []);
+
+//   // Add this useEffect near your other scroll-related effects
+//   useEffect(() => {
+//     if (isOpen && messagesEndRef.current) {
+//       // Small delay to let animations / DOM updates finish
+//       const timer = setTimeout(() => {
+//         messagesEndRef.current?.scrollIntoView({
+//           behavior: "smooth",
+//           block: "end", // ensures it scrolls fully to the very bottom
+//         });
+//       }, 300); // 300ms is usually enough; increase to 500 if animation feels slow
+
+//       return () => clearTimeout(timer); // cleanup
+//     }
+//   }, [isOpen, messages.length, currentSessionId]); // dependencies: re-run when chat opens or messages/session change
+
 //   // use imported util for session id
 //   const getSessionId = () => {
 //     try {
@@ -149,6 +183,8 @@
 //       return "";
 //     }
 //   };
+
+//   console.log("[Chatbot] Current isOpen value:", isOpen);
 
 //   const getUserEmail = () => {
 //     try {
@@ -324,6 +360,7 @@
 //         title: sessionTitle + "...",
 //         messages: [...messages],
 //         createdAt: new Date(),
+//         lastUpdated: new Date(),
 //         modalBuildId: buildMessage?.buildData?.buildId,
 //       };
 //       setChatSessions((prev) => [
@@ -500,56 +537,95 @@
 //       }
 
 //       const formattedSessions: ChatSession[] = Object.keys(data.threads).map(
-//         (threadId) => {
-//           const thread = data.threads[threadId];
+//   (threadId) => {
+//     const thread = data.threads[threadId];
 
-//           return {
-//             id: threadId,
-//             title: thread.last_message?.content?.slice(0, 30) || "Chat Session",
-//             messages: [],
-//             createdAt: new Date(thread.created_at),
-//             modalBuildId: undefined,
-//           };
-//         },
-//       );
+//     return {
+//       id: threadId,
+//       title: thread.last_message?.content?.slice(0, 30) || "Chat Session",
+//       messages: [],
+//       createdAt: new Date(thread.created_at),
 
-//       setChatSessions(formattedSessions);
+//       // ✅ ADD THIS
+//       lastUpdated: new Date(
+//         thread.last_message?.timestamp || thread.created_at
+//       ),
+
+//       modalBuildId: undefined,
+//     };
+//   }
+// );
+
+//       setChatSessions(
+//   formattedSessions.sort(
+//     (a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()
+//   )
+// );
 //     } catch (err) {
 //       console.error("Error loading threads:", err);
 //     }
 //   };
 
-//   const loadThreadHistory = async (threadId: string) => {
+// const loadThreadHistory = async (threadId: string) => {
+//   try {
+//     setIsLoadingHistory(true); // ✅ mark as history load
+
+//     const email = getUserEmail();
+
+//     const res = await fetch(
+//       `${API_BASE_URL}/conversation_history/${threadId}?user_email=${email}`,
+//       { headers: { accept: "application/json" } }
+//     );
+
+//     const data = await res.json();
+
+//     const formattedMessages: Message[] = data.messages.map(
+//       (msg: any, index: number) => ({
+//         id: `${threadId}-${index}`,
+//         role: msg.role,
+//         content: msg.content,
+//         timestamp: new Date(msg.timestamp),
+//         type: "text",
+//       })
+//     );
+
+//     setMessages(formattedMessages);
+//     setCurrentSessionId(threadId);
+//     setShowHistory(false);
+
+//   } catch (err) {
+//     console.error("Error loading thread history:", err);
+//   } finally {
+//     setIsLoadingHistory(false); // ✅ reset
+//   }
+// };
+
+//   const handleDeleteSession = async (sessionId: string) => {
 //     try {
 //       const email = getUserEmail();
 
-//       const res = await fetch(
-//         `${API_BASE_URL}/conversation_history/${threadId}?user_email=${email}`,
-//         { headers: { accept: "application/json" } },
-//       );
+//       const body = new URLSearchParams();
+//       body.append("session_id", sessionId);
+//       body.append("user_email", email);
 
-//       const data = await res.json();
-//       console.log("THREAD HISTORY:", data);
+//       const res = await fetch(`${API_BASE_URL}/delete_session`, {
+//         method: "DELETE",
+//         headers: {
+//           "Content-Type": "application/x-www-form-urlencoded",
+//           accept: "application/json",
+//         },
+//         body: body.toString(),
+//       });
 
-//       if (!res.ok) throw new Error("Failed loading conversation history");
+//       if (!res.ok) throw new Error("Failed to delete session");
 
-//       const formattedMessages: Message[] = data.messages.map(
-//         (msg: any, index: number) => ({
-//           id: `${threadId}-${index}`,
-//           role: msg.role,
-//           content: msg.content,
-//           timestamp: new Date(msg.timestamp),
-//           type: "text",
-//         }),
-//       );
+//       setChatSessions((prev) => prev.filter((s) => s.id !== sessionId));
 
-//       setMessages(formattedMessages);
-//       setCurrentSessionId(threadId);
-//       setShowHistory(false);
-
-//       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//       if (sessionId === currentSessionId) {
+//         startNewChat();
+//       }
 //     } catch (err) {
-//       console.error("Error loading thread history:", err);
+//       console.error("Delete session failed:", err);
 //     }
 //   };
 
@@ -695,6 +771,7 @@
 //       title: `🔧 ${sessionTitle}...`,
 //       messages: [...messages, completeMessage],
 //       createdAt: new Date(),
+//       lastUpdated: new Date(),
 //       modalBuildId: buildId,
 //     };
 
@@ -726,6 +803,17 @@
 //     };
 
 //     setMessages((prev) => [...prev, userMessage]);
+//     setChatSessions((prev) =>
+//   prev
+//     .map((s) =>
+//       s.id === currentSessionId
+//         ? { ...s, lastUpdated: new Date() }
+//         : s
+//     )
+//     .sort(
+//       (a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()
+//     )
+// );
 
 //     const currentInput = input;
 //     setInput("");
@@ -803,6 +891,17 @@
 //       };
 
 //       setMessages((prev) => [...prev, assistantMessage]);
+//       setChatSessions((prev) =>
+//   prev
+//     .map((s) =>
+//       s.id === currentSessionId
+//         ? { ...s, lastUpdated: new Date() }
+//         : s
+//     )
+//     .sort(
+//       (a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()
+//     )
+// );
 //       // Show suggestions if present
 //       if (apiResp.suggestions?.length) {
 //         setMessages((prev) => [
@@ -836,11 +935,11 @@
 //     }
 //   };
 
-// const handleGoToModalBuild = () => {
-//   if (currentBuildData) {
-//     navigate(`/workflow/automl/modal-building/${currentBuildData.buildId}`);
-//   }
-// };
+//   const handleGoToModalBuild = () => {
+//     if (currentBuildData) {
+//       navigate(`/workflow/automl/modal-building/${currentBuildData.buildId}`);
+//     }
+//   };
 
 //   // --- Rendering functions (kept your UI) ---
 //   const renderFullScreenBuildAnimation = () => (
@@ -861,45 +960,6 @@
 //           <span className="text-2xl font-bold text-foreground">
 //             Building ML Model
 //           </span>
-//         </div>
-
-//         <div className="flex justify-center mb-8">
-//           <motion.div className="relative w-40 h-40">
-//             <motion.div
-//               className="absolute inset-0 rounded-full bg-primary/20"
-//               animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
-//               transition={{ duration: 2, repeat: Infinity }}
-//             />
-//             <svg className="w-40 h-40 -rotate-90">
-//               <circle
-//                 cx="80"
-//                 cy="80"
-//                 r="70"
-//                 stroke="hsl(var(--secondary))"
-//                 strokeWidth="8"
-//                 fill="none"
-//               />
-//               <motion.circle
-//                 cx="80"
-//                 cy="80"
-//                 r="70"
-//                 stroke="hsl(var(--primary))"
-//                 strokeWidth="8"
-//                 fill="none"
-//                 strokeLinecap="round"
-//                 strokeDasharray={440}
-//                 strokeDashoffset={440 - (440 * buildProgress) / 100}
-//               />
-//             </svg>
-//             <div className="absolute inset-0 flex items-center justify-center">
-//               <motion.div
-//                 animate={{ scale: [1, 1.1, 1] }}
-//                 transition={{ duration: 1.5, repeat: Infinity }}
-//               >
-//                 <Brain className="w-12 h-12 text-primary" />
-//               </motion.div>
-//             </div>
-//           </motion.div>
 //         </div>
 
 //         <p className="text-center text-3xl font-bold text-primary mb-2">
@@ -1006,6 +1066,68 @@
 //     </motion.div>
 //   );
 
+//   const formatMessage = (content: string) => {
+//     if (!content) return "";
+
+//     return (
+//       content
+//         // Remove ### or ##
+//         .replace(/^#{1,6}\s*/gm, "")
+
+//         // Ensure each bullet starts on new line
+//         .replace(/• /g, "\n• ")
+
+//         // Ensure numbered sections start new line
+//         .replace(/(\d+\.\s)/g, "\n\n$1")
+
+//         // Bold key-value pairs (Task:, Target:, etc.)
+//         .replace(/([A-Za-z\s]+:)/g, "**$1**")
+
+//         // Fix spacing
+//         .replace(/\n{3,}/g, "\n\n")
+//         .trim()
+//     );
+//   }; // Enhanced formatting: makes headings bold + improves readability
+
+//   const formatMessageWithBoldHeadings = (content: string): string => {
+//     if (!content) return "";
+
+//     return (
+//       content
+//         // ✅ Normalize headings like "6.\nOverall Verdict"
+//         .replace(/(\d+)[\.\)]\s*\n\s*([A-Za-z])/g, "$1. $2")
+
+//         // ✅ Convert markdown headings ##, ### → plain
+//         .replace(/^#{1,6}\s*/gm, "")
+
+//         // ✅ Normalize numbered headings
+//         .replace(/^(\d+[\.\)]\s*)([A-Za-z].*)$/gm, "\n\n**$1$2**\n")
+
+//         // ✅ Normalize standalone section titles
+//         .replace(
+//           /^(Task Summary|Performance Metrics.*|Feature Insights.*|Recommendations|Next Steps|Overall Verdict)$/gim,
+//           "\n\n**$1**\n",
+//         )
+
+//         // ✅ Bold key-value pairs
+//         .replace(
+//           /(Task|Target|Best model.*|Key finding|Key takeaway|Data leakage risk|Model behavior|Metric interpretation caveat):/gi,
+//           "**$1:**",
+//         )
+
+//         // ✅ Ensure bullets start new line
+//         .replace(/\n?[-•]\s+/g, "\n• ")
+
+//         // ✅ Add spacing after sentences (safe version)
+//         .replace(/([a-z])\.\s+(?=[A-Z])/g, "$1.\n")
+
+//         // ✅ Clean extra spacing
+//         .replace(/\n{3,}/g, "\n\n")
+
+//         .trim()
+//     );
+//   };
+
 //   const renderBuildComplete = (buildData: BuildData) => (
 //     <motion.div
 //       initial={{ opacity: 0, scale: 0.95 }}
@@ -1044,35 +1166,14 @@
 //   const renderBuildBanner = () => {
 //     if (!currentBuildData) return null;
 
-//     return (
-//       <motion.div
-//         initial={{ opacity: 0, y: -10 }}
-//         animate={{ opacity: 1, y: 0 }}
-//         className="mx-4 mb-2 p-3 bg-primary/10 border border-primary/20 rounded-lg"
-//       >
-//         <div className="flex items-center justify-between gap-2">
-//           <div className="flex-1 min-w-0">
-//             <p className="text-xs font-medium text-foreground truncate">
-//               Modal built: {currentBuildData.dataset}
-//             </p>
-//             <p className="text-[10px] text-muted-foreground">
-//               Best: {currentBuildData.bestModel} (
-//               {currentBuildData.metrics?.accuracy ?? "-"})
-//             </p>
-//           </div>
-//           <Button
-//             variant="outline"
-//             size="sm"
-//             className="h-7 text-xs shrink-0"
-//             onClick={handleGoToModalBuild}
-//           >
-//             <ExternalLink className="w-3 h-3 mr-1" />
-//             View
-//           </Button>
-//         </div>
-//       </motion.div>
-//     );
+//     return <div></div>;
 //   };
+//   console.log(
+//     "[Chatbot] Rendering Chatbot – isOpen:",
+//     isOpen,
+//     "currentSessionId:",
+//     currentSessionId,
+//   );
 
 //   return (
 //     <>
@@ -1125,27 +1226,44 @@
 //                       </p>
 //                     ) : (
 //                       chatSessions.map((session) => (
-//                         <button
+//                         <div
 //                           key={session.id}
-//                           onClick={() => loadThreadHistory(session.id)}
-//                           className={`w-full text-left p-2 rounded-lg text-xs hover:bg-muted transition-colors ${
+//                           className={`group relative w-full text-left p-2 rounded-lg text-xs transition-colors ${
 //                             session.id === currentSessionId
 //                               ? "bg-primary/10 text-primary"
-//                               : "text-foreground"
+//                               : "text-foreground hover:bg-muted"
 //                           }`}
 //                         >
-//                           <p className="truncate font-medium">
-//                             {session.title}
-//                           </p>
-//                           <p className="text-[10px] text-muted-foreground">
-//                             {session.createdAt.toLocaleDateString()}
-//                           </p>
-//                           {session.modalBuildId && (
-//                             <span className="text-[9px] bg-primary/20 text-primary px-1 rounded mt-1 inline-block">
-//                               Build
-//                             </span>
-//                           )}
-//                         </button>
+//                           {/* Clickable area */}
+//                           <button
+//                             onClick={() => loadThreadHistory(session.id)}
+//                             className="w-full text-left"
+//                           >
+//                             <p className="truncate font-medium pr-6">
+//                               {session.title}
+//                             </p>
+//                             <p className="text-[10px] text-muted-foreground">
+//                               {session.createdAt.toLocaleDateString()}
+//                             </p>
+
+//                             {session.modalBuildId && (
+//                               <span className="text-[9px] bg-primary/20 text-primary px-1 rounded mt-1 inline-block">
+//                                 Build
+//                               </span>
+//                             )}
+//                           </button>
+
+//                           {/* 🗑 Delete Icon (only on hover) */}
+//                           <button
+//                             onClick={(e) => {
+//                               e.stopPropagation(); // prevent opening chat
+//                               setDeleteSessionId(session.id);
+//                             }}
+//                             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10"
+//                           >
+//                             <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+//                           </button>
+//                         </div>
 //                       ))
 //                     )}
 //                   </div>
@@ -1211,6 +1329,7 @@
 //                       message.role === "user" ? "flex-row-reverse" : ""
 //                     }`}
 //                   >
+//                     {/* Avatar */}
 //                     <div
 //                       className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
 //                         message.role === "user" ? "bg-primary" : "bg-muted"
@@ -1222,6 +1341,7 @@
 //                         <Bot className="w-4 h-4 text-primary" />
 //                       )}
 //                     </div>
+
 //                     <div
 //                       className={
 //                         message.type === "build-complete"
@@ -1229,11 +1349,12 @@
 //                           : "max-w-[85%]"
 //                       }
 //                     >
+//                       {/* Build Complete */}
 //                       {message.type === "build-complete" &&
 //                       message.buildData ? (
 //                         renderBuildComplete(message.buildData)
 //                       ) : message.previewData ? (
-//                         // NEW: Preview with button
+//                         /* Dataset Preview */
 //                         <div
 //                           className={`p-3 rounded-xl text-sm ${
 //                             message.role === "user"
@@ -1248,6 +1369,7 @@
 //                             {message.previewData.rowCount} rows ×{" "}
 //                             {message.previewData.columnCount} columns
 //                           </p>
+
 //                           <Button
 //                             variant="outline"
 //                             size="sm"
@@ -1264,6 +1386,7 @@
 //                               ? "Hide Preview"
 //                               : "Show Preview"}
 //                           </Button>
+
 //                           {showPreviewForMessage === message.id && (
 //                             <div
 //                               className="message-content mt-2"
@@ -1272,13 +1395,8 @@
 //                               }}
 //                             />
 //                           )}
-//                           <p
-//                             className={`text-[10px] mt-2 ${
-//                               message.role === "user"
-//                                 ? "text-primary-foreground/60"
-//                                 : "text-muted-foreground"
-//                             }`}
-//                           >
+
+//                           <p className="text-[10px] mt-2 text-muted-foreground">
 //                             {message.timestamp.toLocaleTimeString([], {
 //                               hour: "2-digit",
 //                               minute: "2-digit",
@@ -1286,20 +1404,164 @@
 //                           </p>
 //                         </div>
 //                       ) : (
-//                         // EXISTING: Normal message rendering
+//                         /* ✅ NORMAL MESSAGE */
 //                         <div
-//                           className={`p-3 rounded-xl text-sm ${
+//                           className={`p-4 rounded-xl text-sm ${
 //                             message.role === "user"
 //                               ? "bg-primary text-primary-foreground rounded-br-none"
 //                               : "bg-card border border-border text-foreground rounded-bl-none"
 //                           }`}
 //                         >
-//                           <div
-//                             className="message-content whitespace-pre-line"
-//                             dangerouslySetInnerHTML={{
-//                               __html: message.content,
-//                             }}
-//                           />
+//                           {(() => {
+//                             const fullContent = message.content || "";
+
+//                             // Detect table
+//                             const tableIndex = fullContent.indexOf("| Model |");
+//                             const hasTable = tableIndex !== -1;
+
+//                             if (!hasTable) {
+//                               return (
+//                                 <ReactMarkdown
+//                                   remarkPlugins={[remarkGfm]}
+//                                   components={{
+//                                     p: ({ children }) => (
+//                                       <p className="mb-3 leading-relaxed text-sm">
+//                                         {children}
+//                                       </p>
+//                                     ),
+//                                     strong: ({ children }) => (
+//                                       <strong className="font-semibold text-foreground">
+//                                         {children}
+//                                       </strong>
+//                                     ),
+//                                   }}
+//                                 >
+//                                   {formatMessageWithBoldHeadings(fullContent)}
+//                                 </ReactMarkdown>
+//                               );
+//                             }
+
+//                             // Split content: Before Table + Table + After Table
+//                             const beforeTable = fullContent
+//                               .substring(0, tableIndex)
+//                               .trim();
+//                             const remainingContent =
+//                               fullContent.substring(tableIndex);
+
+//                             // Find where table ends and "after" content starts
+//                             const lines = remainingContent.split("\n");
+
+//                             // Detect table lines (start with | or separator row)
+//                             let tableLines: string[] = [];
+//                             let afterLines: string[] = [];
+
+//                             let isTable = true;
+
+//                             for (let line of lines) {
+//                               if (
+//                                 isTable &&
+//                                 (line.includes("|") ||
+//                                   line.trim().startsWith("|"))
+//                               ) {
+//                                 tableLines.push(line);
+//                               } else {
+//                                 isTable = false;
+//                                 afterLines.push(line);
+//                               }
+//                             }
+
+//                             const tablePart = tableLines.join("\n").trim();
+//                             const afterTable = afterLines.join("\n").trim();
+
+//                             return (
+//                               <>
+//                                 {/* BEFORE TABLE */}
+//                                 {beforeTable && (
+//                                   <div className="mb-5">
+//                                     <ReactMarkdown
+//                                       remarkPlugins={[remarkGfm]}
+//                                       components={{
+//                                         p: ({ children }) => (
+//                                           <p className="mb-3 leading-relaxed text-sm text-foreground">
+//                                             {children}
+//                                           </p>
+//                                         ),
+//                                         strong: ({ children }) => (
+//                                           <strong className="font-semibold text-foreground">
+//                                             {children}
+//                                           </strong>
+//                                         ),
+//                                       }}
+//                                     >
+//                                       {formatMessageWithBoldHeadings(
+//                                         beforeTable,
+//                                       )}
+//                                     </ReactMarkdown>
+//                                   </div>
+//                                 )}
+
+//                                 {/* SCROLLABLE TABLE - Only Table Scrolls */}
+//                                 {tablePart && (
+//                                   <div className="my-6 overflow-x-auto rounded-xl border border-border bg-card p-2">
+//                                     <ReactMarkdown
+//                                       remarkPlugins={[remarkGfm]}
+//                                       components={{
+//                                         table: ({ children }) => (
+//                                           <table className="min-w-full text-xs border-collapse divide-y divide-border">
+//                                             {children}
+//                                           </table>
+//                                         ),
+//                                         thead: ({ children }) => (
+//                                           <thead className="bg-muted sticky top-0 z-10">
+//                                             {children}
+//                                           </thead>
+//                                         ),
+//                                         th: ({ children }) => (
+//                                           <th className="px-5 py-3 font-semibold text-left whitespace-nowrap bg-muted border-b">
+//                                             {children}
+//                                           </th>
+//                                         ),
+//                                         td: ({ children }) => (
+//                                           <td className="px-5 py-3 border-b text-center whitespace-nowrap">
+//                                             {children}
+//                                           </td>
+//                                         ),
+//                                       }}
+//                                     >
+//                                       {tablePart}
+//                                     </ReactMarkdown>
+//                                   </div>
+//                                 )}
+
+//                                 {/* AFTER TABLE - Clean & Bold Headings */}
+//                                 {afterTable && (
+//                                   <div className="mt-6 space-y-3">
+//                                     <ReactMarkdown
+//                                       remarkPlugins={[remarkGfm]}
+//                                       components={{
+//                                         p: ({ children }) => (
+//                                           <p className="mb-4 leading-relaxed text-sm text-foreground">
+//                                             {children}
+//                                           </p>
+//                                         ),
+//                                         strong: ({ children }) => (
+//                                           <strong className="font-semibold text-foreground">
+//                                             {children}
+//                                           </strong>
+//                                         ),
+//                                       }}
+//                                     >
+//                                       {formatMessageWithBoldHeadings(
+//                                         afterTable,
+//                                       )}
+//                                     </ReactMarkdown>
+//                                   </div>
+//                                 )}
+//                               </>
+//                             );
+//                           })()}
+
+//                           {/* Timestamp */}
 //                           <p
 //                             className={`text-[10px] mt-1 ${
 //                               message.role === "user"
@@ -1459,11 +1721,49 @@
 //           </motion.div>
 //         )}
 //       </AnimatePresence>
+//       {deleteSessionId && (
+//         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+//           <div className="bg-card border border-border rounded-xl p-5 w-[320px] shadow-xl">
+//             <h3 className="text-sm font-semibold mb-2 text-foreground">
+//               Delete Chat
+//             </h3>
+
+//             <p className="text-xs text-muted-foreground mb-4">
+//               Are you sure you want to delete this chat session? This action
+//               cannot be undone.
+//             </p>
+
+//             <div className="flex justify-end gap-2">
+//               <Button
+//                 variant="outline"
+//                 size="sm"
+//                 onClick={() => setDeleteSessionId(null)}
+//               >
+//                 Cancel
+//               </Button>
+
+//               <Button
+//                 variant="destructive"
+//                 size="sm"
+//                 onClick={() => {
+//                   if (deleteSessionId) {
+//                     handleDeleteSession(deleteSessionId);
+//                   }
+//                   setDeleteSessionId(null);
+//                 }}
+//               >
+//                 Delete
+//               </Button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
 //     </>
 //   );
 // };
 
 // export default Chatbot;
+
 // src/components/chatbot/Chatbot.tsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -1546,40 +1846,39 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
     string | null
   >(null);
 
-useEffect(() => {
-  if (messages.length > 1 && !isLoadingHistory) {
-    const sessionTitle =
-      messages.find((m) => m.role === "user")?.content.slice(0, 30) ||
-      "Chat Session";
+  useEffect(() => {
+    if (messages.length > 1 && !isLoadingHistory) {
+      const sessionTitle =
+        messages.find((m) => m.role === "user")?.content.slice(0, 30) ||
+        "Chat Session";
 
-    const buildMessage = messages.find((m) => m.type === "build-complete");
+      const buildMessage = messages.find((m) => m.type === "build-complete");
 
-    const currentSession: ChatSession = {
-      id: currentSessionId,
-      title: sessionTitle + "...",
-      messages: [...messages],
-      createdAt: new Date(), // (this will be handled in your updated logic)
-      lastUpdated: new Date(),
-      modalBuildId: buildMessage?.buildData?.buildId,
-      
-    };
+      const currentSession: ChatSession = {
+        id: currentSessionId,
+        title: sessionTitle + "...",
+        messages: [...messages],
+        createdAt: new Date(), // (this will be handled in your updated logic)
+        lastUpdated: new Date(),
+        modalBuildId: buildMessage?.buildData?.buildId,
+      };
 
-setChatSessions((prev) => {
-  const index = prev.findIndex((s) => s.id === currentSessionId);
+      setChatSessions((prev) => {
+        const index = prev.findIndex((s) => s.id === currentSessionId);
 
-  if (index === -1) return prev;
+        if (index === -1) return prev;
 
-  const updated = [...prev];
+        const updated = [...prev];
 
-  updated[index] = {
-    ...updated[index],
-    messages: [...messages],
-  };
+        updated[index] = {
+          ...updated[index],
+          messages: [...messages],
+        };
 
-  return updated;
-});
-  }
-}, [messages, currentSessionId, isLoadingHistory]);
+        return updated;
+      });
+    }
+  }, [messages, currentSessionId, isLoadingHistory]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -2004,68 +2303,67 @@ setChatSessions((prev) => {
       }
 
       const formattedSessions: ChatSession[] = Object.keys(data.threads).map(
-  (threadId) => {
-    const thread = data.threads[threadId];
+        (threadId) => {
+          const thread = data.threads[threadId];
 
-    return {
-      id: threadId,
-      title: thread.last_message?.content?.slice(0, 30) || "Chat Session",
-      messages: [],
-      createdAt: new Date(thread.created_at),
+          return {
+            id: threadId,
+            title: thread.last_message?.content?.slice(0, 30) || "Chat Session",
+            messages: [],
+            createdAt: new Date(thread.created_at),
 
-      // ✅ ADD THIS
-      lastUpdated: new Date(
-        thread.last_message?.timestamp || thread.created_at
-      ),
+            // ✅ ADD THIS
+            lastUpdated: new Date(
+              thread.last_message?.timestamp || thread.created_at,
+            ),
 
-      modalBuildId: undefined,
-    };
-  }
-);
+            modalBuildId: undefined,
+          };
+        },
+      );
 
       setChatSessions(
-  formattedSessions.sort(
-    (a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()
-  )
-);
+        formattedSessions.sort(
+          (a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime(),
+        ),
+      );
     } catch (err) {
       console.error("Error loading threads:", err);
     }
   };
 
-const loadThreadHistory = async (threadId: string) => {
-  try {
-    setIsLoadingHistory(true); // ✅ mark as history load
+  const loadThreadHistory = async (threadId: string) => {
+    try {
+      setIsLoadingHistory(true); // ✅ mark as history load
 
-    const email = getUserEmail();
+      const email = getUserEmail();
 
-    const res = await fetch(
-      `${API_BASE_URL}/conversation_history/${threadId}?user_email=${email}`,
-      { headers: { accept: "application/json" } }
-    );
+      const res = await fetch(
+        `${API_BASE_URL}/conversation_history/${threadId}?user_email=${email}`,
+        { headers: { accept: "application/json" } },
+      );
 
-    const data = await res.json();
+      const data = await res.json();
 
-    const formattedMessages: Message[] = data.messages.map(
-      (msg: any, index: number) => ({
-        id: `${threadId}-${index}`,
-        role: msg.role,
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-        type: "text",
-      })
-    );
+      const formattedMessages: Message[] = data.messages.map(
+        (msg: any, index: number) => ({
+          id: `${threadId}-${index}`,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+          type: "text",
+        }),
+      );
 
-    setMessages(formattedMessages);
-    setCurrentSessionId(threadId);
-    setShowHistory(false);
-
-  } catch (err) {
-    console.error("Error loading thread history:", err);
-  } finally {
-    setIsLoadingHistory(false); // ✅ reset
-  }
-};
+      setMessages(formattedMessages);
+      setCurrentSessionId(threadId);
+      setShowHistory(false);
+    } catch (err) {
+      console.error("Error loading thread history:", err);
+    } finally {
+      setIsLoadingHistory(false); // ✅ reset
+    }
+  };
 
   const handleDeleteSession = async (sessionId: string) => {
     try {
@@ -2271,16 +2569,12 @@ const loadThreadHistory = async (threadId: string) => {
 
     setMessages((prev) => [...prev, userMessage]);
     setChatSessions((prev) =>
-  prev
-    .map((s) =>
-      s.id === currentSessionId
-        ? { ...s, lastUpdated: new Date() }
-        : s
-    )
-    .sort(
-      (a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()
-    )
-);
+      prev
+        .map((s) =>
+          s.id === currentSessionId ? { ...s, lastUpdated: new Date() } : s,
+        )
+        .sort((a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()),
+    );
 
     const currentInput = input;
     setInput("");
@@ -2359,16 +2653,12 @@ const loadThreadHistory = async (threadId: string) => {
 
       setMessages((prev) => [...prev, assistantMessage]);
       setChatSessions((prev) =>
-  prev
-    .map((s) =>
-      s.id === currentSessionId
-        ? { ...s, lastUpdated: new Date() }
-        : s
-    )
-    .sort(
-      (a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()
-    )
-);
+        prev
+          .map((s) =>
+            s.id === currentSessionId ? { ...s, lastUpdated: new Date() } : s,
+          )
+          .sort((a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()),
+      );
       // Show suggestions if present
       if (apiResp.suggestions?.length) {
         setMessages((prev) => [
@@ -2883,9 +3173,10 @@ const loadThreadHistory = async (threadId: string) => {
                             const fullContent = message.content || "";
 
                             // Detect table
-                            const tableIndex = fullContent.indexOf("| Model |");
-                            const hasTable = tableIndex !== -1;
-
+                            const tableIndex = fullContent.indexOf("|");
+                            const hasTable =
+                              fullContent.includes("|") &&
+                              fullContent.includes("---");
                             if (!hasTable) {
                               return (
                                 <ReactMarkdown
@@ -2918,21 +3209,25 @@ const loadThreadHistory = async (threadId: string) => {
                             // Find where table ends and "after" content starts
                             const lines = remainingContent.split("\n");
 
-                            // Detect table lines (start with | or separator row)
                             let tableLines: string[] = [];
                             let afterLines: string[] = [];
-
-                            let isTable = true;
+                            let isTable = false;
 
                             for (let line of lines) {
-                              if (
-                                isTable &&
-                                (line.includes("|") ||
-                                  line.trim().startsWith("|"))
-                              ) {
+                              const trimmed = line.trim();
+
+                              // Detect start of table
+                              if (trimmed.startsWith("|")) {
+                                isTable = true;
+                              }
+
+                              if (isTable && trimmed.startsWith("|")) {
                                 tableLines.push(line);
                               } else {
-                                isTable = false;
+                                if (isTable) {
+                                  // table ended
+                                  isTable = false;
+                                }
                                 afterLines.push(line);
                               }
                             }
@@ -2974,7 +3269,7 @@ const loadThreadHistory = async (threadId: string) => {
                                       remarkPlugins={[remarkGfm]}
                                       components={{
                                         table: ({ children }) => (
-                                          <table className="min-w-full text-xs border-collapse divide-y divide-border">
+                                          <table className="min-w-max text-xs border-collapse">
                                             {children}
                                           </table>
                                         ),
@@ -2984,12 +3279,12 @@ const loadThreadHistory = async (threadId: string) => {
                                           </thead>
                                         ),
                                         th: ({ children }) => (
-                                          <th className="px-5 py-3 font-semibold text-left whitespace-nowrap bg-muted border-b">
+                                          <th className="px-4 py-2 font-semibold text-left whitespace-nowrap border-b">
                                             {children}
                                           </th>
                                         ),
                                         td: ({ children }) => (
-                                          <td className="px-5 py-3 border-b text-center whitespace-nowrap">
+                                          <td className="px-4 py-2 border-b text-center whitespace-nowrap">
                                             {children}
                                           </td>
                                         ),

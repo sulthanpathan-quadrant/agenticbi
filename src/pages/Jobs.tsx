@@ -34,18 +34,30 @@
 //   X,
 //   Settings,
 //   Clock,
-// Sparkles
+//   Sparkles,
 // } from "lucide-react";
-// import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+// import {
+//   PieChart,
+//   Pie,
+//   Cell,
+//   ResponsiveContainer,
+//   LineChart,
+//   Line,
+//   XAxis,
+//   YAxis,
+//   CartesianGrid,
+//   Tooltip,
+//   Legend,
+// } from "recharts";
 // import { toast } from "sonner";
 // import { ThemeToggle } from "@/components/ThemeToggle";
- 
+
 // interface ApiJob {
 //   job_id: string;
 //   job_name: string;
 //   created_at: string;
 // }
- 
+
 // interface DetailedJobResponse {
 //   user_id: string;
 //   job_id: string;
@@ -64,7 +76,7 @@
 //   business_logic_enabled: boolean;
 //   business_logic_rules?: Record<string, string>;
 // }
- 
+
 // interface Job {
 //   id: string;
 //   name: string;
@@ -79,9 +91,9 @@
 //     dataTransformations: "skipped" | "executed";
 //   };
 // }
- 
+
 // const API_BASE = "https://api.veriton.ai/api/service2";
- 
+
 // const Jobs = () => {
 //   const navigate = useNavigate();
 //   const [viewMode, setViewMode] = useState<"chart" | "table">("table");
@@ -92,16 +104,19 @@
 //   const [endDate, setEndDate] = useState("");
 //   const [jobs, setJobs] = useState<Job[]>([]);
 //   const [loading, setLoading] = useState(true);
- 
-//   const [selectedJob, setSelectedJob] = useState<DetailedJobResponse | null>(null);
+
+//   const [selectedJob, setSelectedJob] = useState<DetailedJobResponse | null>(
+//     null,
+//   );
 //   const [showJobModal, setShowJobModal] = useState(false);
 //   const [modalLoading, setModalLoading] = useState(false);
- 
+//   const [autoMLLoading, setAutoMLLoading] = useState(false);
+
 //   const storedUser = localStorage.getItem("user");
 //   const user = storedUser ? JSON.parse(storedUser) : null;
 //   const userName = user?.name || user?.email?.split("@")[0] || "User";
 //   const userId = user?.id || user?.user_id;
- 
+
 //   // Reusable X close button for all toasts (Sonner style)
 //   const closeToastButton = (
 //     <button
@@ -112,7 +127,65 @@
 //       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
 //     </button>
 //   );
- 
+
+//   useEffect(() => {
+//     // Prevent calling multiple times in the same session
+//     // if (localStorage.getItem("aivolve_user")) {
+//     //   return; // already have it → skip
+//     // }
+
+//     const warmUpAutoML = async () => {
+//       try {
+//         const storedUser = localStorage.getItem("user");
+//         if (!storedUser) return;
+
+//         const baseUser = JSON.parse(storedUser);
+//         if (!baseUser?.email || !baseUser?.name) return;
+
+//         const formData = new URLSearchParams();
+//         formData.append("email", baseUser.email);
+//         formData.append("full_name", baseUser.name);
+
+//         const res = await fetch(
+//           "https://api.veriton.ai/api/service3/automl_register_login",
+//           {
+//             method: "POST",
+//             headers: {
+//               accept: "application/json",
+//               "Content-Type": "application/x-www-form-urlencoded",
+//             },
+//             body: formData.toString(),
+//           },
+//         );
+
+//         if (!res.ok) {
+//           console.warn("AutoML warm-up failed", res.status);
+//           return;
+//         }
+
+//         const data = await res.json();
+
+//         const aivolveUser = {
+//           ...data.user,
+//           agent_id: data.agent_id,
+//           agent_name: data.agent_name,
+//           session_id: data.session_id,
+//           total_chats: data.total_chats,
+//         };
+
+//         localStorage.setItem("aivolve_user", JSON.stringify(aivolveUser));
+//         window.dispatchEvent(new Event("storage"));
+
+//         console.log("AutoML account ready in background");
+//       } catch (err) {
+//         console.warn("AutoML background prep failed silently", err);
+//         // → We don't show error to user here — it's background
+//       }
+//     };
+
+//     warmUpAutoML();
+//   }, []); // ← empty deps = run once on mount
+
 //   // Load persisted job statuses from localStorage on mount
 //   useEffect(() => {
 //     const persistedStatuses = localStorage.getItem("jobStatuses");
@@ -130,14 +203,14 @@
 //               };
 //             }
 //             return job;
-//           })
+//           }),
 //         );
 //       } catch (e) {
 //         console.error("Failed to parse persisted job statuses", e);
 //       }
 //     }
 //   }, []);
- 
+
 //   const handleLogout = () => {
 //     localStorage.clear();
 //     // localStorage.removeItem("user");
@@ -148,7 +221,7 @@
 //     });
 //     navigate("/", { replace: true });
 //   };
- 
+
 //   useEffect(() => {
 //     const fetchJobs = async () => {
 //       if (!userId) {
@@ -158,16 +231,18 @@
 //         setLoading(false);
 //         return;
 //       }
- 
+
 //       try {
 //         setLoading(true);
-//         const response = await fetch(`https://api.veriton.ai/api/service1/get-all-jobs?user_id=${userId}`);
+//         const response = await fetch(
+//           `https://api.veriton.ai/api/service1/get-all-jobs?user_id=${userId}`,
+//         );
 //         if (!response.ok) {
 //           throw new Error(`Failed to fetch jobs: ${response.status}`);
 //         }
- 
+
 //         const data = await response.json();
- 
+
 //         let mappedJobs: Job[] = data.jobs.map((item: ApiJob) => ({
 //           id: item.job_id,
 //           name: item.job_name || "Unnamed Job",
@@ -189,7 +264,7 @@
 //             dataTransformations: "skipped",
 //           },
 //         }));
- 
+
 //         // Merge persisted statuses
 //         const persistedStatusesStr = localStorage.getItem("jobStatuses");
 //         if (persistedStatusesStr) {
@@ -210,7 +285,7 @@
 //             console.error("Failed to parse persisted statuses", e);
 //           }
 //         }
- 
+
 //         setJobs(mappedJobs);
 //       } catch (error) {
 //         console.error("Error fetching jobs:", error);
@@ -221,10 +296,10 @@
 //         setLoading(false);
 //       }
 //     };
- 
+
 //     fetchJobs();
 //   }, [userId]);
- 
+
 //   useEffect(() => {
 //     if (jobs.length > 0) {
 //       const statusMap: Record<string, { status: string; lastRun: string }> = {};
@@ -237,59 +312,96 @@
 //       localStorage.setItem("jobStatuses", JSON.stringify(statusMap));
 //     }
 //   }, [jobs]);
- 
+
 //   const filteredJobs = jobs.filter((job) => {
-//     const matchesSearch = job.name.toLowerCase().includes(searchQuery.toLowerCase());
-//     const matchesCategory = categoryFilter === "all" || job.category === categoryFilter;
+//     const matchesSearch = job.name
+//       .toLowerCase()
+//       .includes(searchQuery.toLowerCase());
+//     const matchesCategory =
+//       categoryFilter === "all" || job.category === categoryFilter;
 //     const matchesStatus = statusFilter === "All" || job.status === statusFilter;
 //     const jobDate = new Date(job.createdAt);
 //     const afterStart = !startDate || jobDate >= new Date(startDate);
 //     const beforeEnd = !endDate || jobDate <= new Date(endDate);
-//     return matchesSearch && matchesCategory && matchesStatus && afterStart && beforeEnd;
+//     return (
+//       matchesSearch &&
+//       matchesCategory &&
+//       matchesStatus &&
+//       afterStart &&
+//       beforeEnd
+//     );
 //   });
- 
+
 //   const jobsByCategory = [
-//     { name: "Unknown", value: jobs.filter((j) => j.category === "Unknown").length, color: "#3b82f6" },
-//     { name: "Glue", value: jobs.filter((j) => j.category === "Glue").length, color: "#10b981" },
+//     {
+//       name: "Unknown",
+//       value: jobs.filter((j) => j.category === "Unknown").length,
+//       color: "#3b82f6",
+//     },
+//     {
+//       name: "Glue",
+//       value: jobs.filter((j) => j.category === "Glue").length,
+//       color: "#10b981",
+//     },
 //   ];
- 
+
 //   const jobsByStatus = [
-//     { name: "PENDING", value: jobs.filter((j) => j.status === "PENDING").length, color: "#f97316" },
-//     { name: "Completed", value: jobs.filter((j) => j.status === "Completed").length, color: "#10b981" },
-//     { name: "Created", value: jobs.filter((j) => j.status === "Created").length, color: "#6b7280" },
+//     {
+//       name: "PENDING",
+//       value: jobs.filter((j) => j.status === "PENDING").length,
+//       color: "#f97316",
+//     },
+//     {
+//       name: "Completed",
+//       value: jobs.filter((j) => j.status === "Completed").length,
+//       color: "#10b981",
+//     },
+//     {
+//       name: "Created",
+//       value: jobs.filter((j) => j.status === "Created").length,
+//       color: "#6b7280",
+//     },
 //   ];
- 
+
 //   const hourlyData = Array.from({ length: 8 }, (_, i) => ({
 //     time: `${String(i * 3).padStart(2, "0")}:00`,
 //     jobs: 0,
 //   }));
- 
+
 //   const runJob = (jobId: string) => {
 //     setJobs((prevJobs) =>
 //       prevJobs.map((job) =>
 //         job.id === jobId
-//           ? { ...job, status: "Running" as const, lastRun: new Date().toLocaleString() }
-//           : job
-//       )
+//           ? {
+//               ...job,
+//               status: "Running" as const,
+//               lastRun: new Date().toLocaleString(),
+//             }
+//           : job,
+//       ),
 //     );
 //     toast.success("Job started successfully", {
 //       action: closeToastButton,
 //     });
- 
+
 //     setTimeout(() => {
 //       setJobs((prevJobs) =>
 //         prevJobs.map((job) =>
 //           job.id === jobId
-//             ? { ...job, status: "Completed" as const, lastRun: new Date().toLocaleString() }
-//             : job
-//         )
+//             ? {
+//                 ...job,
+//                 status: "Completed" as const,
+//                 lastRun: new Date().toLocaleString(),
+//               }
+//             : job,
+//         ),
 //       );
 //       toast.success("Job completed successfully", {
 //         action: closeToastButton,
 //       });
 //     }, 3000);
 //   };
- 
+
 //   const getStatusBadge = (status: string) => {
 //     const styles: Record<string, string> = {
 //       Completed: "bg-green-500/20 text-green-600 border-green-500/30",
@@ -300,14 +412,18 @@
 //     };
 //     return <Badge className={styles[status] || styles.Created}>{status}</Badge>;
 //   };
- 
+
 //   const getStepBadge = (status: "skipped" | "executed") => {
 //     if (status === "executed") {
-//       return <Badge className="bg-primary/20 text-primary border-primary/30">executed</Badge>;
+//       return (
+//         <Badge className="bg-primary/20 text-primary border-primary/30">
+//           executed
+//         </Badge>
+//       );
 //     }
 //     return <Badge variant="secondary">skipped</Badge>;
 //   };
- 
+
 //   const openJobDetails = async (job: Job) => {
 //     if (!userId) {
 //       toast.error("User ID not found. Please login again.", {
@@ -315,18 +431,20 @@
 //       });
 //       return;
 //     }
- 
+
 //     setModalLoading(true);
 //     setShowJobModal(true);
 //     setSelectedJob(null);
- 
+
 //     try {
-//       const response = await fetch(`${API_BASE}/view-job?user_id=${userId}&job_id=${job.id}`);
- 
+//       const response = await fetch(
+//         `${API_BASE}/view-job?user_id=${userId}&job_id=${job.id}`,
+//       );
+
 //       if (!response.ok) {
 //         throw new Error(`Failed to fetch job details: ${response.status}`);
 //       }
- 
+
 //       const data: DetailedJobResponse = await response.json();
 //       setSelectedJob(data);
 //     } catch (error) {
@@ -339,14 +457,15 @@
 //       setModalLoading(false);
 //     }
 //   };
- 
+
 //   const getS3Path = (paths: any[] = []) => {
 //     return (
-//       paths.find((path) => typeof path === 'string' && path.startsWith("s3://")) ||
-//       "N/A"
+//       paths.find(
+//         (path) => typeof path === "string" && path.startsWith("s3://"),
+//       ) || "N/A"
 //     );
 //   };
- 
+
 //   const formatSchedule = (schedule: DetailedJobResponse["schedule"]) => {
 //     if (!schedule) return "N/A";
 //     const parts = [];
@@ -362,78 +481,11 @@
 //           hour: "numeric",
 //           minute: "2-digit",
 //           hour12: true,
-//         })}`
+//         })}`,
 //       );
 //     }
 //     return parts.join(" • ") || "N/A";
 //   };
-
-//  const handleAutoMLClick = async () => {
-//   try {
-//     const storedUser = localStorage.getItem("user");
-//     if (!storedUser) {
-//       toast.error("Please log in again", { action: closeToastButton });
-//       return;
-//     }
- 
-//     const baseUser = JSON.parse(storedUser);
-//     if (!baseUser?.email || !baseUser?.name) {
-//       toast.error("User profile incomplete", { action: closeToastButton });
-//       return;
-//     }
- 
-//     // Show a quick toast so user knows something is happening
-//     toast.loading("Connecting to Auto AI/ML...", {
-//       id: "automl-connect",
-//       action: closeToastButton,
-//     });
- 
-//     const formData = new URLSearchParams();
-//     formData.append("email", baseUser.email);
-//     formData.append("full_name", baseUser.name);
- 
-//     const res = await fetch(
-//       "https://automl-webnew-chcgfqc8a5cbhtc4.eastus-01.azurewebsites.net/automl_register_login",
-//       {
-//         method: "POST",
-//         headers: {
-//           accept: "application/json",
-//           "Content-Type": "application/x-www-form-urlencoded",
-//         },
-//         body: formData.toString(),
-//       }
-//     );
- 
-//     if (!res.ok) throw new Error("AutoML connection failed");
- 
-//     const data = await res.json();
- 
-//     const aivolveUser = {
-//       ...data.user,
-//       agent_id: data.agent_id,
-//       agent_name: data.agent_name,
-//       session_id: data.session_id,
-//       total_chats: data.total_chats,
-//     };
- 
-//     localStorage.setItem("aivolve_user", JSON.stringify(aivolveUser));
-//     window.dispatchEvent(new Event("storage"));
- 
-//     toast.dismiss("automl-connect");
-//     toast.success("Connected!", { action: closeToastButton });
- 
-//     // Hard redirect — but feels cleaner without button changing
-//     window.location.href = "/workflow/automl/jobs1";
- 
-//   } catch (err) {
-//     toast.dismiss("automl-connect");
-//     toast.error("Connection failed. Please try again.", {
-//       action: closeToastButton,
-//     });
-//     console.error(err);
-//   }
-// };
- 
 
 //   return (
 //     <div className=" h-screen flex flex-col overflow-hidden">
@@ -451,36 +503,36 @@
 //                   Welcome, <span className="text-primary">{userName}</span>
 //                 </p>
 //               </div> */}
-            
+
 //             <div className="flex items-center gap-3 md:gap-4">
-//   {/* Logo */}
-//   <a href="/" className="flex-shrink-0">
-//     <img
-//       src="/logo2.png"
-//       alt="Veriton"
-//       className="
-//         h-10               /* mobile base size */
-//         sm:h-10
-//         md:h-9 lg:h-10    /* larger on desktop */
-//         w-auto
-//         object-contain
-//         drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
-//         transition-transform duration-200
-//         hover:scale-105
-//       "
-//     />
-//   </a>
+//               {/* Logo */}
+//               <a href="/" className="flex-shrink-0">
+//                 <img
+//                   src="/logo2.png"
+//                   alt="Veriton"
+//                   className="
+//                     h-10               /* mobile base size */
+//                     sm:h-10
+//                     md:h-9 lg:h-10    /* larger on desktop */
+//                     w-auto
+//                     object-contain
+//                     drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+//                     transition-transform duration-200
+//                     hover:scale-105
+//                   "
+//                 />
+//               </a>
 
-//   {/* Welcome text – side by side */}
-//   <div className="flex flex-col">
-//     <p className="text-sm md:text-base text-muted-foreground">
-//       Welcome, <span className="text-primary font-medium">{userName || "User"}</span>
-//     </p>
-//   </div>
-// </div>
-            
-
-
+//               {/* Welcome text – side by side */}
+//               <div className="flex flex-col">
+//                 <p className="text-sm md:text-base text-muted-foreground">
+//                   Welcome,{" "}
+//                   <span className="text-primary font-medium">
+//                     {userName || "User"}
+//                   </span>
+//                 </p>
+//               </div>
+//             </div>
 
 //             <nav className="flex items-center gap-6">
 //               <button
@@ -499,30 +551,36 @@
 //               </button>
 
 //               <button
-//                 onClick={() => navigate("/datasets")}  // or any route you prefer
+//                 onClick={() => navigate("/datasets")} // or any route you prefer
 //                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
 //               >
-//                 <TableIcon className="w-4 h-4" />   {/* Perfect icon for datasets */}
+//                 <TableIcon className="w-4 h-4" />{" "}
+//                 {/* Perfect icon for datasets */}
 //                 Datasets
 //               </button>
-                
-//              <button
-//                 onClick={handleAutoMLClick}
+
+//               <button
+//                 onClick={() => {
+//                   // Optional: double-check (but usually not needed)
+//                   if (!localStorage.getItem("aivolve_user")) {
+//                     toast.info("Preparing AutoML...", { duration: 2000 });
+//                   }
+//                   navigate("/workflow/automl/jobs1");
+//                   // or window.location.href = "/workflow/automl" if you still prefer hard redirect
+//                 }}
 //                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
 //               >
 //                 <Sparkles className="w-4 h-4" />
-//                 Auto AI/ML
+//                 AutoML
 //               </button>
- 
+
 //               <div className="flex items-center gap-3">
 //                 <ThemeToggle />
- 
+
 //                 <Button
 //                   variant="ghost"
 //                   size="icon"
-//                   onClick={handleLogout
-                    
-//                   }
+//                   onClick={handleLogout}
 //                   className="hover:bg-primary rounded-full"
 //                   title="Logout"
 //                 >
@@ -533,7 +591,7 @@
 //           </div>
 //         </div>
 //       </header>
- 
+
 //       <main className="container mx-auto px-6 py-8 flex-1 overflow-y-auto">
 //         {viewMode === "chart" ? (
 //           <>
@@ -549,7 +607,7 @@
 //                 Table View
 //               </Button>
 //             </div>
- 
+
 //             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 //               <Card className="p-6">
 //                 <h3 className="font-semibold mb-4">Jobs by Category</h3>
@@ -575,7 +633,7 @@
 //                   </ResponsiveContainer>
 //                 </div>
 //               </Card>
- 
+
 //               <Card className="p-6">
 //                 <h3 className="font-semibold mb-4">Job Status Distribution</h3>
 //                 <div className="h-64">
@@ -601,7 +659,7 @@
 //                 </div>
 //               </Card>
 //             </div>
- 
+
 //             <Card className="p-6">
 //               <div className="flex items-center justify-between mb-4">
 //                 <h3 className="font-semibold">
@@ -627,7 +685,13 @@
 //                     <YAxis />
 //                     <Tooltip />
 //                     <Legend />
-//                     <Line type="monotone" dataKey="jobs" name="Glue Jobs" stroke="#3b82f6" strokeWidth={2} />
+//                     <Line
+//                       type="monotone"
+//                       dataKey="jobs"
+//                       name="Glue Jobs"
+//                       stroke="#3b82f6"
+//                       strokeWidth={2}
+//                     />
 //                   </LineChart>
 //                 </ResponsiveContainer>
 //               </div>
@@ -637,8 +701,12 @@
 //           <>
 //             <div className="flex items-center justify-between mb-8">
 //               <div>
-//                 <h2 className="text-2xl font-bold">All Jobs ({filteredJobs.length})</h2>
-//                 <p className="text-muted-foreground">View and manage your jobs</p>
+//                 <h2 className="text-2xl font-bold">
+//                   All Jobs ({filteredJobs.length})
+//                 </h2>
+//                 <p className="text-muted-foreground">
+//                   View and manage your jobs
+//                 </p>
 //               </div>
 //               <div className="flex items-center gap-3">
 //                 {/* <Button variant="outline" onClick={() => setViewMode("chart")}>
@@ -649,136 +717,164 @@
 //                   <Plus className="w-4 h-4 mr-2" />
 //                   Create Job
 //                 </Button> */}
-//                 <Button 
-//                 onClick={() => {
-//                   // Modern browsers support crypto.randomUUID()
-//                   const newJobId = crypto.randomUUID().replace(/-/g, '');
-                  
-//                   localStorage.setItem("current_job_id", newJobId);
-              
-//                   navigate("/workflow/data-ingestion");
-//                 }}
-//               >
-//                 <Plus className="w-4 h-4 mr-2" />
-//                 Create Job
-//               </Button>
+//                 <Button
+//                   onClick={() => {
+//                     // Modern browsers support crypto.randomUUID()
+//                     const newJobId = crypto.randomUUID().replace(/-/g, "");
+
+//                     localStorage.setItem("current_job_id", newJobId);
+
+//                     navigate("/workflow/data-ingestion");
+//                   }}
+//                 >
+//                   <Plus className="w-4 h-4 mr-2" />
+//                   Create Job
+//                 </Button>
 //               </div>
 //             </div>
- 
+
 //             <div className="p-4 mb-6">
-//   <div className="flex flex-wrap items-center gap-4">
-//     <div className="relative flex-1 min-w-[200px]">
-//       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-//       <Input
-//         placeholder="Search jobs..."
-//         value={searchQuery}
-//         onChange={(e) => setSearchQuery(e.target.value)}
-//         className="pl-10"
-//       />
-//     </div>
- 
-//     <div className="flex flex-col sm:flex-row gap-4">
-//       <div className="relative w-40">
-//         <Input
-//           type="date"
-//           value={startDate}
-//           onChange={(e) => setStartDate(e.target.value)}
-//           className="w-full text-center peer"
-//           placeholder=" "
-//         />
-//         <label
-//           className="
+//               <div className="flex flex-wrap items-center gap-4">
+//                 <div className="relative flex-1 min-w-[200px]">
+//                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+//                   <Input
+//                     placeholder="Search jobs..."
+//                     value={searchQuery}
+//                     onChange={(e) => setSearchQuery(e.target.value)}
+//                     className="pl-10"
+//                   />
+//                 </div>
+
+//                 <div className="flex flex-col sm:flex-row gap-4">
+//                   <div className="relative w-40">
+//                     <Input
+//                       type="date"
+//                       value={startDate}
+//                       onChange={(e) => setStartDate(e.target.value)}
+//                       className="w-full text-center peer"
+//                       placeholder=" "
+//                     />
+//                     <label
+//                       className="
 //             absolute left-2 -top-2.5 px-1 text-xs font-medium text-muted-foreground
 //             bg-background transition-all peer-placeholder-shown:top-1/2
 //             peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground/70
 //             peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-foreground
 //           "
-//         >
-//           Start Date
-//         </label>
-//       </div>
- 
-//       <div className="relative w-40">
-//         <Input
-//           type="date"
-//           value={endDate}
-//           onChange={(e) => setEndDate(e.target.value)}
-//           className="w-full text-center peer"
-//           placeholder=" "
-//         />
-//         <label
-//           className="
+//                     >
+//                       Start Date
+//                     </label>
+//                   </div>
+
+//                   <div className="relative w-40">
+//                     <Input
+//                       type="date"
+//                       value={endDate}
+//                       onChange={(e) => setEndDate(e.target.value)}
+//                       className="w-full text-center peer"
+//                       placeholder=" "
+//                     />
+//                     <label
+//                       className="
 //             absolute left-2 -top-2.5 px-1 text-xs font-medium text-muted-foreground
 //             bg-background transition-all peer-placeholder-shown:top-1/2
 //             peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground/70
 //             peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-foreground
 //           "
-//         >
-//           End Date
-//         </label>
-//       </div>
- 
-//       {/* Status dropdown with floating label */}
-//       <div className="relative w-40">
-//         <Select value={statusFilter} onValueChange={setStatusFilter}>
-//           <SelectTrigger
-//             className="
+//                     >
+//                       End Date
+//                     </label>
+//                   </div>
+
+//                   {/* Status dropdown with floating label */}
+//                   <div className="relative w-40">
+//                     <Select
+//                       value={statusFilter}
+//                       onValueChange={setStatusFilter}
+//                     >
+//                       <SelectTrigger
+//                         className="
 //               w-full text-center peer
 //               [&>span]:text-muted-foreground/70
 //               peer-placeholder-shown:text-muted-foreground/70
 //               focus-within:text-foreground
 //             "
-//           >
-//             <SelectValue placeholder=" " />
-//           </SelectTrigger>
-//           <label
-//             className="
+//                       >
+//                         <SelectValue placeholder=" " />
+//                       </SelectTrigger>
+//                       <label
+//                         className="
 //               absolute left-2 -top-2.5 px-1 text-xs font-medium text-muted-foreground
 //               bg-background transition-all peer-placeholder-shown:top-1/2
 //               peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground/70
 //               peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-foreground
 //             "
-//           >
-//             Status
-//           </label>
-//           <SelectContent>
-//             <SelectItem className="hover:bg-primary/30" value="All">All Statuses</SelectItem>
-//             <SelectItem className="hover:bg-primary/30" value="Created">Created</SelectItem>
-//             <SelectItem className="hover:bg-primary/30" value="Running">Running</SelectItem>
-//             <SelectItem className="hover:bg-primary/30" value="Completed">Completed</SelectItem>
-//             <SelectItem className="hover:bg-primary/30" value="Failed">Failed</SelectItem>
-//             <SelectItem className="hover:bg-primary/30" value="PENDING">Pending</SelectItem>
-//           </SelectContent>
-//         </Select>
-//       </div>
-//     </div>
- 
-//     <Button
-//       variant="ghost"
-//       onClick={() => {
-//         setSearchQuery("");
-//         setCategoryFilter("all");
-//         setStatusFilter("All");
-//         setStartDate("");
-//         setEndDate("");
-//       }}
-//       className="border border-border"
-//     >
-//       Clear
-//     </Button>
-//   </div>
-// </div>
- 
- 
- 
-           
- 
+//                       >
+//                         Status
+//                       </label>
+//                       <SelectContent>
+//                         <SelectItem className="hover:bg-primary/30" value="All">
+//                           All Statuses
+//                         </SelectItem>
+//                         <SelectItem
+//                           className="hover:bg-primary/30"
+//                           value="Created"
+//                         >
+//                           Created
+//                         </SelectItem>
+//                         <SelectItem
+//                           className="hover:bg-primary/30"
+//                           value="Running"
+//                         >
+//                           Running
+//                         </SelectItem>
+//                         <SelectItem
+//                           className="hover:bg-primary/30"
+//                           value="Completed"
+//                         >
+//                           Completed
+//                         </SelectItem>
+//                         <SelectItem
+//                           className="hover:bg-primary/30"
+//                           value="Failed"
+//                         >
+//                           Failed
+//                         </SelectItem>
+//                         <SelectItem
+//                           className="hover:bg-primary/30"
+//                           value="PENDING"
+//                         >
+//                           Pending
+//                         </SelectItem>
+//                       </SelectContent>
+//                     </Select>
+//                   </div>
+//                 </div>
+
+//                 <Button
+//                   variant="ghost"
+//                   onClick={() => {
+//                     setSearchQuery("");
+//                     setCategoryFilter("all");
+//                     setStatusFilter("All");
+//                     setStartDate("");
+//                     setEndDate("");
+//                   }}
+//                   className="border border-border"
+//                 >
+//                   Clear
+//                 </Button>
+//               </div>
+//             </div>
+
 //             <Card className="min-h-[300px] flex flex-col">
 //               {loading ? (
 //                 <div className="flex-1 flex items-center justify-center py-12">
 //                   <div className="flex flex-col items-center gap-3">
 //                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
-//                     <p className="text-muted-foreground">Loading your jobs...</p>
+//                     <p className="text-muted-foreground">
+//                       Loading your jobs...
+//                     </p>
 //                   </div>
 //                 </div>
 //               ) : filteredJobs.length === 0 ? (
@@ -790,19 +886,36 @@
 //                   <table className="w-full">
 //                     <thead>
 //                       <tr className="border-b border-border">
-//                         <th className="text-left p-4 font-medium text-muted-foreground">Job Name</th>
-//                         <th className="text-left p-4 font-medium text-muted-foreground">Created At</th>
-//                         <th className="text-left p-4 font-medium text-muted-foreground">Last Run</th>
-//                         <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
-//                         <th className="text-center p-4 font-medium text-muted-foreground">Actions</th>
+//                         <th className="text-left p-4 font-medium text-muted-foreground">
+//                           Job Name
+//                         </th>
+//                         <th className="text-left p-4 font-medium text-muted-foreground">
+//                           Created At
+//                         </th>
+//                         <th className="text-left p-4 font-medium text-muted-foreground">
+//                           Last Run
+//                         </th>
+//                         <th className="text-left p-4 font-medium text-muted-foreground">
+//                           Status
+//                         </th>
+//                         <th className="text-center p-4 font-medium text-muted-foreground">
+//                           Actions
+//                         </th>
 //                       </tr>
 //                     </thead>
 //                     <tbody>
 //                       {filteredJobs.map((job) => (
-//                         <tr key={job.id} className="border-b border-border last:border-0 hover:bg-muted/30">
+//                         <tr
+//                           key={job.id}
+//                           className="border-b border-border last:border-0 hover:bg-muted/30"
+//                         >
 //                           <td className="p-4 font-medium">{job.name}</td>
-//                           <td className="p-4 text-muted-foreground">{job.createdAt}</td>
-//                           <td className="p-4 text-muted-foreground">{job.lastRun}</td>
+//                           <td className="p-4 text-muted-foreground">
+//                             {job.createdAt}
+//                           </td>
+//                           <td className="p-4 text-muted-foreground">
+//                             {job.lastRun}
+//                           </td>
 //                           <td className="p-4">{getStatusBadge(job.status)}</td>
 //                           <td className="p-4">
 //                             <div className="flex items-center justify-center gap-2">
@@ -810,7 +923,10 @@
 //                                 size="icon"
 //                                 className="bg-primary hover:bg-primary/90 h-8 w-8"
 //                                 onClick={() => runJob(job.id)}
-//                                 disabled={job.status === "Running" || job.status === "Completed"}
+//                                 disabled={
+//                                   job.status === "Running" ||
+//                                   job.status === "Completed"
+//                                 }
 //                               >
 //                                 <Play className="w-4 h-4" />
 //                               </Button>
@@ -828,7 +944,10 @@
 //                                 className="h-8 w-8"
 //                                 onClick={() =>
 //                                   navigate(`/edit-job/${job.id}`, {
-//                                     state: { business_logic_rules: selectedJob?.business_logic_rules || {} },
+//                                     state: {
+//                                       business_logic_rules:
+//                                         selectedJob?.business_logic_rules || {},
+//                                     },
 //                                   })
 //                                 }
 //                               >
@@ -846,7 +965,7 @@
 //           </>
 //         )}
 //       </main>
- 
+
 //       {/* Job Details Modal */}
 //       <Dialog open={showJobModal} onOpenChange={setShowJobModal}>
 //         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
@@ -860,7 +979,7 @@
 //               </Button>
 //             </DialogClose>
 //           </DialogHeader>
- 
+
 //           {modalLoading ? (
 //             <div className="flex flex-col items-center justify-center py-12">
 //               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
@@ -875,7 +994,9 @@
 //                   </div>
 //                   <div>
 //                     <p className="text-sm text-muted-foreground">Job Name</p>
-//                     <p className="font-medium">{selectedJob.job_name || "N/A"}</p>
+//                     <p className="font-medium">
+//                       {selectedJob.job_name || "N/A"}
+//                     </p>
 //                   </div>
 //                 </Card>
 //                 <Card className="p-4 flex items-center gap-3">
@@ -884,36 +1005,51 @@
 //                   </div>
 //                   <div>
 //                     <p className="text-sm text-muted-foreground">Data Source</p>
-//                     <p className="font-medium">{getS3Path(selectedJob.datasource_paths)}</p>
+//                     <p className="font-medium">
+//                       {getS3Path(selectedJob.datasource_paths)}
+//                     </p>
 //                   </div>
 //                 </Card>
 //               </div>
- 
+
 //               <Card className="p-6 mb-6">
 //                 <div className="grid grid-cols-2 gap-8">
 //                   <div>
 //                     <h4 className="font-semibold mb-4">Job Information</h4>
 //                     <div className="space-y-3">
 //                       <div>
-//                         <p className="text-sm text-muted-foreground">Job Name:</p>
-//                         <p className="font-medium">{selectedJob.job_name || "N/A"}</p>
-//                       </div>
-//                       <div>
-//                         <p className="text-sm text-muted-foreground">Created At:</p>
+//                         <p className="text-sm text-muted-foreground">
+//                           Job Name:
+//                         </p>
 //                         <p className="font-medium">
-//                           {new Date(selectedJob.created_at).toLocaleString("en-US", {
-//                             month: "short",
-//                             day: "numeric",
-//                             year: "numeric",
-//                             hour: "numeric",
-//                             minute: "2-digit",
-//                             hour12: true,
-//                           })}
+//                           {selectedJob.job_name || "N/A"}
 //                         </p>
 //                       </div>
 //                       <div>
-//                         <p className="text-sm text-muted-foreground">Data Source:</p>
-//                         <p className="font-medium">{getS3Path(selectedJob.datasource_paths)}</p>
+//                         <p className="text-sm text-muted-foreground">
+//                           Created At:
+//                         </p>
+//                         <p className="font-medium">
+//                           {new Date(selectedJob.created_at).toLocaleString(
+//                             "en-US",
+//                             {
+//                               month: "short",
+//                               day: "numeric",
+//                               year: "numeric",
+//                               hour: "numeric",
+//                               minute: "2-digit",
+//                               hour12: true,
+//                             },
+//                           )}
+//                         </p>
+//                       </div>
+//                       <div>
+//                         <p className="text-sm text-muted-foreground">
+//                           Data Source:
+//                         </p>
+//                         <p className="font-medium">
+//                           {getS3Path(selectedJob.datasource_paths)}
+//                         </p>
 //                       </div>
 //                     </div>
 //                   </div>
@@ -921,14 +1057,22 @@
 //                     <h4 className="font-semibold mb-4">Execution Details</h4>
 //                     <div className="space-y-3">
 //                       <div>
-//                         <p className="text-sm text-muted-foreground">Overall Status:</p>
-//                         <Badge variant="outline">{selectedJob.overall_job_status || "N/A"}</Badge>
+//                         <p className="text-sm text-muted-foreground">
+//                           Overall Status:
+//                         </p>
+//                         <Badge variant="outline">
+//                           {selectedJob.overall_job_status || "N/A"}
+//                         </Badge>
 //                       </div>
 //                       <div>
-//                         <p className="text-sm text-muted-foreground">Last Run:</p>
+//                         <p className="text-sm text-muted-foreground">
+//                           Last Run:
+//                         </p>
 //                         <p className="font-medium">
 //                           {selectedJob.overall_last_job_run
-//                             ? new Date(selectedJob.overall_last_job_run).toLocaleString("en-US", {
+//                             ? new Date(
+//                                 selectedJob.overall_last_job_run,
+//                               ).toLocaleString("en-US", {
 //                                 month: "short",
 //                                 day: "numeric",
 //                                 year: "numeric",
@@ -940,14 +1084,18 @@
 //                         </p>
 //                       </div>
 //                       <div>
-//                         <p className="text-sm text-muted-foreground">Schedule:</p>
-//                         <p className="font-medium">{formatSchedule(selectedJob.schedule)}</p>
+//                         <p className="text-sm text-muted-foreground">
+//                           Schedule:
+//                         </p>
+//                         <p className="font-medium">
+//                           {formatSchedule(selectedJob.schedule)}
+//                         </p>
 //                       </div>
 //                     </div>
 //                   </div>
 //                 </div>
 //               </Card>
- 
+
 //               <h3 className="text-lg font-semibold mb-4">Job Stages (3)</h3>
 //               <div className="grid grid-cols-3 gap-4 mb-6">
 //                 <Card className="p-4">
@@ -961,9 +1109,11 @@
 //                     </div>
 //                   </div>
 //                   <p className="font-medium mb-2">DQ Rules</p>
-//                   {getStepBadge(selectedJob.dq_enabled ? "executed" : "skipped")}
+//                   {getStepBadge(
+//                     selectedJob.dq_enabled ? "executed" : "skipped",
+//                   )}
 //                 </Card>
- 
+
 //                 <Card className="p-4">
 //                   <div className="flex items-center gap-2 mb-2">
 //                     <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -975,9 +1125,11 @@
 //                     </div>
 //                   </div>
 //                   <p className="font-medium mb-2">NER</p>
-//                   {getStepBadge(selectedJob.ner_enabled ? "executed" : "skipped")}
+//                   {getStepBadge(
+//                     selectedJob.ner_enabled ? "executed" : "skipped",
+//                   )}
 //                 </Card>
- 
+
 //                 <Card className="p-4">
 //                   <div className="flex items-center gap-2 mb-2">
 //                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -989,21 +1141,25 @@
 //                     </div>
 //                   </div>
 //                   <p className="font-medium mb-2">Business Logic</p>
-//                   {getStepBadge(selectedJob.business_logic_enabled ? "executed" : "skipped")}
+//                   {getStepBadge(
+//                     selectedJob.business_logic_enabled ? "executed" : "skipped",
+//                   )}
 //                 </Card>
 //               </div>
 //             </>
 //           ) : (
-//             <div className="text-center py-12 text-muted-foreground">No job details available</div>
+//             <div className="text-center py-12 text-muted-foreground">
+//               No job details available
+//             </div>
 //           )}
 //         </DialogContent>
 //       </Dialog>
 //     </div>
 //   );
 // };
- 
+
 // export default Jobs;
- 
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -1134,63 +1290,6 @@ const Jobs = () => {
     </button>
   );
 
-  useEffect(() => {
-    // Prevent calling multiple times in the same session
-    // if (localStorage.getItem("aivolve_user")) {
-    //   return; // already have it → skip
-    // }
-
-    const warmUpAutoML = async () => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        if (!storedUser) return;
-
-        const baseUser = JSON.parse(storedUser);
-        if (!baseUser?.email || !baseUser?.name) return;
-
-        const formData = new URLSearchParams();
-        formData.append("email", baseUser.email);
-        formData.append("full_name", baseUser.name);
-
-        const res = await fetch(
-          "https://api.veriton.ai/api/service3/automl_register_login",
-          {
-            method: "POST",
-            headers: {
-              accept: "application/json",
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: formData.toString(),
-          },
-        );
-
-        if (!res.ok) {
-          console.warn("AutoML warm-up failed", res.status);
-          return;
-        }
-
-        const data = await res.json();
-
-        const aivolveUser = {
-          ...data.user,
-          agent_id: data.agent_id,
-          agent_name: data.agent_name,
-          session_id: data.session_id,
-          total_chats: data.total_chats,
-        };
-
-        localStorage.setItem("aivolve_user", JSON.stringify(aivolveUser));
-        window.dispatchEvent(new Event("storage"));
-
-        console.log("AutoML account ready in background");
-      } catch (err) {
-        console.warn("AutoML background prep failed silently", err);
-        // → We don't show error to user here — it's background
-      }
-    };
-
-    warmUpAutoML();
-  }, []); // ← empty deps = run once on mount
 
   // Load persisted job statuses from localStorage on mount
   useEffect(() => {
@@ -1569,7 +1668,7 @@ const Jobs = () => {
                 onClick={() => {
                   // Optional: double-check (but usually not needed)
                   if (!localStorage.getItem("aivolve_user")) {
-                    toast.info("Preparing AutoML...", { duration: 2000 });
+                    toast.info("Preparing Auto AI/ML...", { duration: 2000 });
                   }
                   navigate("/workflow/automl/jobs1");
                   // or window.location.href = "/workflow/automl" if you still prefer hard redirect
@@ -1577,7 +1676,7 @@ const Jobs = () => {
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
-                AutoML
+                Auto AI/ML
               </button>
 
               <div className="flex items-center gap-3">

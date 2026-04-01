@@ -534,10 +534,10 @@ export function PowerBIMicrosoftLogin({
     // Clear any previous success flag
     localStorage.removeItem('pbi_auth_success');
 
-    const width = 520;
-    const height = 680;
+    const width = 460;
+    const height = 400;
     const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2 - 50;
+    const top = window.screenY + (window.outerHeight - height) / 2 - 40;
 
     const popup = window.open(
       'https://api.veriton.ai/api/service4/auth/login',

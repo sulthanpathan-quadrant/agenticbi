@@ -24,7 +24,7 @@ export function ValidationCompleteDialog({
  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-[550px] max-h-[91vh]">
         <Button
           variant="ghost"
           size="icon"
@@ -34,7 +34,7 @@ export function ValidationCompleteDialog({
           <X className="h-4 w-4" />
         </Button>
  
-        <div className="space-y-6 py-6">
+        <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold text-foreground">DQ Rules Validation</h2>
             <p className="text-muted-foreground mt-1">
@@ -42,9 +42,9 @@ export function ValidationCompleteDialog({
             </p>
           </div>
  
-          <div className="flex flex-col items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center">
-              <CheckCircle2 className="h-10 w-10 text-green-500" />
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+              <CheckCircle2 className="h-8 w-8 text-green-500" />
             </div>
  
             <h3 className="text-2xl font-semibold text-green-500">
@@ -54,11 +54,11 @@ export function ValidationCompleteDialog({
             <div className="w-full bg-muted/50 rounded-lg p-6">
               <div className="grid grid-cols-2 gap-6 mb-4">
                 <div className="text-center">
-                  <div className="text-5xl font-bold text-green-500 mb-2">{passed}</div>
+                  <div className="text-4xl font-bold text-green-500 mb-2">{passed}</div>
                   <div className="text-muted-foreground">Rules Passed</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-5xl font-bold text-red-500 mb-2">{failed}</div>
+                  <div className="text-4xl font-bold text-red-500 mb-2">{failed}</div>
                   <div className="text-muted-foreground">Rules Failed</div>
                 </div>
               </div>

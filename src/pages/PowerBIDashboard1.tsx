@@ -155,32 +155,6 @@ const PowerBIDashboard1 = () => {
   return (
     <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
       <Workflowheader/>
-      {/* <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
-        <div className="px-6 py-4">
-          <div className="flex justify-between items-center gap-4 animate-fade-in">
-            <div className='flex gap-4'>
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20">
-                <BarChart3 className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground tracking-tight">
-                  Power BI Dashboard Generator
-                </h1>
-                <p className="text-xs text-muted-foreground">
-                  {selectedDatasetName ? `Working with: ${selectedDatasetName}` : 'Loading dataset...'}
-                </p>
-              </div>
-            </div>
-            <div>
-              <Button variant="outline" onClick={() => navigate("/PathSelection1")}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to path selection
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div> */}
- 
       <div className="flex-1 flex overflow-hidden">
         {viewMode === 'chatbot' && selectedDatasetName ? (
           <ChatbotInterface1

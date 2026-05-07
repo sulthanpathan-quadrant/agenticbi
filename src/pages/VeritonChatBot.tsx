@@ -3,6 +3,7 @@
 // import {
 //   Send, Loader2, RotateCcw, Paperclip, FileText,
 //   X, Sparkles, Bot, User, Pencil, Check, XCircle,
+//   Download, Share2, BarChart3, TrendingUp, AlertCircle,
 // } from "lucide-react";
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
 // import ReactFlow, {
@@ -15,6 +16,12 @@
 // } from "reactflow";
 // import "reactflow/dist/style.css";
 // import { createPortal } from "react-dom";
+// import { useNavigate } from "react-router-dom";
+// import {
+//   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+//   ScatterChart, Scatter, Cell, LineChart, Line, AreaChart, Area,
+//   PieChart, Pie, Legend, FunnelChart, Funnel, LabelList,
+// } from "recharts";
 
 // // ─────────────────────────────────────────────────────────────
 // // EditableField — inline edit with confirm / cancel
@@ -430,11 +437,39 @@
 //   download_url: string;
 // }
 
+// interface DashboardKPI {
+//   kpi_name: string;
+//   measures: string;
+//   metrics: number;
+// }
+
+// interface DashboardVisual {
+//   chart_name: string;
+//   chart_type: string;
+//   description: string;
+//   value?: number;
+//   format?: string;
+//   x_axis_column?: string;
+//   y_axis_columns?: string[];
+//   data?: any;
+// }
+
+// interface DashboardResult {
+//   status: string;
+//   user_prompt: string;
+//   total_kpis_discovered: number;
+//   selected_kpi_names: string[];
+//   computed_kpis: DashboardKPI[];
+//   visuals: DashboardVisual[];
+//   total_visuals: number;
+// }
+
 // interface Message {
 //   id: string;
 //   role: "user" | "assistant";
 //   content: string;
 //   result?: MessageResult;
+//   dashboardResult?: DashboardResult;
 //   attachment?: string;
 //   error?: boolean;
 //   timestamp: Date;
@@ -445,8 +480,377 @@
 // const SAVE_JOB_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/save-job";
 // const RENAME_JOB_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/rename-job";
 // const RENAME_DATASET_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/rename-dataset";
+// const POWERBI_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/generate_powerbi_dashboard";
 
 // // ─────────────────────────────────────────────────────────────
+// // PowerBIDashboardCard — full DashboardView-style with recharts
+// // ─────────────────────────────────────────────────────────────
+// const DASHBOARD_COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
+
+// function PowerBIDashboardCard({ dashboard }: { dashboard: DashboardResult }) {
+//   const navigate = useNavigate();
+
+//   const visuals = dashboard.visuals || [];
+
+//   // KPI / card visuals
+//   const kpiVisuals = visuals.filter((v: any) =>
+//     v.chart_type === "KPI" || v.chart_type === "card"
+//   );
+
+//   // All non-KPI visuals (charts + table)
+//   const chartVisuals = visuals.filter((v: any) =>
+//     !["KPI", "card"].includes(v.chart_type)
+//   );
+
+//   const hasKpis = kpiVisuals.length > 0;
+//   const hasCharts = chartVisuals.length > 0;
+
+//   return (
+//     <div className="mt-3 w-full max-w-2xl space-y-6">
+
+//       {/* ── Header row ── */}
+//       <div className="flex flex-wrap items-center justify-between gap-3">
+//         <div className="flex items-center gap-2">
+//           <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+//             <BarChart3 className="w-5 h-5 text-primary" />
+//           </div>
+//           <span className="text-base font-semibold text-foreground">Power BI Dashboard</span>
+//         </div>
+//         <div className="flex items-center gap-2">
+//           <Button
+//             variant="outline"
+//             size="sm"
+//             className="gap-2 h-8 text-xs"
+//             onClick={() => navigate("/workflow/powerbi-flow")}
+//           >
+//             <Share2 className="w-3.5 h-3.5" />
+//             Deploy to Power BI
+//           </Button>
+//         </div>
+//       </div>
+
+//       {/* ── Stats pills ── */}
+//       <div className="flex flex-wrap items-center gap-3 text-xs">
+//         <span className="px-3 py-1.5 rounded-full bg-primary/10 text-primary font-medium">
+//           {kpiVisuals.length} KPIs
+//         </span>
+//         <span className="px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-400 font-medium">
+//           {dashboard.total_visuals} Visuals
+//         </span>
+//         <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
+//           {dashboard.total_kpis_discovered} KPIs Discovered
+//         </span>
+//       </div>
+
+//       {/* ── KPI Cards ── */}
+//       {hasKpis && (
+//         <div>
+//           <div className="flex items-center gap-2 mb-3">
+//             <TrendingUp className="w-4 h-4 text-primary" />
+//             <span className="text-sm font-semibold text-foreground">Key Results</span>
+//           </div>
+//           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+//             {kpiVisuals.map((kpi: any, i: number) => {
+//               const val = kpi.value;
+//               const formatted =
+//                 val == null ? "No data"
+//                 : val >= 1_000_000 ? `${(val / 1_000_000).toFixed(2)}M`
+//                 : val >= 1_000 ? `${(val / 1_000).toFixed(2)}K`
+//                 : val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+//               return (
+//                 <div key={i} className="bg-card border border-border rounded-xl p-4">
+//                   <p className="text-xs text-muted-foreground font-medium mb-1 leading-snug">{kpi.chart_name}</p>
+//                   <p className="text-xl font-bold text-primary leading-none mb-1">{formatted}</p>
+//                   <p className="text-[10px] text-muted-foreground leading-snug">{kpi.description || "Result from query"}</p>
+//                 </div>
+//               );
+//             })}
+//           </div>
+//         </div>
+//       )}
+
+//       {/* ── Chart Visuals ── */}
+//       {hasCharts && (
+//         <div>
+//           <div className="flex items-center gap-2 mb-3">
+//             <BarChart3 className="w-4 h-4 text-primary" />
+//             <span className="text-sm font-semibold text-foreground">Visualizations</span>
+//           </div>
+//           <div className="grid grid-cols-1 gap-5">
+//             {chartVisuals.map((visual: any, i: number) => {
+//               const hasData =
+//                 (visual.data?.x?.length > 0) ||
+//                 (visual.data?.y?.length > 0) ||
+//                 (visual.data?.labels?.length > 0) ||
+//                 (visual.data?.values?.length > 0) ||
+//                 (Object.values(visual.data?.series || {}).some((arr: any) => arr.length > 0)) ||
+//                 (visual.data?.rows?.length > 0);
+
+//               const chartType =
+//                 visual.chart_type === "column" || visual.chart_type === "histogram"
+//                   ? "bar"
+//                   : visual.chart_type;
+
+//               return (
+//                 <div key={i} className="bg-card rounded-xl border border-border p-4">
+//                   <h3 className="text-sm font-semibold text-foreground mb-1">{visual.chart_name}</h3>
+//                   <p className="text-xs text-muted-foreground mb-4">{visual.description || "No description"}</p>
+
+//                   {/* BAR */}
+//                   {(chartType === "bar") && (
+//                     <ResponsiveContainer width="100%" height={260}>
+//                       {hasData ? (
+//                         <BarChart data={(visual.data?.x || []).map((x: any, idx: number) => ({
+//                           name: String(x),
+//                           value: visual.data?.y?.[idx] ||
+//                             (Object.values(visual.data?.series || {}) as any[])[0]?.[idx] || 0,
+//                         }))}>
+//                           <CartesianGrid strokeDasharray="3 3" />
+//                           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+//                           <YAxis tick={{ fontSize: 11 }} />
+//                           <Tooltip />
+//                           <Bar dataKey="value" fill="#8b5cf6" />
+//                         </BarChart>
+//                       ) : <NoData />}
+//                     </ResponsiveContainer>
+//                   )}
+
+//                   {/* STACKED BAR */}
+//                   {chartType === "stacked_bar" && (
+//                     <ResponsiveContainer width="100%" height={260}>
+//                       {hasData ? (
+//                         <BarChart data={(visual.data?.x || []).map((x: any, idx: number) => {
+//                           const pt: any = { name: String(x) };
+//                           Object.entries(visual.data?.series || {}).forEach(([k, vals]: [string, any]) => {
+//                             pt[k] = vals[idx] || 0;
+//                           });
+//                           return pt;
+//                         })}>
+//                           <CartesianGrid strokeDasharray="3 3" />
+//                           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+//                           <YAxis tick={{ fontSize: 11 }} />
+//                           <Tooltip /><Legend />
+//                           {Object.keys(visual.data?.series || {}).map((k, si) => (
+//                             <Bar key={k} dataKey={k} stackId="a" fill={DASHBOARD_COLORS[si % DASHBOARD_COLORS.length]} />
+//                           ))}
+//                         </BarChart>
+//                       ) : <NoData />}
+//                     </ResponsiveContainer>
+//                   )}
+
+//                   {/* LINE */}
+//                   {chartType === "line" && (
+//                     <ResponsiveContainer width="100%" height={260}>
+//                       {hasData ? (
+//                         <LineChart data={(visual.data?.x || []).map((x: any, idx: number) => {
+//                           const pt: any = { name: String(x) };
+//                           Object.entries(visual.data?.series || {}).forEach(([k, vals]: [string, any]) => {
+//                             pt[k] = vals[idx] || 0;
+//                           });
+//                           return pt;
+//                         })}>
+//                           <CartesianGrid strokeDasharray="3 3" />
+//                           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+//                           <YAxis tick={{ fontSize: 11 }} />
+//                           <Tooltip /><Legend />
+//                           {Object.keys(visual.data?.series || {}).map((k, si) => (
+//                             <Line key={k} type="monotone" dataKey={k}
+//                               stroke={DASHBOARD_COLORS[si % DASHBOARD_COLORS.length]} strokeWidth={2} />
+//                           ))}
+//                         </LineChart>
+//                       ) : <NoData />}
+//                     </ResponsiveContainer>
+//                   )}
+
+//                   {/* AREA */}
+//                   {chartType === "area" && (
+//                     <ResponsiveContainer width="100%" height={260}>
+//                       {hasData ? (
+//                         <AreaChart data={(visual.data?.x || []).map((x: any, idx: number) => {
+//                           const pt: any = { name: String(x) };
+//                           Object.entries(visual.data?.series || {}).forEach(([k, vals]: [string, any]) => {
+//                             pt[k] = vals[idx] || 0;
+//                           });
+//                           return pt;
+//                         })}>
+//                           <CartesianGrid strokeDasharray="3 3" />
+//                           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+//                           <YAxis tick={{ fontSize: 11 }} />
+//                           <Tooltip /><Legend />
+//                           {Object.keys(visual.data?.series || {}).map((k, si) => (
+//                             <Area key={k} type="monotone" dataKey={k} stackId="1"
+//                               stroke={DASHBOARD_COLORS[si % DASHBOARD_COLORS.length]}
+//                               fill={DASHBOARD_COLORS[si % DASHBOARD_COLORS.length]} fillOpacity={0.6} />
+//                           ))}
+//                         </AreaChart>
+//                       ) : <NoData />}
+//                     </ResponsiveContainer>
+//                   )}
+
+//                   {/* PIE */}
+//                   {chartType === "pie" && (
+//                     <ResponsiveContainer width="100%" height={260}>
+//                       {hasData ? (
+//                         <PieChart>
+//                           <Pie
+//                             data={visual.data?.labels
+//                               ? (visual.data.labels || []).map((label: any, idx: number) => ({
+//                                   name: String(label), value: visual.data?.values?.[idx] || 0,
+//                                 }))
+//                               : (visual.data?.x || []).map((x: any, idx: number) => ({
+//                                   name: String(x),
+//                                   value: visual.data?.y?.[idx] ||
+//                                     (Object.values(visual.data?.series || {}) as any[])[0]?.[idx] || 0,
+//                                 }))
+//                             }
+//                             cx="50%" cy="50%" outerRadius={80}
+//                             labelLine={false}
+//                             label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
+//                             dataKey="value"
+//                           >
+//                             {(visual.data?.labels || visual.data?.x || []).map((_: any, idx: number) => (
+//                               <Cell key={idx} fill={DASHBOARD_COLORS[idx % DASHBOARD_COLORS.length]} />
+//                             ))}
+//                           </Pie>
+//                           <Tooltip /><Legend />
+//                         </PieChart>
+//                       ) : <NoData />}
+//                     </ResponsiveContainer>
+//                   )}
+
+//                   {/* DONUT */}
+//                   {chartType === "donut" && (
+//                     <ResponsiveContainer width="100%" height={260}>
+//                       {hasData ? (
+//                         <PieChart>
+//                           <Pie
+//                             data={visual.data?.labels
+//                               ? (visual.data.labels || []).map((label: any, idx: number) => ({
+//                                   name: String(label), value: visual.data?.values?.[idx] || 0,
+//                                 }))
+//                               : (visual.data?.x || []).map((x: any, idx: number) => ({
+//                                   name: String(x),
+//                                   value: visual.data?.y?.[idx] ||
+//                                     (Object.values(visual.data?.series || {}) as any[])[0]?.[idx] || 0,
+//                                 }))
+//                             }
+//                             cx="50%" cy="50%" outerRadius={80} innerRadius={40}
+//                             labelLine={false}
+//                             label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
+//                             dataKey="value"
+//                           >
+//                             {(visual.data?.labels || visual.data?.x || []).map((_: any, idx: number) => (
+//                               <Cell key={idx} fill={DASHBOARD_COLORS[idx % DASHBOARD_COLORS.length]} />
+//                             ))}
+//                           </Pie>
+//                           <Tooltip /><Legend />
+//                         </PieChart>
+//                       ) : <NoData />}
+//                     </ResponsiveContainer>
+//                   )}
+
+//                   {/* FUNNEL */}
+//                   {chartType === "funnel" && (
+//                     <ResponsiveContainer width="100%" height={260}>
+//                       {hasData ? (
+//                         <FunnelChart>
+//                           <Tooltip />
+//                           <Funnel
+//                             dataKey="value"
+//                             data={(visual.data?.x || []).map((x: any, idx: number) => ({
+//                               name: String(x),
+//                               value: visual.data?.y?.[idx] ||
+//                                 (Object.values(visual.data?.series || {}) as any[])[0]?.[idx] || 0,
+//                             }))}
+//                             isAnimationActive
+//                           >
+//                             <LabelList position="right" fill="#000" stroke="none" dataKey="name" />
+//                             {(visual.data?.x || []).map((_: any, idx: number) => (
+//                               <Cell key={idx} fill={DASHBOARD_COLORS[idx % DASHBOARD_COLORS.length]} />
+//                             ))}
+//                           </Funnel>
+//                         </FunnelChart>
+//                       ) : <NoData />}
+//                     </ResponsiveContainer>
+//                   )}
+
+//                   {/* SCATTER */}
+//                   {chartType === "scatter" && (
+//                     <ResponsiveContainer width="100%" height={260}>
+//                       {hasData ? (
+//                         <ScatterChart>
+//                           <CartesianGrid strokeDasharray="3 3" />
+//                           <XAxis type="number" dataKey="x" tick={{ fontSize: 11 }} />
+//                           <YAxis type="number" dataKey="y" tick={{ fontSize: 11 }} />
+//                           <Tooltip /><Legend />
+//                           <Scatter
+//                             data={(visual.data?.x || []).map((xv: any, idx: number) => ({
+//                               x: Number(xv), y: Number(visual.data?.y?.[idx] || 0),
+//                             }))}
+//                             fill="#3b82f6"
+//                           >
+//                             {(visual.data?.x || []).map((_: any, idx: number) => (
+//                               <Cell key={idx} fill={DASHBOARD_COLORS[idx % DASHBOARD_COLORS.length]} />
+//                             ))}
+//                           </Scatter>
+//                         </ScatterChart>
+//                       ) : <NoData />}
+//                     </ResponsiveContainer>
+//                   )}
+
+//                   {/* TABLE */}
+//                   {chartType === "table" && (
+//                     <div className="overflow-x-auto overflow-y-auto" style={{ height: 260 }}>
+//                       {hasData && visual.data?.rows?.length > 0 ? (
+//                         <table className="w-full text-xs">
+//                           <thead className="sticky top-0 bg-card">
+//                             <tr className="border-b border-border">
+//                               {Object.keys(visual.data.rows[0]).map((h: string) => (
+//                                 <th key={h} className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+//                               ))}
+//                             </tr>
+//                           </thead>
+//                           <tbody>
+//                             {visual.data.rows.map((row: any, ri: number) => (
+//                               <tr key={ri} className="border-b border-border/50">
+//                                 {Object.values(row).map((v: any, ci: number) => (
+//                                   <td key={ci} className="px-3 py-2 text-foreground whitespace-nowrap">{String(v)}</td>
+//                                 ))}
+//                               </tr>
+//                             ))}
+//                           </tbody>
+//                         </table>
+//                       ) : <NoData />}
+//                     </div>
+//                   )}
+//                 </div>
+//               );
+//             })}
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Nothing at all */}
+//       {!hasKpis && !hasCharts && (
+//         <div className="text-center py-10">
+//           <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+//           <p className="text-sm text-foreground">No results generated</p>
+//           <p className="text-xs text-muted-foreground mt-1">The query returned no data or visuals</p>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+// function NoData() {
+//   return (
+//     <div className="h-full flex items-center justify-center text-muted-foreground gap-2">
+//       <AlertCircle className="w-6 h-6" />
+//       <span className="text-sm">No data available</span>
+//     </div>
+//   );
+// }
+
 // // ResultCard — isolated so editable state lives per-message
 // // ─────────────────────────────────────────────────────────────
 // function ResultCard({
@@ -786,6 +1190,19 @@
 //     return greetings.some((g) => text.toLowerCase().includes(g));
 //   };
 
+//   // Detect if the user is asking for a Power BI dashboard
+//   const isPowerBiIntent = (text: string) => {
+//     const lower = text.toLowerCase();
+//     return (
+//       lower.includes("powerbi") ||
+//       lower.includes("power bi") ||
+//       lower.includes("dashboard") ||
+//       lower.includes("generate dashboard") ||
+//       lower.includes("create dashboard") ||
+//       lower.includes("build dashboard")
+//     );
+//   };
+
 //   const sendMessage = async (text?: string) => {
 //     const content = (text || input).trim();
 //     if ((!content && !attachedFile) || loading) return;
@@ -816,6 +1233,53 @@
 //       return;
 //     }
 
+//     // ── Power BI Dashboard flow ──
+//     if (isPowerBiIntent(content)) {
+//       try {
+//         // Retrieve the dataset blob path saved from the last run-pipeline response
+//         const csvBlob = localStorage.getItem("current_dataset_path");
+//         if (!csvBlob) {
+//           setMessages((prev) => [...prev, {
+//             id: (Date.now() + 1).toString(),
+//             role: "assistant",
+//             content: "No dataset found. Please run a pipeline first to generate a dataset, then request the dashboard.",
+//             error: true,
+//             timestamp: new Date(),
+//           }]);
+//           setLoading(false);
+//           return;
+//         }
+
+//         const res = await fetch(POWERBI_URL, {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json", accept: "application/json" },
+//           body: JSON.stringify({ csv_blob: csvBlob, user_prompt: content }),
+//         });
+
+//         const data = await res.json();
+
+//         setMessages((prev) => [...prev, {
+//           id: (Date.now() + 1).toString(),
+//           role: "assistant",
+//           content: "Power BI dashboard generated successfully!",
+//           dashboardResult: data,
+//           timestamp: new Date(),
+//         }]);
+//       } catch {
+//         setMessages((prev) => [...prev, {
+//           id: (Date.now() + 1).toString(),
+//           role: "assistant",
+//           content: "Failed to generate the Power BI dashboard. Please try again.",
+//           error: true,
+//           timestamp: new Date(),
+//         }]);
+//       } finally {
+//         setLoading(false);
+//       }
+//       return;
+//     }
+
+//     // ── Standard pipeline flow ──
 //     try {
 //       if (!userId || !jobId) {
 //         setMessages((prev) => [...prev, {
@@ -836,6 +1300,11 @@
 //       });
 
 //       const data = await res.json();
+
+//       // ── Save dataset_path to localStorage for Power BI use ──
+//       if (data.final_dataset?.dataset_path) {
+//         localStorage.setItem("current_dataset_path", data.final_dataset.dataset_path);
+//       }
 
 //       setMessages((prev) => [...prev, {
 //         id: (Date.now() + 1).toString(),
@@ -965,6 +1434,11 @@
 //                           userId={userId}
 //                           onDownload={handleDownload}
 //                         />
+//                       )}
+
+//                       {/* Power BI Dashboard card */}
+//                       {msg.dashboardResult && !msg.error && (
+//                         <PowerBIDashboardCard dashboard={msg.dashboardResult} />
 //                       )}
 
 //                       <span className="text-[11px] text-muted-foreground mt-1 px-1">
@@ -1562,15 +2036,36 @@ function PowerBIDashboardCard({ dashboard }: { dashboard: DashboardResult }) {
           <span className="text-base font-semibold text-foreground">Power BI Dashboard</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 h-8 text-xs"
+          <button
             onClick={() => navigate("/workflow/powerbi-flow")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              color: "#fff",
+              background: "linear-gradient(135deg, #f59e0b, #d97706)",
+              border: "none",
+              borderRadius: 8,
+              padding: "7px 14px",
+              cursor: "pointer",
+              boxShadow: "0 0 0 3px rgba(245,158,11,0.3), 0 4px 12px rgba(217,119,6,0.4)",
+              transition: "all 0.2s ease",
+              letterSpacing: "0.02em",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 0 4px rgba(245,158,11,0.45), 0 6px 16px rgba(217,119,6,0.5)";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 0 3px rgba(245,158,11,0.3), 0 4px 12px rgba(217,119,6,0.4)";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+            }}
           >
-            <Share2 className="w-3.5 h-3.5" />
-            Deploy to Power BI
-          </Button>
+            <Share2 style={{ width: 13, height: 13 }} />
+            ⚡ Deploy to Power BI
+          </button>
         </div>
       </div>
 
@@ -1950,26 +2445,25 @@ function ResultCard({
   };
 
   const handleSaveJob = async () => {
-    if (saving) return;
+    if (saving || saveStatus === "success") return;
     setSaving(true);
     setSaveStatus("idle");
     try {
+      // ── 1. save-job ──
       const res = await fetch(SAVE_JOB_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", accept: "application/json" },
-        body: JSON.stringify({
-          user_id: userId,
-          job_id: result.job_id,
-        }),
+        body: JSON.stringify({ user_id: userId, job_id: result.job_id }),
       });
       const data = await res.json();
-      if (data.status === "success") {
-        setSaveStatus("success");
-        setTimeout(() => setSaveStatus("idle"), 3000);
-      } else {
+      if (data.status !== "success") {
         setSaveStatus("error");
         setTimeout(() => setSaveStatus("idle"), 3000);
+        return;
       }
+
+      // ── 2. Mark saved permanently (no auto-reset) ──
+      setSaveStatus("success");
     } catch {
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
@@ -2074,7 +2568,7 @@ function ResultCard({
           {/* Save Job button */}
           <button
             onClick={handleSaveJob}
-            disabled={saving}
+            disabled={saving || saveStatus === "success"}
             style={{
               display: "flex",
               alignItems: "center",
@@ -2083,22 +2577,23 @@ function ResultCard({
               fontWeight: 600,
               color: saveStatus === "success" ? "#fff" : saveStatus === "error" ? "#fff" : "hsl(var(--foreground))",
               background: saveStatus === "success"
-                ? "hsl(142 72% 42%)"
+                ? "hsl(142 72% 38%)"
                 : saveStatus === "error"
                   ? "hsl(0 72% 51%)"
                   : "hsl(var(--muted))",
               border: `1.5px solid ${
                 saveStatus === "success"
-                  ? "hsl(142 72% 38%)"
+                  ? "hsl(142 72% 32%)"
                   : saveStatus === "error"
                     ? "hsl(0 72% 46%)"
                     : "hsl(var(--border))"
               }`,
               borderRadius: 8,
               padding: "7px 14px",
-              cursor: saving ? "not-allowed" : "pointer",
+              cursor: saving || saveStatus === "success" ? "default" : "pointer",
               opacity: saving ? 0.7 : 1,
-              transition: "all 0.2s ease",
+              transition: "all 0.25s ease",
+              boxShadow: saveStatus === "success" ? "0 0 0 3px hsl(142 72% 38% / 0.25)" : "none",
             }}
           >
             {saving ? (
@@ -2303,6 +2798,13 @@ export default function VeritonChatBot() {
 
         const data = await res.json();
 
+        // ── Store dashboard response in sessionStorage (same key as AnalysisPanel) ──
+        const fileName = (localStorage.getItem("current_dataset_path") || "").split("/").pop() || "";
+        sessionStorage.setItem("pbi_generate_visuals", JSON.stringify({
+          ...data,
+          file_name: fileName,
+        }));
+
         setMessages((prev) => [...prev, {
           id: (Date.now() + 1).toString(),
           role: "assistant",
@@ -2346,9 +2848,12 @@ export default function VeritonChatBot() {
 
       const data = await res.json();
 
-      // ── Save dataset_path to localStorage for Power BI use ──
+      // ── Save dataset_path & onelake_path to localStorage for Power BI ──
       if (data.final_dataset?.dataset_path) {
         localStorage.setItem("current_dataset_path", data.final_dataset.dataset_path);
+      }
+      if (data.onelake_path) {
+        localStorage.setItem("current_onelake_path", data.onelake_path);
       }
 
       setMessages((prev) => [...prev, {

@@ -2,7 +2,7 @@
 // import { Button } from "@/components/ui/button";
 // import {
 //   Send, Loader2, RotateCcw, Paperclip, FileText,
-//   X, Sparkles, Bot, User,
+//   X, Sparkles, Bot, User, Pencil, Check, XCircle,
 // } from "lucide-react";
 // import { WorkflowLayout } from "@/components/WorkflowLayout";
 // import ReactFlow, {
@@ -16,6 +16,150 @@
 // import "reactflow/dist/style.css";
 // import { createPortal } from "react-dom";
 
+// // ─────────────────────────────────────────────────────────────
+// // EditableField — inline edit with confirm / cancel
+// // ─────────────────────────────────────────────────────────────
+// function EditableField({
+//   value,
+//   onSave,
+//   label,
+//   saving,
+// }: {
+//   value: string;
+//   onSave: (newValue: string) => Promise<void>;
+//   label: string;
+//   saving?: boolean;
+// }) {
+//   const [editing, setEditing] = useState(false);
+//   const [draft, setDraft] = useState(value);
+//   const [busy, setBusy] = useState(false);
+//   const inputRef = useRef<HTMLInputElement>(null);
+
+//   useEffect(() => {
+//     if (editing) inputRef.current?.focus();
+//   }, [editing]);
+
+//   const handleSave = async () => {
+//     if (!draft.trim() || draft === value) {
+//       setEditing(false);
+//       setDraft(value);
+//       return;
+//     }
+//     setBusy(true);
+//     try {
+//       await onSave(draft.trim());
+//     } finally {
+//       setBusy(false);
+//       setEditing(false);
+//     }
+//   };
+
+//   const handleCancel = () => {
+//     setDraft(value);
+//     setEditing(false);
+//   };
+
+//   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+//     if (e.key === "Enter") handleSave();
+//     if (e.key === "Escape") handleCancel();
+//   };
+
+//   return (
+//     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+//       <span style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", fontWeight: 600 }}>
+//         {label}:
+//       </span>
+
+//       {editing ? (
+//         <>
+//           <input
+//             ref={inputRef}
+//             value={draft}
+//             onChange={(e) => setDraft(e.target.value)}
+//             onKeyDown={handleKeyDown}
+//             disabled={busy}
+//             style={{
+//               fontSize: 13,
+//               fontWeight: 600,
+//               color: "hsl(var(--foreground))",
+//               background: "hsl(var(--background))",
+//               border: "1.5px solid hsl(var(--primary))",
+//               borderRadius: 6,
+//               padding: "2px 8px",
+//               outline: "none",
+//               minWidth: 160,
+//             }}
+//           />
+//           {busy ? (
+//             <Loader2 style={{ width: 14, height: 14, color: "hsl(var(--primary))" }} className="animate-spin" />
+//           ) : (
+//             <>
+//               <button
+//                 onClick={handleSave}
+//                 title="Save"
+//                 style={{
+//                   background: "hsl(142 72% 42%)",
+//                   border: "none",
+//                   borderRadius: 5,
+//                   padding: "2px 6px",
+//                   cursor: "pointer",
+//                   display: "flex",
+//                   alignItems: "center",
+//                 }}
+//               >
+//                 <Check style={{ width: 12, height: 12, color: "#fff" }} />
+//               </button>
+//               <button
+//                 onClick={handleCancel}
+//                 title="Cancel"
+//                 style={{
+//                   background: "hsl(0 72% 51%)",
+//                   border: "none",
+//                   borderRadius: 5,
+//                   padding: "2px 6px",
+//                   cursor: "pointer",
+//                   display: "flex",
+//                   alignItems: "center",
+//                 }}
+//               >
+//                 <XCircle style={{ width: 12, height: 12, color: "#fff" }} />
+//               </button>
+//             </>
+//           )}
+//         </>
+//       ) : (
+//         <>
+//           <span style={{ fontSize: 13, fontWeight: 600, color: "hsl(var(--foreground))" }}>
+//             {value}
+//           </span>
+//           <button
+//             onClick={() => { setDraft(value); setEditing(true); }}
+//             title={`Edit ${label}`}
+//             style={{
+//               background: "hsl(var(--muted))",
+//               border: "1px solid hsl(var(--border))",
+//               borderRadius: 5,
+//               padding: "2px 6px",
+//               cursor: "pointer",
+//               display: "flex",
+//               alignItems: "center",
+//               gap: 3,
+//             }}
+//           >
+//             <Pencil style={{ width: 11, height: 11, color: "hsl(var(--muted-foreground))" }} />
+//             <span style={{ fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 600 }}>
+//               Edit
+//             </span>
+//           </button>
+//         </>
+//       )}
+//     </div>
+//   );
+// }
+
+// // ─────────────────────────────────────────────────────────────
+// // DataModelSummary
+// // ─────────────────────────────────────────────────────────────
 // function DataModelSummary({ dataModel, relationships, schemas }: {
 //   dataModel: any; relationships: any[]; schemas: any;
 // }) {
@@ -34,8 +178,6 @@
 //       lineHeight: 1.8,
 //       marginTop: 10,
 //     }}>
-
-//       {/* ── Header badge ── */}
 //       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
 //         <div style={{
 //           background: "linear-gradient(135deg, hsl(267 84% 60%), hsl(220 90% 60%))",
@@ -50,126 +192,82 @@
 //         </div>
 //       </div>
 
-//       {/* ── Fact table row ── */}
-//       <div style={{
-//         display: "flex", alignItems: "center", gap: 8,
-//         marginBottom: 6, flexWrap: "wrap",
-//       }}>
+//       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
 //         <span style={{
 //           width: 9, height: 9, borderRadius: "50%",
-//           background: "hsl(267 84% 65%)",
-//           display: "inline-block", flexShrink: 0,
+//           background: "hsl(267 84% 65%)", display: "inline-block", flexShrink: 0,
 //         }} />
 //         <span>
 //           <span style={{
-//             background: "hsl(267 84% 65%)",
-//             color: "#fff",
-//             borderRadius: 5, padding: "1px 8px",
-//             fontSize: 11, fontWeight: 700, marginRight: 5,
+//             background: "hsl(267 84% 65%)", color: "#fff",
+//             borderRadius: 5, padding: "1px 8px", fontSize: 11, fontWeight: 700, marginRight: 5,
 //           }}>{fact}</span>
 //           is the <strong>main table</strong> — holds core transaction data
 //         </span>
 //         {schemas?.[fact] && (
 //           <span style={{
-//             background: "hsl(267 84% 65% / 0.15)",
-//             color: "hsl(267 84% 60%)",
+//             background: "hsl(267 84% 65% / 0.15)", color: "hsl(267 84% 60%)",
 //             border: "1px solid hsl(267 84% 65% / 0.3)",
-//             borderRadius: 20, padding: "1px 8px",
-//             fontSize: 10, fontWeight: 600,
+//             borderRadius: 20, padding: "1px 8px", fontSize: 10, fontWeight: 600,
 //           }}>
 //             {schemas[fact].length} cols
 //           </span>
 //         )}
 //       </div>
 
-//       {/* ── Dimension tables row ── */}
-//       <div style={{
-//         display: "flex", alignItems: "center", gap: 6,
-//         marginBottom: 12, flexWrap: "wrap",
-//       }}>
+//       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
 //         <span style={{
 //           width: 9, height: 9, borderRadius: "50%",
-//           background: "hsl(197 100% 50%)",
-//           display: "inline-block", flexShrink: 0,
+//           background: "hsl(197 100% 50%)", display: "inline-block", flexShrink: 0,
 //         }} />
 //         <span>Connected to <strong>{dims.length} supporting table{dims.length !== 1 ? "s" : ""}</strong>:</span>
 //         {dims.map((d) => (
 //           <span key={d} style={{
-//             background: "hsl(197 100% 50% / 0.12)",
-//             color: "hsl(197 100% 38%)",
+//             background: "hsl(197 100% 50% / 0.12)", color: "hsl(197 100% 38%)",
 //             border: "1px solid hsl(197 100% 50% / 0.3)",
-//             borderRadius: 5, padding: "1px 7px",
-//             fontSize: 11, fontWeight: 600,
+//             borderRadius: 5, padding: "1px 7px", fontSize: 11, fontWeight: 600,
 //           }}>{d}</span>
 //         ))}
 //       </div>
 
-//       {/* ── Divider ── */}
-//       <div style={{
-//         borderTop: "1px solid hsl(267 84% 65% / 0.2)",
-//         marginBottom: 10,
-//       }} />
+//       <div style={{ borderTop: "1px solid hsl(267 84% 65% / 0.2)", marginBottom: 10 }} />
 
-//       {/* ── Relationships ── */}
 //       <div style={{ marginBottom: 10 }}>
-//         <div style={{
-//           display: "flex", alignItems: "center", gap: 6, marginBottom: 8,
-//         }}>
+//         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
 //           <span style={{ fontSize: 13 }}>🔗</span>
 //           <span style={{ fontWeight: 700, fontSize: 12, color: "hsl(var(--foreground))" }}>
 //             How they connect
 //           </span>
 //         </div>
-
 //         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
 //           {relationships.map((rel, i) => (
 //             <div key={i} style={{
-//               display: "flex", alignItems: "center",
-//               gap: 6, flexWrap: "wrap",
+//               display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
 //               background: "hsl(var(--background) / 0.5)",
 //               border: "1px solid hsl(267 84% 65% / 0.15)",
 //               borderRadius: 8, padding: "5px 10px",
 //             }}>
-//               {/* FROM */}
 //               <span style={{
-//                 background: "hsl(267 84% 60%)",
-//                 color: "#fff",
-//                 borderRadius: 4, padding: "1px 8px",
-//                 fontSize: 11, fontWeight: 700,
+//                 background: "hsl(267 84% 60%)", color: "#fff",
+//                 borderRadius: 4, padding: "1px 8px", fontSize: 11, fontWeight: 700,
 //               }}>{rel.from}</span>
-
-//               {/* Arrow */}
+//               <span style={{ color: "hsl(var(--muted-foreground))", fontSize: 16, lineHeight: 1 }}>→</span>
 //               <span style={{
-//                 color: "hsl(var(--muted-foreground))",
-//                 fontSize: 16, lineHeight: 1,
-//               }}>→</span>
-
-//               {/* TO */}
-//               <span style={{
-//                 background: "hsl(267 84% 65% / 0.15)",
-//                 color: "hsl(267 84% 60%)",
+//                 background: "hsl(267 84% 65% / 0.15)", color: "hsl(267 84% 60%)",
 //                 border: "1px solid hsl(267 84% 65% / 0.35)",
-//                 borderRadius: 4, padding: "1px 8px",
-//                 fontSize: 11, fontWeight: 700,
+//                 borderRadius: 4, padding: "1px 8px", fontSize: 11, fontWeight: 700,
 //               }}>{rel.to}</span>
-
-//               {/* via label */}
 //               <span style={{ color: "hsl(var(--muted-foreground))", fontSize: 11 }}>via</span>
-
-//               {/* JOIN code */}
 //               <code style={{
-//                 background: "hsl(267 84% 65% / 0.1)",
-//                 color: "hsl(267 84% 62%)",
+//                 background: "hsl(267 84% 65% / 0.1)", color: "hsl(267 84% 62%)",
 //                 border: "1px solid hsl(267 84% 65% / 0.25)",
-//                 borderRadius: 4, padding: "1px 7px",
-//                 fontSize: 10, fontWeight: 600,
+//                 borderRadius: 4, padding: "1px 7px", fontSize: 10, fontWeight: 600,
 //               }}>{rel.join}</code>
 //             </div>
 //           ))}
 //         </div>
 //       </div>
 
-//       {/* ── Hint bar ── */}
 //       <div style={{
 //         display: "flex", alignItems: "center", gap: 7,
 //         background: "hsl(197 100% 50% / 0.07)",
@@ -177,64 +275,45 @@
 //         borderRadius: 7, padding: "6px 10px",
 //       }}>
 //         <span style={{ fontSize: 13 }}>👆</span>
-//         <span style={{
-//           color: "hsl(var(--muted-foreground))",
-//           fontSize: 11, fontStyle: "italic",
-//         }}>
+//         <span style={{ color: "hsl(var(--muted-foreground))", fontSize: 11, fontStyle: "italic" }}>
 //           Hover over any connecting line to see exactly which columns are linked.
 //         </span>
 //       </div>
-
 //     </div>
 //   );
 // }
 
+// // ─────────────────────────────────────────────────────────────
+// // SchemaNode
+// // ─────────────────────────────────────────────────────────────
 // function SchemaNode({ data }: { data: any }) {
 //   const isFact = data.type === "FACT";
-
 //   return (
-//     <div
-//       style={{
-//         background: isFact ? "hsl(var(--card))" : "hsl(var(--card))",
-//         border: `2px solid ${isFact ? "hsl(var(--primary))" : "hsl(var(--border))"}`,
-//         borderRadius: 10,
-//         minWidth: 180,
-//         boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-//         fontFamily: "inherit",
-//       }}
-//     >
+//     <div style={{
+//       background: "hsl(var(--card))",
+//       border: `2px solid ${isFact ? "hsl(var(--primary))" : "hsl(var(--border))"}`,
+//       borderRadius: 10, minWidth: 180,
+//       boxShadow: "0 4px 16px rgba(0,0,0,0.15)", fontFamily: "inherit",
+//     }}>
 //       <Handle type="target" position={Position.Left} style={{ background: "transparent", border: 0 }} />
 //       <Handle type="source" position={Position.Right} style={{ background: "transparent", border: 0 }} />
-
-//       {/* Header */}
-//       <div
-//         style={{
-//           background: isFact ? "hsl(var(--primary))" : "hsl(var(--muted))",
-//           borderRadius: "8px 8px 0 0",
-//           padding: "6px 10px",
-//           display: "flex",
-//           alignItems: "center",
-//           justifyContent: "space-between",
-//         }}
-//       >
-//         <span style={{
-//           fontWeight: 700, fontSize: 12,
-//           color: isFact ? "#fff" : "hsl(var(--foreground))",
-//         }}>
+//       <div style={{
+//         background: isFact ? "hsl(var(--primary))" : "hsl(var(--muted))",
+//         borderRadius: "8px 8px 0 0", padding: "6px 10px",
+//         display: "flex", alignItems: "center", justifyContent: "space-between",
+//       }}>
+//         <span style={{ fontWeight: 700, fontSize: 12, color: isFact ? "#fff" : "hsl(var(--foreground))" }}>
 //           {data.label}
 //         </span>
 //         <span style={{
 //           fontSize: 9, fontWeight: 600,
 //           color: isFact ? "rgba(255,255,255,0.85)" : "hsl(var(--primary))",
 //           background: isFact ? "rgba(255,255,255,0.15)" : "hsl(var(--accent) / 0.2)",
-//           borderRadius: 4,
-//           padding: "1px 5px",
+//           borderRadius: 4, padding: "1px 5px",
 //         }}>
 //           {data.type}
 //         </span>
 //       </div>
-
-//       {/* Columns */}
 //       <div style={{ padding: "6px 0", maxHeight: 160, overflowY: "auto" }}>
 //         {(data.columns || []).map((col: string, i: number) => {
 //           const isJoinCol = (data.relationships || []).some((rel: any) => {
@@ -242,25 +321,14 @@
 //             return left === col || right === col;
 //           });
 //           return (
-//             <div
-//               key={i}
-//               style={{
-//                 display: "flex", alignItems: "center", gap: 6,
-//                 padding: "2px 10px", fontSize: 11,
-//                 color: "hsl(var(--foreground))",
-//                 background: isJoinCol ? "hsl(var(--primary) / 0.12)" : "transparent",
-//               }}
-//             >
-//               {isJoinCol && (
-//                 <span style={{ color: "hsl(var(--primary))", fontSize: 9, fontWeight: 700 }}>⬡</span>
-//               )}
+//             <div key={i} style={{
+//               display: "flex", alignItems: "center", gap: 6,
+//               padding: "2px 10px", fontSize: 11, color: "hsl(var(--foreground))",
+//               background: isJoinCol ? "hsl(var(--primary) / 0.12)" : "transparent",
+//             }}>
+//               {isJoinCol && <span style={{ color: "hsl(var(--primary))", fontSize: 9, fontWeight: 700 }}>⬡</span>}
 //               <span>{col}</span>
-//               {isJoinCol && (
-//                 <span style={{
-//                   marginLeft: "auto", fontSize: 9,
-//                   color: "hsl(var(--primary))", fontWeight: 600,
-//                 }}>FK</span>
-//               )}
+//               {isJoinCol && <span style={{ marginLeft: "auto", fontSize: 9, color: "hsl(var(--primary))", fontWeight: 600 }}>FK</span>}
 //             </div>
 //           );
 //         })}
@@ -269,61 +337,37 @@
 //   );
 // }
 
-// function SchemaEdge({
-//   sourceX, sourceY, targetX, targetY, data, selected,
-// }: EdgeProps & { data?: { join: string } }) {
+// // ─────────────────────────────────────────────────────────────
+// // SchemaEdge
+// // ─────────────────────────────────────────────────────────────
+// function SchemaEdge({ sourceX, sourceY, targetX, targetY, data, selected }: EdgeProps & { data?: { join: string } }) {
 //   const [hovered, setHovered] = useState(false);
 //   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-//   const [edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
+//   const [edgePath] = getStraightPath({ sourceX, sourceY, targetX, targetY });
 
 //   return (
 //     <>
-//       <path
-//         d={edgePath}
-//         fill="none"
-//         stroke="transparent"
-//         strokeWidth={20}
-//         onMouseEnter={(e) => {
-//           setHovered(true);
-//           setTooltipPos({ x: e.clientX, y: e.clientY });
-//         }}
-//         onMouseMove={(e) => {
-//           setTooltipPos({ x: e.clientX, y: e.clientY });
-//         }}
+//       <path d={edgePath} fill="none" stroke="transparent" strokeWidth={20}
+//         onMouseEnter={(e) => { setHovered(true); setTooltipPos({ x: e.clientX, y: e.clientY }); }}
+//         onMouseMove={(e) => setTooltipPos({ x: e.clientX, y: e.clientY })}
 //         onMouseLeave={() => setHovered(false)}
 //         style={{ cursor: "pointer" }}
 //       />
-//       <path
-//         d={edgePath}
-//         fill="none"
+//       <path d={edgePath} fill="none"
 //         stroke={hovered || selected ? "#f59e0b" : "#6366f1"}
 //         strokeWidth={hovered || selected ? 3 : 2}
 //         strokeDasharray="5 4"
 //         style={{ transition: "all 0.15s ease", pointerEvents: "none" }}
 //       />
-//       {/* Portal tooltip - renders outside ReactFlow container */}
 //       {hovered && data?.join && createPortal(
-//         <div
-//           style={{
-//             position: "fixed",
-//             left: tooltipPos.x + 12,
-//             top: tooltipPos.y - 36,
-//             zIndex: 99999,
-//             background: "hsl(var(--card))",
-//             color: "hsl(var(--foreground))",
-//             border: "1px solid hsl(var(--border))",
-//             borderRadius: 8,
-//             padding: "5px 12px",
-//             fontSize: 12,
-//             fontWeight: 600,
-//             pointerEvents: "none",
-//             boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-//             whiteSpace: "nowrap",
-//             display: "flex",
-//             alignItems: "center",
-//             gap: 6,
-//           }}
-//         >
+//         <div style={{
+//           position: "fixed", left: tooltipPos.x + 12, top: tooltipPos.y - 36,
+//           zIndex: 99999, background: "hsl(var(--card))", color: "hsl(var(--foreground))",
+//           border: "1px solid hsl(var(--border))", borderRadius: 8, padding: "5px 12px",
+//           fontSize: 12, fontWeight: 600, pointerEvents: "none",
+//           boxShadow: "0 4px 16px rgba(0,0,0,0.25)", whiteSpace: "nowrap",
+//           display: "flex", alignItems: "center", gap: 6,
+//         }}>
 //           <span style={{ color: "#818cf8" }}>🔗</span>
 //           <span>{data.join}</span>
 //         </div>,
@@ -333,58 +377,34 @@
 //   );
 // }
 
-// // ── Must be outside component to avoid remount on every render ─
 // const schemaNodeTypes = { schemaNode: SchemaNode };
 // const schemaEdgeTypes = { schemaEdge: SchemaEdge };
 
-// // ── Build star schema nodes + edges ───────────────────────────
 // function buildStarSchema(dataModel: any, relationships: any[], schemas: any) {
 //   if (!dataModel?.fact_table) return { nodes: [], edges: [] };
-
 //   const fact = dataModel.fact_table;
 //   const dims: string[] = dataModel.dimension_tables || [];
 //   const radius = 260;
 //   const angleStep = (2 * Math.PI) / Math.max(1, dims.length);
 
-//   const nodes: any[] = [
-//     {
-//       id: fact,
-//       type: "schemaNode",
-//       data: {
-//         label: fact,
-//         type: "FACT",
-//         columns: schemas?.[fact] || [],
-//         relationships,
-//       },
-//       position: { x: 400, y: 300 },
-//     },
-//   ];
+//   const nodes: any[] = [{
+//     id: fact, type: "schemaNode",
+//     data: { label: fact, type: "FACT", columns: schemas?.[fact] || [], relationships },
+//     position: { x: 400, y: 300 },
+//   }];
 
 //   dims.forEach((dim, index) => {
 //     const angle = index * angleStep - Math.PI / 2;
 //     nodes.push({
-//       id: dim,
-//       type: "schemaNode",
-//       data: {
-//         label: dim,
-//         type: "DIM",
-//         columns: schemas?.[dim] || [],
-//         relationships,
-//       },
-//       position: {
-//         x: 400 + radius * Math.cos(angle),
-//         y: 300 + radius * Math.sin(angle),
-//       },
+//       id: dim, type: "schemaNode",
+//       data: { label: dim, type: "DIM", columns: schemas?.[dim] || [], relationships },
+//       position: { x: 400 + radius * Math.cos(angle), y: 300 + radius * Math.sin(angle) },
 //     });
 //   });
 
 //   const edges: any[] = relationships.map((rel: any) => ({
-//     id: `${rel.from}-${rel.to}`,
-//     source: rel.from,
-//     target: rel.to,
-//     type: "schemaEdge",
-//     data: { join: rel.join },
-//     animated: false,
+//     id: `${rel.from}-${rel.to}`, source: rel.from, target: rel.to,
+//     type: "schemaEdge", data: { join: rel.join }, animated: false,
 //   }));
 
 //   return { nodes, edges };
@@ -393,30 +413,294 @@
 // // ─────────────────────────────────────────────────────────────
 // // Types
 // // ─────────────────────────────────────────────────────────────
+// interface MessageResult {
+//   pipeline_name: string;
+//   suggested_job_name: string;
+//   job_id: string;
+//   data_model: any;
+//   relationships: any[];
+//   schemas: any;
+//   final_dataset: {
+//     rows: number;
+//     columns: string[];
+//     preview: any[];
+//     dataset_name: string;
+//     dataset_path: string;
+//   };
+//   download_url: string;
+// }
+
 // interface Message {
 //   id: string;
 //   role: "user" | "assistant";
 //   content: string;
-//   result?: {
-//     pipeline_name: string;
-//     job_id: string;
-//     data_model: any;
-//     relationships: any[];
-//     schemas: any;
-//     final_dataset: {
-//       rows: number;
-//       columns: string[];
-//       preview: any[];
-//     };
-//     download_url: string;
-//   };
+//   result?: MessageResult;
 //   attachment?: string;
 //   error?: boolean;
 //   timestamp: Date;
 // }
 
-// const API_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/run-pipeline";
+// const API_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/run";
 // const GET_API_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/jobs";
+// const SAVE_JOB_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/save-job";
+// const RENAME_JOB_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/rename-job";
+// const RENAME_DATASET_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/rename-dataset";
+
+// // ─────────────────────────────────────────────────────────────
+// // ResultCard — isolated so editable state lives per-message
+// // ─────────────────────────────────────────────────────────────
+// function ResultCard({
+//   result,
+//   userId,
+//   onDownload,
+// }: {
+//   result: MessageResult;
+//   userId: string | null;
+//   onDownload: (url: string) => void;
+// }) {
+//   const [jobName, setJobName] = useState(result.suggested_job_name || result.pipeline_name || "");
+//   const [datasetName, setDatasetName] = useState(result.final_dataset?.dataset_name || "");
+//   const [saving, setSaving] = useState(false);
+//   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+
+//   const handleSaveJobName = async (newName: string) => {
+//     const res = await fetch(RENAME_JOB_URL, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json", accept: "application/json" },
+//       body: JSON.stringify({
+//         user_id: userId,
+//         job_id: result.job_id,
+//         job_name: newName,
+//       }),
+//     });
+//     const data = await res.json();
+//     if (data.status === "success") {
+//       setJobName(data.job_name || newName);
+//     } else {
+//       throw new Error("Failed to rename job");
+//     }
+//   };
+
+//   const handleRenameDataset = async (newName: string) => {
+//     const res = await fetch(RENAME_DATASET_URL, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json", accept: "application/json" },
+//       body: JSON.stringify({
+//         user_id: userId,
+//         job_id: result.job_id,
+//         old_name: datasetName,
+//         new_name: newName,
+//       }),
+//     });
+//     const data = await res.json();
+//     if (data.status === "success") {
+//       setDatasetName(data.new_name || newName);
+//     } else {
+//       throw new Error("Failed to rename dataset");
+//     }
+//   };
+
+//   const handleSaveJob = async () => {
+//     if (saving) return;
+//     setSaving(true);
+//     setSaveStatus("idle");
+//     try {
+//       const res = await fetch(SAVE_JOB_URL, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json", accept: "application/json" },
+//         body: JSON.stringify({
+//           user_id: userId,
+//           job_id: result.job_id,
+//         }),
+//       });
+//       const data = await res.json();
+//       if (data.status === "success") {
+//         setSaveStatus("success");
+//         setTimeout(() => setSaveStatus("idle"), 3000);
+//       } else {
+//         setSaveStatus("error");
+//         setTimeout(() => setSaveStatus("idle"), 3000);
+//       }
+//     } catch {
+//       setSaveStatus("error");
+//       setTimeout(() => setSaveStatus("idle"), 3000);
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   return (
+//     <div className="mt-3 w-full max-w-2xl bg-card border border-border rounded-xl p-4 shadow-sm space-y-3">
+
+//       {/* Editable Job Name */}
+//       <EditableField
+//         label="Pipeline"
+//         value={jobName}
+//         onSave={handleSaveJobName}
+//       />
+
+//       {/* Data Model Diagram */}
+//       {result.data_model && result.relationships && (
+//         <div>
+//           <p className="text-xs font-semibold text-foreground mb-2">Data Model</p>
+//           <div className="h-[400px] w-full border border-border rounded-lg overflow-hidden">
+//             <ReactFlow
+//               nodes={buildStarSchema(result.data_model, result.relationships, result.schemas).nodes}
+//               edges={buildStarSchema(result.data_model, result.relationships, result.schemas).edges}
+//               nodeTypes={schemaNodeTypes}
+//               edgeTypes={schemaEdgeTypes}
+//               fitView
+//               fitViewOptions={{ padding: 0.3 }}
+//               proOptions={{ hideAttribution: true }}
+//             >
+//               <Background gap={20} size={1} />
+//               <Controls showInteractive={false} />
+//             </ReactFlow>
+//           </div>
+//           <DataModelSummary
+//             dataModel={result.data_model}
+//             relationships={result.relationships}
+//             schemas={result.schemas}
+//           />
+//         </div>
+//       )}
+
+//       {/* Editable Dataset Name */}
+//       {result.final_dataset && (
+//         <EditableField
+//           label="Dataset"
+//           value={datasetName}
+//           onSave={handleRenameDataset}
+//         />
+//       )}
+
+//       {/* Preview table */}
+//       {result.final_dataset?.preview && (
+//         <div className="overflow-auto border border-border rounded-lg">
+//           <table className="text-xs w-full">
+//             <thead className="bg-muted">
+//               <tr>
+//                 {Object.keys(result.final_dataset.preview[0]).map((key) => (
+//                   <th key={key} className="border-b border-border px-2 py-1.5 text-left text-muted-foreground font-semibold whitespace-nowrap">
+//                     {key}
+//                   </th>
+//                 ))}
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {result.final_dataset.preview.slice(0, 5).map((row, i) => (
+//                 <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+//                   {Object.values(row).map((val: any, j) => (
+//                     <td key={j} className="px-2 py-1.5 text-foreground whitespace-nowrap">
+//                       {String(val)}
+//                     </td>
+//                   ))}
+//                 </tr>
+//               ))}
+//             </tbody>
+//           </table>
+//         </div>
+//       )}
+
+//       {/* Action buttons row */}
+//       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+//         {/* Info banner */}
+//         <div style={{
+//           background: "hsl(197 100% 50% / 0.07)",
+//           border: "1px solid hsl(197 100% 50% / 0.2)",
+//           borderRadius: 8,
+//           padding: "8px 12px",
+//           fontSize: 11,
+//           color: "hsl(var(--muted-foreground))",
+//           lineHeight: 1.6,
+//         }}>
+//           <span style={{ fontWeight: 700, color: "hsl(var(--foreground))" }}>💾 Save</span>
+//           {" "}stores this dataset to your account so you can access it later. {" "}
+//           <span style={{ fontWeight: 700, color: "hsl(var(--foreground))" }}>⬇️ Download</span>
+//           {" "}exports the CSV file directly to your device.
+//         </div>
+
+//         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+//           {/* Save Job button */}
+//           <button
+//             onClick={handleSaveJob}
+//             disabled={saving}
+//             style={{
+//               display: "flex",
+//               alignItems: "center",
+//               gap: 6,
+//               fontSize: 12,
+//               fontWeight: 600,
+//               color: saveStatus === "success" ? "#fff" : saveStatus === "error" ? "#fff" : "hsl(var(--foreground))",
+//               background: saveStatus === "success"
+//                 ? "hsl(142 72% 42%)"
+//                 : saveStatus === "error"
+//                   ? "hsl(0 72% 51%)"
+//                   : "hsl(var(--muted))",
+//               border: `1.5px solid ${
+//                 saveStatus === "success"
+//                   ? "hsl(142 72% 38%)"
+//                   : saveStatus === "error"
+//                     ? "hsl(0 72% 46%)"
+//                     : "hsl(var(--border))"
+//               }`,
+//               borderRadius: 8,
+//               padding: "7px 14px",
+//               cursor: saving ? "not-allowed" : "pointer",
+//               opacity: saving ? 0.7 : 1,
+//               transition: "all 0.2s ease",
+//             }}
+//           >
+//             {saving ? (
+//               <Loader2 style={{ width: 13, height: 13 }} className="animate-spin" />
+//             ) : saveStatus === "success" ? (
+//               <Check style={{ width: 13, height: 13 }} />
+//             ) : saveStatus === "error" ? (
+//               <XCircle style={{ width: 13, height: 13 }} />
+//             ) : (
+//               <span style={{ fontSize: 13 }}>💾</span>
+//             )}
+//             {saving
+//               ? "Saving…"
+//               : saveStatus === "success"
+//                 ? "Saved!"
+//                 : saveStatus === "error"
+//                   ? "Save failed"
+//                   : "Save Dataset"}
+//           </button>
+
+//           {/* Download button */}
+//           {result.download_url && (
+//             <button
+//               onClick={() => onDownload(result.download_url)}
+//               style={{
+//                 display: "flex",
+//                 alignItems: "center",
+//                 gap: 6,
+//                 fontSize: 12,
+//                 fontWeight: 600,
+//                 color: "#fff",
+//                 background: "linear-gradient(135deg, hsl(267 84% 60%), hsl(220 90% 60%))",
+//                 border: "none",
+//                 borderRadius: 8,
+//                 padding: "7px 14px",
+//                 cursor: "pointer",
+//                 transition: "opacity 0.2s ease",
+//               }}
+//               onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+//               onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+//             >
+//               <span style={{ fontSize: 13 }}>⬇️</span>
+//               Download CSV
+//             </button>
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
 // // ─────────────────────────────────────────────────────────────
 // // Main Component
 // // ─────────────────────────────────────────────────────────────
@@ -432,10 +716,7 @@
 
 //   const scrollToBottom = () => {
 //     if (chatContainerRef.current) {
-//       chatContainerRef.current.scrollTo({
-//         top: chatContainerRef.current.scrollHeight,
-//         behavior: "smooth",
-//       });
+//       chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: "smooth" });
 //     }
 //   };
 
@@ -454,93 +735,43 @@
 //     }
 //   }, [input]);
 
-// //   useEffect(() => {
-// //   if (!userId || !jobId) return;
+//   useEffect(() => {
+//     if (!userId || !jobId) return;
+//     const fetchJobResult = async () => {
+//       try {
+//         const res = await fetch(`${GET_API_URL}/${userId}/${jobId}`);
+//         const data = await res.json();
+//         if (!data.job_id) return;
 
-// //   const fetchJobResult = async () => {
-// //     try {
-// //       const res = await fetch(`${GET_API_URL}/${userId}/${jobId}`);
-// //       const data = await res.json();
-
-// //       if (data.status === "success") {
-// //         // Recreate the user prompt message from pipeline_metadata
-// //         const userMsg: Message = {
-// //           id: "restored-user",
-// //           role: "user",
-// //           content: data.pipeline_metadata?.prompt || "Previous pipeline request",
-// //           timestamp: new Date(),
-// //         };
-
-// //         // Recreate the assistant result message
-// //         const assistantMsg: Message = {
-// //           id: "restored-assistant",
-// //           role: "assistant",
-// //           content: "Pipeline executed successfully",
-// //           result: {
-// //             pipeline_name: data.pipeline_metadata?.job_id || jobId,
-// //             job_id: data.pipeline_metadata?.job_id || jobId,
-// //             data_model: data.data_model,
-// //             relationships: data.relationships,
-// //             schemas: data.schemas,
-// //             final_dataset: data.final_dataset,
-// //             download_url: "", // set if your GET response includes it
-// //           },
-// //           timestamp: new Date(),
-// //         };
-
-// //         setMessages([userMsg, assistantMsg]);
-// //       }
-// //     } catch (err) {
-// //       console.error("Failed to restore job result:", err);
-// //     }
-// //   };
-
-// //   fetchJobResult();
-// // }, []); // runs once on mount
-
-// useEffect(() => {
-//   if (!userId || !jobId) return;
-
-//   const fetchJobResult = async () => {
-//     try {
-//       const res = await fetch(`${GET_API_URL}/${userId}/${jobId}`);
-//       const data = await res.json();
-
-//       if (!data.job_id) return;
-
-//       // User bubble — restored from pipeline_metadata.prompt
-//       const userMsg: Message = {
-//         id: "restored-user",
-//         role: "user",
-//         content: data.pipeline_metadata?.prompt || "Previous pipeline request",
-//         timestamp: new Date(),
-//       };
-
-//       // Assistant result card
-//       const assistantMsg: Message = {
-//         id: "restored-assistant",
-//         role: "assistant",
-//         content: "Pipeline executed successfully",
-//         result: {
-//           pipeline_name: data.pipeline_name,
-//           job_id: data.job_id,
-//           data_model: data.data_model,
-//           relationships: data.relationships,
-//           schemas: data.schemas,
-//           final_dataset: data.final_dataset,
-//           download_url: data.download_url,  // now available directly
-//         },
-//         timestamp: new Date(),
-//       };
-
-//       setMessages([userMsg, assistantMsg]);
-//     } catch (err) {
-//       console.error("Failed to restore job result:", err);
-//     }
-//   };
-
-//   fetchJobResult();
-// }, []);
+//         const userMsg: Message = {
+//           id: "restored-user",
+//           role: "user",
+//           content: data.pipeline_metadata?.prompt || "Previous pipeline request",
+//           timestamp: new Date(),
+//         };
+//         const assistantMsg: Message = {
+//           id: "restored-assistant",
+//           role: "assistant",
+//           content: "Pipeline executed successfully",
+//           result: {
+//             pipeline_name: data.pipeline_name,
+//             suggested_job_name: data.suggested_job_name || data.pipeline_name,
+//             job_id: data.job_id,
+//             data_model: data.data_model,
+//             relationships: data.relationships,
+//             schemas: data.schemas,
+//             final_dataset: data.final_dataset,
+//             download_url: data.download_url,
+//           },
+//           timestamp: new Date(),
+//         };
+//         setMessages([userMsg, assistantMsg]);
+//       } catch (err) {
+//         console.error("Failed to restore job result:", err);
+//       }
+//     };
+//     fetchJobResult();
+//   }, []);
 
 //   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 //     const file = e.target.files?.[0];
@@ -575,31 +806,25 @@
 //     if (isGreeting(content)) {
 //       setLoading(false);
 //       setTimeout(() => {
-//         setMessages((prev) => [
-//           ...prev,
-//           {
-//             id: (Date.now() + 1).toString(),
-//             role: "assistant",
-//             content: "Hello! 👋 How can I help you with your data today?",
-//             timestamp: new Date(),
-//           },
-//         ]);
+//         setMessages((prev) => [...prev, {
+//           id: (Date.now() + 1).toString(),
+//           role: "assistant",
+//           content: "Hello! 👋 How can I help you with your data today?",
+//           timestamp: new Date(),
+//         }]);
 //       }, 600);
 //       return;
 //     }
 
 //     try {
 //       if (!userId || !jobId) {
-//         setMessages((prev) => [
-//           ...prev,
-//           {
-//             id: (Date.now() + 1).toString(),
-//             role: "assistant",
-//             content: "User session missing. Please login again.",
-//             error: true,
-//             timestamp: new Date(),
-//           },
-//         ]);
+//         setMessages((prev) => [...prev, {
+//           id: (Date.now() + 1).toString(),
+//           role: "assistant",
+//           content: "User session missing. Please login again.",
+//           error: true,
+//           timestamp: new Date(),
+//         }]);
 //         setLoading(false);
 //         return;
 //       }
@@ -612,45 +837,37 @@
 
 //       const data = await res.json();
 
-//       setMessages((prev) => [
-//         ...prev,
-//         {
-//           id: (Date.now() + 1).toString(),
-//           role: "assistant",
-//           content: data.message || "Pipeline executed successfully",
-//           result: {
-//             pipeline_name: data.pipeline_name,
-//             job_id: data.job_id,
-//             data_model: data.data_model,
-//             relationships: data.relationships,
-//             schemas: data.schemas,
-//             final_dataset: data.final_dataset,
-//             download_url: data.download_url,
-//           },
-//           timestamp: new Date(),
+//       setMessages((prev) => [...prev, {
+//         id: (Date.now() + 1).toString(),
+//         role: "assistant",
+//         content: data.message || "Pipeline executed successfully",
+//         result: {
+//           pipeline_name: data.pipeline_name,
+//           suggested_job_name: data.suggested_job_name || data.pipeline_name,
+//           job_id: data.job_id,
+//           data_model: data.data_model,
+//           relationships: data.relationships,
+//           schemas: data.schemas,
+//           final_dataset: data.final_dataset,
+//           download_url: data.download_url,
 //         },
-//       ]);
+//         timestamp: new Date(),
+//       }]);
 //     } catch {
-//       setMessages((prev) => [
-//         ...prev,
-//         {
-//           id: (Date.now() + 1).toString(),
-//           role: "assistant",
-//           content: "I couldn't reach the server. Please try again in a moment.",
-//           error: true,
-//           timestamp: new Date(),
-//         },
-//       ]);
+//       setMessages((prev) => [...prev, {
+//         id: (Date.now() + 1).toString(),
+//         role: "assistant",
+//         content: "I couldn't reach the server. Please try again in a moment.",
+//         error: true,
+//         timestamp: new Date(),
+//       }]);
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
 //   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-//     if (e.key === "Enter" && !e.shiftKey) {
-//       e.preventDefault();
-//       sendMessage();
-//     }
+//     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 //   };
 
 //   const formatTime = (date: Date) =>
@@ -660,11 +877,17 @@
 
 //   const handleDownload = async (url: string) => {
 //     try {
-//       const response = await fetch(`http://127.0.0.1:8000${url}`);
+//       // Use the full download URL from the API response directly
+//       const fullUrl = url.startsWith("http")
+//         ? url
+//         : `https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net${url}`;
+//       const response = await fetch(fullUrl);
 //       const blob = await response.blob();
 //       const link = document.createElement("a");
 //       link.href = window.URL.createObjectURL(blob);
-//       link.download = "dataset.csv";
+//       // Use the dataset filename from the URL path
+//       const fileName = url.split("/").pop() || "dataset.csv";
+//       link.download = fileName;
 //       document.body.appendChild(link);
 //       link.click();
 //       link.remove();
@@ -673,7 +896,7 @@
 //     }
 //   };
 
-// return (
+//   return (
 //     <WorkflowLayout>
 //       <div className="flex flex-col h-screen bg-background">
 //         {/* Header */}
@@ -720,8 +943,6 @@
 
 //                     {/* Bubble + result */}
 //                     <div className={`flex flex-col max-w-[78%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                      
-//                       {/* Message text bubble */}
 //                       <div className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed whitespace-pre-wrap break-words shadow-sm ${
 //                         msg.role === "user"
 //                           ? "bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-tr-sm"
@@ -737,85 +958,13 @@
 //                         {msg.content}
 //                       </div>
 
-//                       {/* Result card */}
+//                       {/* Result card with editable fields */}
 //                       {msg.result && !msg.error && (
-//                         <div className="mt-3 w-full max-w-2xl bg-card border border-border rounded-xl p-4 shadow-sm space-y-3">
-                          
-//                           {/* Pipeline name */}
-//                           <p className="text-sm font-semibold text-foreground">
-//                             Pipeline: {msg.result.pipeline_name}
-//                           </p>
-
-//                           {/* Data Model Diagram */}
-//                           {msg.result.data_model && msg.result.relationships && (
-//                             <div>
-//                               <p className="text-xs font-semibold text-foreground mb-2">Data Model</p>
-//                               <div className="h-[400px] w-full border border-border rounded-lg overflow-hidden">
-//                                 <ReactFlow
-//                                   nodes={buildStarSchema(msg.result.data_model, msg.result.relationships, msg.result.schemas).nodes}
-//                                   edges={buildStarSchema(msg.result.data_model, msg.result.relationships, msg.result.schemas).edges}
-//                                   nodeTypes={schemaNodeTypes}
-//                                   edgeTypes={schemaEdgeTypes}
-//                                   fitView
-//                                   fitViewOptions={{ padding: 0.3 }}
-//                                   proOptions={{ hideAttribution: true }}
-//                                 >
-//                                   <Background gap={20} size={1} />
-//                                   <Controls showInteractive={false} />
-//                                 </ReactFlow>
-//                               </div>
-
-//                               <DataModelSummary
-//                                 dataModel={msg.result.data_model}
-//                                 relationships={msg.result.relationships}
-//                                 schemas={msg.result.schemas}
-//                               />
-//                             </div>
-//                           )}
-
-//                           {/* Dataset label */}
-//                           {msg.result.final_dataset && (
-//                             <p className="text-sm font-semibold text-foreground">Dataset</p>
-//                           )}
-
-//                           {/* Preview table */}
-//                           {msg.result.final_dataset?.preview && (
-//                             <div className="overflow-auto border border-border rounded-lg">
-//                               <table className="text-xs w-full">
-//                                 <thead className="bg-muted">
-//                                   <tr>
-//                                     {Object.keys(msg.result.final_dataset.preview[0]).map((key) => (
-//                                       <th key={key} className="border-b border-border px-2 py-1.5 text-left text-muted-foreground font-semibold whitespace-nowrap">
-//                                         {key}
-//                                       </th>
-//                                     ))}
-//                                   </tr>
-//                                 </thead>
-//                                 <tbody>
-//                                   {msg.result.final_dataset.preview.slice(0, 5).map((row, i) => (
-//                                     <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
-//                                       {Object.values(row).map((val: any, j) => (
-//                                         <td key={j} className="px-2 py-1.5 text-foreground whitespace-nowrap">
-//                                           {String(val)}
-//                                         </td>
-//                                       ))}
-//                                     </tr>
-//                                   ))}
-//                                 </tbody>
-//                               </table>
-//                             </div>
-//                           )}
-
-//                           {/* Download */}
-//                           {msg.result.download_url && (
-//                             <button
-//                               onClick={() => handleDownload(msg.result!.download_url)}
-//                               className="text-xs text-white bg-purple-600 px-3 py-1.5 rounded-lg hover:bg-purple-700 transition-colors font-medium"
-//                             >
-//                               Download Dataset
-//                             </button>
-//                           )}
-//                         </div>
+//                         <ResultCard
+//                           result={msg.result}
+//                           userId={userId}
+//                           onDownload={handleDownload}
+//                         />
 //                       )}
 
 //                       <span className="text-[11px] text-muted-foreground mt-1 px-1">
@@ -857,7 +1006,6 @@
 //                 </button>
 //               </div>
 //             )}
-
 //             <div className="flex items-end gap-2 bg-card border border-border rounded-2xl shadow-sm focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all px-2 py-1.5">
 //               <button
 //                 onClick={() => fileInputRef.current?.click()}
@@ -884,11 +1032,9 @@
 //                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
 //               </Button>
 //             </div>
-
 //             <p className="text-[11px] text-muted-foreground text-center mt-2">
 //               Press Enter to send · Shift + Enter for new line
 //             </p>
-
 //             <input ref={fileInputRef} type="file" accept=".csv,.json,.xlsx,.parquet" onChange={handleFileChange} className="hidden" />
 //           </div>
 //         </footer>
@@ -902,6 +1048,7 @@ import { Button } from "@/components/ui/button";
 import {
   Send, Loader2, RotateCcw, Paperclip, FileText,
   X, Sparkles, Bot, User, Pencil, Check, XCircle,
+  Download, Share2, BarChart3, TrendingUp, AlertCircle,
 } from "lucide-react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import ReactFlow, {
@@ -914,6 +1061,12 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ScatterChart, Scatter, Cell, LineChart, Line, AreaChart, Area,
+  PieChart, Pie, Legend, FunnelChart, Funnel, LabelList,
+} from "recharts";
 
 // ─────────────────────────────────────────────────────────────
 // EditableField — inline edit with confirm / cancel
@@ -1329,11 +1482,39 @@ interface MessageResult {
   download_url: string;
 }
 
+interface DashboardKPI {
+  kpi_name: string;
+  measures: string;
+  metrics: number;
+}
+
+interface DashboardVisual {
+  chart_name: string;
+  chart_type: string;
+  description: string;
+  value?: number;
+  format?: string;
+  x_axis_column?: string;
+  y_axis_columns?: string[];
+  data?: any;
+}
+
+interface DashboardResult {
+  status: string;
+  user_prompt: string;
+  total_kpis_discovered: number;
+  selected_kpi_names: string[];
+  computed_kpis: DashboardKPI[];
+  visuals: DashboardVisual[];
+  total_visuals: number;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   result?: MessageResult;
+  dashboardResult?: DashboardResult;
   attachment?: string;
   error?: boolean;
   timestamp: Date;
@@ -1344,8 +1525,377 @@ const GET_API_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebs
 const SAVE_JOB_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/save-job";
 const RENAME_JOB_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/rename-job";
 const RENAME_DATASET_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/rename-dataset";
+const POWERBI_URL = "https://veriton-webapp-ezbud7exfzb7g8at.eastus-01.azurewebsites.net/generate_powerbi_dashboard";
 
 // ─────────────────────────────────────────────────────────────
+// PowerBIDashboardCard — full DashboardView-style with recharts
+// ─────────────────────────────────────────────────────────────
+const DASHBOARD_COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
+
+function PowerBIDashboardCard({ dashboard }: { dashboard: DashboardResult }) {
+  const navigate = useNavigate();
+
+  const visuals = dashboard.visuals || [];
+
+  // KPI / card visuals
+  const kpiVisuals = visuals.filter((v: any) =>
+    v.chart_type === "KPI" || v.chart_type === "card"
+  );
+
+  // All non-KPI visuals (charts + table)
+  const chartVisuals = visuals.filter((v: any) =>
+    !["KPI", "card"].includes(v.chart_type)
+  );
+
+  const hasKpis = kpiVisuals.length > 0;
+  const hasCharts = chartVisuals.length > 0;
+
+  return (
+    <div className="mt-3 w-full max-w-2xl space-y-6">
+
+      {/* ── Header row ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+            <BarChart3 className="w-5 h-5 text-primary" />
+          </div>
+          <span className="text-base font-semibold text-foreground">Power BI Dashboard</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 h-8 text-xs"
+            onClick={() => navigate("/workflow/powerbi-flow")}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            Deploy to Power BI
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Stats pills ── */}
+      <div className="flex flex-wrap items-center gap-3 text-xs">
+        <span className="px-3 py-1.5 rounded-full bg-primary/10 text-primary font-medium">
+          {kpiVisuals.length} KPIs
+        </span>
+        <span className="px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-400 font-medium">
+          {dashboard.total_visuals} Visuals
+        </span>
+        <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
+          {dashboard.total_kpis_discovered} KPIs Discovered
+        </span>
+      </div>
+
+      {/* ── KPI Cards ── */}
+      {hasKpis && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">Key Results</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {kpiVisuals.map((kpi: any, i: number) => {
+              const val = kpi.value;
+              const formatted =
+                val == null ? "No data"
+                : val >= 1_000_000 ? `${(val / 1_000_000).toFixed(2)}M`
+                : val >= 1_000 ? `${(val / 1_000).toFixed(2)}K`
+                : val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+              return (
+                <div key={i} className="bg-card border border-border rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground font-medium mb-1 leading-snug">{kpi.chart_name}</p>
+                  <p className="text-xl font-bold text-primary leading-none mb-1">{formatted}</p>
+                  <p className="text-[10px] text-muted-foreground leading-snug">{kpi.description || "Result from query"}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Chart Visuals ── */}
+      {hasCharts && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <BarChart3 className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">Visualizations</span>
+          </div>
+          <div className="grid grid-cols-1 gap-5">
+            {chartVisuals.map((visual: any, i: number) => {
+              const hasData =
+                (visual.data?.x?.length > 0) ||
+                (visual.data?.y?.length > 0) ||
+                (visual.data?.labels?.length > 0) ||
+                (visual.data?.values?.length > 0) ||
+                (Object.values(visual.data?.series || {}).some((arr: any) => arr.length > 0)) ||
+                (visual.data?.rows?.length > 0);
+
+              const chartType =
+                visual.chart_type === "column" || visual.chart_type === "histogram"
+                  ? "bar"
+                  : visual.chart_type;
+
+              return (
+                <div key={i} className="bg-card rounded-xl border border-border p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">{visual.chart_name}</h3>
+                  <p className="text-xs text-muted-foreground mb-4">{visual.description || "No description"}</p>
+
+                  {/* BAR */}
+                  {(chartType === "bar") && (
+                    <ResponsiveContainer width="100%" height={260}>
+                      {hasData ? (
+                        <BarChart data={(visual.data?.x || []).map((x: any, idx: number) => ({
+                          name: String(x),
+                          value: visual.data?.y?.[idx] ||
+                            (Object.values(visual.data?.series || {}) as any[])[0]?.[idx] || 0,
+                        }))}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip />
+                          <Bar dataKey="value" fill="#8b5cf6" />
+                        </BarChart>
+                      ) : <NoData />}
+                    </ResponsiveContainer>
+                  )}
+
+                  {/* STACKED BAR */}
+                  {chartType === "stacked_bar" && (
+                    <ResponsiveContainer width="100%" height={260}>
+                      {hasData ? (
+                        <BarChart data={(visual.data?.x || []).map((x: any, idx: number) => {
+                          const pt: any = { name: String(x) };
+                          Object.entries(visual.data?.series || {}).forEach(([k, vals]: [string, any]) => {
+                            pt[k] = vals[idx] || 0;
+                          });
+                          return pt;
+                        })}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip /><Legend />
+                          {Object.keys(visual.data?.series || {}).map((k, si) => (
+                            <Bar key={k} dataKey={k} stackId="a" fill={DASHBOARD_COLORS[si % DASHBOARD_COLORS.length]} />
+                          ))}
+                        </BarChart>
+                      ) : <NoData />}
+                    </ResponsiveContainer>
+                  )}
+
+                  {/* LINE */}
+                  {chartType === "line" && (
+                    <ResponsiveContainer width="100%" height={260}>
+                      {hasData ? (
+                        <LineChart data={(visual.data?.x || []).map((x: any, idx: number) => {
+                          const pt: any = { name: String(x) };
+                          Object.entries(visual.data?.series || {}).forEach(([k, vals]: [string, any]) => {
+                            pt[k] = vals[idx] || 0;
+                          });
+                          return pt;
+                        })}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip /><Legend />
+                          {Object.keys(visual.data?.series || {}).map((k, si) => (
+                            <Line key={k} type="monotone" dataKey={k}
+                              stroke={DASHBOARD_COLORS[si % DASHBOARD_COLORS.length]} strokeWidth={2} />
+                          ))}
+                        </LineChart>
+                      ) : <NoData />}
+                    </ResponsiveContainer>
+                  )}
+
+                  {/* AREA */}
+                  {chartType === "area" && (
+                    <ResponsiveContainer width="100%" height={260}>
+                      {hasData ? (
+                        <AreaChart data={(visual.data?.x || []).map((x: any, idx: number) => {
+                          const pt: any = { name: String(x) };
+                          Object.entries(visual.data?.series || {}).forEach(([k, vals]: [string, any]) => {
+                            pt[k] = vals[idx] || 0;
+                          });
+                          return pt;
+                        })}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip /><Legend />
+                          {Object.keys(visual.data?.series || {}).map((k, si) => (
+                            <Area key={k} type="monotone" dataKey={k} stackId="1"
+                              stroke={DASHBOARD_COLORS[si % DASHBOARD_COLORS.length]}
+                              fill={DASHBOARD_COLORS[si % DASHBOARD_COLORS.length]} fillOpacity={0.6} />
+                          ))}
+                        </AreaChart>
+                      ) : <NoData />}
+                    </ResponsiveContainer>
+                  )}
+
+                  {/* PIE */}
+                  {chartType === "pie" && (
+                    <ResponsiveContainer width="100%" height={260}>
+                      {hasData ? (
+                        <PieChart>
+                          <Pie
+                            data={visual.data?.labels
+                              ? (visual.data.labels || []).map((label: any, idx: number) => ({
+                                  name: String(label), value: visual.data?.values?.[idx] || 0,
+                                }))
+                              : (visual.data?.x || []).map((x: any, idx: number) => ({
+                                  name: String(x),
+                                  value: visual.data?.y?.[idx] ||
+                                    (Object.values(visual.data?.series || {}) as any[])[0]?.[idx] || 0,
+                                }))
+                            }
+                            cx="50%" cy="50%" outerRadius={80}
+                            labelLine={false}
+                            label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            dataKey="value"
+                          >
+                            {(visual.data?.labels || visual.data?.x || []).map((_: any, idx: number) => (
+                              <Cell key={idx} fill={DASHBOARD_COLORS[idx % DASHBOARD_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip /><Legend />
+                        </PieChart>
+                      ) : <NoData />}
+                    </ResponsiveContainer>
+                  )}
+
+                  {/* DONUT */}
+                  {chartType === "donut" && (
+                    <ResponsiveContainer width="100%" height={260}>
+                      {hasData ? (
+                        <PieChart>
+                          <Pie
+                            data={visual.data?.labels
+                              ? (visual.data.labels || []).map((label: any, idx: number) => ({
+                                  name: String(label), value: visual.data?.values?.[idx] || 0,
+                                }))
+                              : (visual.data?.x || []).map((x: any, idx: number) => ({
+                                  name: String(x),
+                                  value: visual.data?.y?.[idx] ||
+                                    (Object.values(visual.data?.series || {}) as any[])[0]?.[idx] || 0,
+                                }))
+                            }
+                            cx="50%" cy="50%" outerRadius={80} innerRadius={40}
+                            labelLine={false}
+                            label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            dataKey="value"
+                          >
+                            {(visual.data?.labels || visual.data?.x || []).map((_: any, idx: number) => (
+                              <Cell key={idx} fill={DASHBOARD_COLORS[idx % DASHBOARD_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip /><Legend />
+                        </PieChart>
+                      ) : <NoData />}
+                    </ResponsiveContainer>
+                  )}
+
+                  {/* FUNNEL */}
+                  {chartType === "funnel" && (
+                    <ResponsiveContainer width="100%" height={260}>
+                      {hasData ? (
+                        <FunnelChart>
+                          <Tooltip />
+                          <Funnel
+                            dataKey="value"
+                            data={(visual.data?.x || []).map((x: any, idx: number) => ({
+                              name: String(x),
+                              value: visual.data?.y?.[idx] ||
+                                (Object.values(visual.data?.series || {}) as any[])[0]?.[idx] || 0,
+                            }))}
+                            isAnimationActive
+                          >
+                            <LabelList position="right" fill="#000" stroke="none" dataKey="name" />
+                            {(visual.data?.x || []).map((_: any, idx: number) => (
+                              <Cell key={idx} fill={DASHBOARD_COLORS[idx % DASHBOARD_COLORS.length]} />
+                            ))}
+                          </Funnel>
+                        </FunnelChart>
+                      ) : <NoData />}
+                    </ResponsiveContainer>
+                  )}
+
+                  {/* SCATTER */}
+                  {chartType === "scatter" && (
+                    <ResponsiveContainer width="100%" height={260}>
+                      {hasData ? (
+                        <ScatterChart>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" dataKey="x" tick={{ fontSize: 11 }} />
+                          <YAxis type="number" dataKey="y" tick={{ fontSize: 11 }} />
+                          <Tooltip /><Legend />
+                          <Scatter
+                            data={(visual.data?.x || []).map((xv: any, idx: number) => ({
+                              x: Number(xv), y: Number(visual.data?.y?.[idx] || 0),
+                            }))}
+                            fill="#3b82f6"
+                          >
+                            {(visual.data?.x || []).map((_: any, idx: number) => (
+                              <Cell key={idx} fill={DASHBOARD_COLORS[idx % DASHBOARD_COLORS.length]} />
+                            ))}
+                          </Scatter>
+                        </ScatterChart>
+                      ) : <NoData />}
+                    </ResponsiveContainer>
+                  )}
+
+                  {/* TABLE */}
+                  {chartType === "table" && (
+                    <div className="overflow-x-auto overflow-y-auto" style={{ height: 260 }}>
+                      {hasData && visual.data?.rows?.length > 0 ? (
+                        <table className="w-full text-xs">
+                          <thead className="sticky top-0 bg-card">
+                            <tr className="border-b border-border">
+                              {Object.keys(visual.data.rows[0]).map((h: string) => (
+                                <th key={h} className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {visual.data.rows.map((row: any, ri: number) => (
+                              <tr key={ri} className="border-b border-border/50">
+                                {Object.values(row).map((v: any, ci: number) => (
+                                  <td key={ci} className="px-3 py-2 text-foreground whitespace-nowrap">{String(v)}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : <NoData />}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Nothing at all */}
+      {!hasKpis && !hasCharts && (
+        <div className="text-center py-10">
+          <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm text-foreground">No results generated</p>
+          <p className="text-xs text-muted-foreground mt-1">The query returned no data or visuals</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NoData() {
+  return (
+    <div className="h-full flex items-center justify-center text-muted-foreground gap-2">
+      <AlertCircle className="w-6 h-6" />
+      <span className="text-sm">No data available</span>
+    </div>
+  );
+}
+
 // ResultCard — isolated so editable state lives per-message
 // ─────────────────────────────────────────────────────────────
 function ResultCard({
@@ -1685,6 +2235,19 @@ export default function VeritonChatBot() {
     return greetings.some((g) => text.toLowerCase().includes(g));
   };
 
+  // Detect if the user is asking for a Power BI dashboard
+  const isPowerBiIntent = (text: string) => {
+    const lower = text.toLowerCase();
+    return (
+      lower.includes("powerbi") ||
+      lower.includes("power bi") ||
+      lower.includes("dashboard") ||
+      lower.includes("generate dashboard") ||
+      lower.includes("create dashboard") ||
+      lower.includes("build dashboard")
+    );
+  };
+
   const sendMessage = async (text?: string) => {
     const content = (text || input).trim();
     if ((!content && !attachedFile) || loading) return;
@@ -1715,6 +2278,53 @@ export default function VeritonChatBot() {
       return;
     }
 
+    // ── Power BI Dashboard flow ──
+    if (isPowerBiIntent(content)) {
+      try {
+        // Retrieve the dataset blob path saved from the last run-pipeline response
+        const csvBlob = localStorage.getItem("current_dataset_path");
+        if (!csvBlob) {
+          setMessages((prev) => [...prev, {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: "No dataset found. Please run a pipeline first to generate a dataset, then request the dashboard.",
+            error: true,
+            timestamp: new Date(),
+          }]);
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch(POWERBI_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", accept: "application/json" },
+          body: JSON.stringify({ csv_blob: csvBlob, user_prompt: content }),
+        });
+
+        const data = await res.json();
+
+        setMessages((prev) => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "Power BI dashboard generated successfully!",
+          dashboardResult: data,
+          timestamp: new Date(),
+        }]);
+      } catch {
+        setMessages((prev) => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "Failed to generate the Power BI dashboard. Please try again.",
+          error: true,
+          timestamp: new Date(),
+        }]);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // ── Standard pipeline flow ──
     try {
       if (!userId || !jobId) {
         setMessages((prev) => [...prev, {
@@ -1735,6 +2345,11 @@ export default function VeritonChatBot() {
       });
 
       const data = await res.json();
+
+      // ── Save dataset_path to localStorage for Power BI use ──
+      if (data.final_dataset?.dataset_path) {
+        localStorage.setItem("current_dataset_path", data.final_dataset.dataset_path);
+      }
 
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
@@ -1864,6 +2479,11 @@ export default function VeritonChatBot() {
                           userId={userId}
                           onDownload={handleDownload}
                         />
+                      )}
+
+                      {/* Power BI Dashboard card */}
+                      {msg.dashboardResult && !msg.error && (
+                        <PowerBIDashboardCard dashboard={msg.dashboardResult} />
                       )}
 
                       <span className="text-[11px] text-muted-foreground mt-1 px-1">

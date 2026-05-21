@@ -1,4 +1,4 @@
-// import { useState, useEffect, useRef } from 'react';
+// import { useState, useEffect } from 'react';
 // import { DataFile, KPI } from '@/components/types/dashboard';
 // import { createThread, attachFileToAgent } from '../api/api';
 // import { DashboardPreview } from './DashboardPreview';
@@ -24,14 +24,15 @@
 // import { cn } from '@/lib/utils';
 // import { Button } from '@/components/ui/button';
 // import { toast } from 'sonner';
+// import { useNavigate } from 'react-router-dom';
  
 // // ─────────────────────────────────────────────────────────────
-// // Helper: Create minimal DataFile from just a name (fixes TS error)
+// // Helper: Create minimal DataFile from just a name
 // // ─────────────────────────────────────────────────────────────
 // const createMinimalDataFile = (name: string): DataFile => ({
-//   id: `file-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, // unique dummy ID
+//   id: `file-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
 //   name,
-//   columns: 0,               // placeholder (can be updated later if needed)
+//   columns: 0,
 //   rows: 0,
 //   createdAt: new Date().toISOString(),
 //   type: name.toLowerCase().endsWith('.json') ? 'json'
@@ -113,8 +114,7 @@
 //   const [showDashboard, setShowDashboard] = useState(false);
 //   const [dashboardData, setDashboardData] = useState<any>(null);
 //   const [queryText, setQueryText] = useState('');
-//   const [stateRestored, setStateRestored] = useState(false);
-//   const hasInitializedRef = useRef(false);
+//   const navigate = useNavigate();
  
 //   const closeToastButton = (
 //     <button
@@ -126,52 +126,22 @@
 //     </button>
 //   );
  
+//   // Reset state completely when file changes
 //   useEffect(() => {
-//     if (!file || stateRestored) return;
- 
-//     const savedState = sessionStorage.getItem(`analysis_panel_state_${file}`);
-//     if (savedState) {
-//       try {
-//         const parsedState = JSON.parse(savedState);
-//         if (parsedState.kpisWithDetails && parsedState.kpisWithDetails.length > 0) {
-//           setKpisWithDetails(parsedState.kpisWithDetails);
-//         }
-//         if (parsedState.currentStep) {
-//           setCurrentStep(parsedState.currentStep);
-//         }
-//         hasInitializedRef.current = true;
-//       } catch (error) {
-//         console.error('Error parsing saved analysis state:', error);
-//         sessionStorage.removeItem(`analysis_panel_state_${file}`);
-//       }
+//     if (!file) {
+//       setKpisWithDetails([]);
+//       setSelectedKpis(new Set());
+//       setSelectedMetrics(new Set());
+//       setSelectedMeasurements(new Set());
+//       setCurrentStep('select-kpis');
+//       setIsAnalyzing(false);
+//       setShowDashboard(false);
+//       setDashboardData(null);
+//       setQueryText('');
+//       return;
 //     }
-//     setStateRestored(true);
-//   }, [file]);
  
-//   useEffect(() => {
-//     if (!file || !stateRestored) return;
- 
-//     const stateToSave = {
-//       kpisWithDetails,
-//       currentStep,
-//     };
-//     sessionStorage.setItem(`analysis_panel_state_${file}`, JSON.stringify(stateToSave));
-//   }, [file, kpisWithDetails, currentStep, stateRestored]);
- 
-//   const handleGenerateDashboard = (data: any, query: string) => {
-//     setDashboardData(data);
-//     setQueryText(query);
-//     setShowDashboard(true);
-//   };
- 
-//   const handleBackToChat = () => {
-//     setShowDashboard(false);
-//   };
- 
-//   useEffect(() => {
-//     if (!file || !stateRestored) return;
-//     if (kpisWithDetails.length > 0 || hasInitializedRef.current) return;
- 
+//     // Fetch KPIs fresh every time file changes
 //     const { userId, jobId, isValid } = getDashboardContext();
  
 //     if (!isValid) {
@@ -182,6 +152,11 @@
 //     const csvBlobPath = `${userId}/${jobId}/${file}.csv`;
  
 //     setIsAnalyzing(true);
+//     setKpisWithDetails([]);           // clear previous result
+//     setSelectedKpis(new Set());       // reset selections
+//     setSelectedMetrics(new Set());
+//     setSelectedMeasurements(new Set());
+//     setCurrentStep('select-kpis');
  
 //     const fetchKPIs = async () => {
 //       try {
@@ -214,9 +189,6 @@
 //         });
  
 //         setKpisWithDetails(generatedKPIs);
-//         setCurrentStep('select-kpis');
-//         hasInitializedRef.current = true;
- 
 //         toast.success(`${apiKpis.length} KPIs discovered!`, { action: closeToastButton });
 //       } catch (err) {
 //         toast.error("Failed to load KPIs", { action: closeToastButton });
@@ -227,23 +199,17 @@
 //     };
  
 //     fetchKPIs();
-//   }, [file, stateRestored, kpisWithDetails.length]);
- 
-//   useEffect(() => {
-//     if (!file) {
-//       setKpisWithDetails([]);
-//       setSelectedKpis(new Set());
-//       setSelectedMetrics(new Set());
-//       setSelectedMeasurements(new Set());
-//       setCurrentStep('select-kpis');
-//       setIsAnalyzing(false);
-//       setShowDashboard(false);
-//       setDashboardData(null);
-//       setQueryText('');
-//       setStateRestored(false);
-//       hasInitializedRef.current = false;
-//     }
 //   }, [file]);
+ 
+//   const handleGenerateDashboard = (data: any, query: string) => {
+//     setDashboardData(data);
+//     setQueryText(query);
+//     setShowDashboard(true);
+//   };
+ 
+//   const handleBackToChat = () => {
+//     setShowDashboard(false);
+//   };
  
 //   const handleGenerateMetrics = async () => {
 //     if (selectedKpis.size === 0) return;
@@ -354,6 +320,13 @@
 //       });
  
 //       const visualsData = response.ok ? await response.json() : { visuals: [], total_rows: 0 };
+
+//       sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({ ...visualsData, file_name: file }));
+// // ── STORE for PowerBIPage to read ──────────────────────────────────────────
+// sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
+//   ...visualsData,
+//   file_name: file,
+// }));
  
 //       let finalKpis = visualsData.visuals
 //         ?.filter((v: any) => v.chart_type === "KPI")
@@ -369,17 +342,15 @@
 //         finalKpis = fallbackKpis;
 //       }
  
-//       if (file) {
-//         sessionStorage.removeItem(`analysis_panel_state_${file}`);
-//       }
- 
 //       onBuildWithRecommendations({
 //         kpis: finalKpis,
 //         visuals: visualsData.visuals || [],
 //         total_rows: visualsData.total_rows || selectedComputedKpis.length
 //       });
  
-//       toast.success("Dashboard generated with real visuals!", { action: closeToastButton });
+//     //  navigate('/workflow/powerbi-flow?from=analysis1');
+
+//       // toast.success("Dashboard generated with real visuals!", { action: closeToastButton });
 //     } catch (err) {
 //       console.error("Generate visuals failed:", err);
 //       toast.info("Showing your selected KPIs", { action: closeToastButton });
@@ -422,8 +393,6 @@
 //       if (!blobPath.toLowerCase().endsWith('.csv')) {
 //         blobPath += '.csv';
 //       }
- 
-//       console.log("[DEBUG] Attaching file with blob path:", blobPath);
  
 //       await attachFileToAgent(blobPath);
  
@@ -510,13 +479,12 @@
 //   };
  
 //   if (showDashboard && dashboardData) {
-//     // FIX: Convert string to DataFile object
 //     const dataFile: DataFile = createMinimalDataFile(file);
  
 //     return (
 //       <DashboardPreview
 //         dashboardData={dashboardData}
-//         file={dataFile}           // ← now passes correct type
+//         file={dataFile}
 //         query={queryText}
 //         onBack={handleBackToChat}
 //       />
@@ -562,7 +530,7 @@
 //     );
 //   }
  
-//   if (kpisWithDetails.length === 0 && stateRestored) {
+//   if (kpisWithDetails.length === 0) {
 //     return (
 //       <div className="flex-1 flex items-center justify-center text-center">
 //         <p className="text-muted-foreground">No KPIs discovered for this dataset.</p>
@@ -584,7 +552,7 @@
 //         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
 //         currentStep === 'select-metrics'
 //           ? "bg-primary text-primary-foreground"
-//           : currentStep === 'confirmation' ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"
+//           : currentStep === 'confirmation' ? "bg-primary/20 text-primary" : "bg-primary/20 text-muted-foreground"
 //       )}>
 //         <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center">2</span>
 //         Select Metrics
@@ -592,7 +560,7 @@
 //       <ChevronRight className="w-4 h-4 text-muted-foreground" />
 //       <div className={cn(
 //         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-//         currentStep === 'confirmation' ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+//         currentStep === 'confirmation' ? "bg-primary text-primary-foreground" : "bg-primary/20 text-muted-foreground"
 //       )}>
 //         <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center">3</span>
 //         Confirm
@@ -828,7 +796,7 @@
 //                             "px-4 py-2 rounded-full text-sm font-medium border transition-all",
 //                             isSelected
 //                               ? "bg-primary text-primary-foreground border-primary"
-//                               : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+//                               : "bg-primary/20 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
 //                           )}
 //                         >
 //                           {measurement}
@@ -969,7 +937,8 @@
 //     </div>
 //   );
 // }
- 
+
+
 import { useState, useEffect } from 'react';
 import { DataFile, KPI } from '@/components/types/dashboard';
 import { createThread, attachFileToAgent } from '../api/api';
@@ -992,12 +961,14 @@ import {
   Check,
   Loader2,
   X,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
- 
+
 // ─────────────────────────────────────────────────────────────
 // Helper: Create minimal DataFile from just a name
 // ─────────────────────────────────────────────────────────────
@@ -1015,7 +986,7 @@ const createMinimalDataFile = (name: string): DataFile => ({
     rows: [],
   },
 });
- 
+
 interface KPIWithTarget {
   id: string;
   name: string;
@@ -1026,32 +997,32 @@ interface KPIWithTarget {
   metrics: KPI[];
   measurements: string[];
 }
- 
+
 interface AnalysisPanelProps {
   file: string;
   onBuildWithRecommendations: (data: { kpis: KPI[]; visuals: any[]; total_rows: number }) => void;
   onBuildCustomDashboard: () => void;
   isLoading: boolean;
 }
- 
+
 const fileIcons = {
   csv: FileText,
   excel: Table,
   json: FileJson,
 };
- 
+
 const fileColors = {
   csv: 'text-emerald-400',
   excel: 'text-green-400',
   json: 'text-amber-400',
 };
- 
+
 type Step = 'select-kpis' | 'select-metrics' | 'confirmation';
- 
+
 const getDashboardContext = () => {
   const userIdRaw = localStorage.getItem("selected_user_id");
   const jobId = localStorage.getItem("selected_job_id");
- 
+
   let userId: string | null = null;
   if (userIdRaw) {
     try {
@@ -1061,14 +1032,14 @@ const getDashboardContext = () => {
       userId = userIdRaw;
     }
   }
- 
+
   return {
     userId,
     jobId,
     isValid: !!(userId && jobId),
   };
 };
- 
+
 export function AnalysisPanel({
   file,
   onBuildWithRecommendations,
@@ -1087,7 +1058,7 @@ export function AnalysisPanel({
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [queryText, setQueryText] = useState('');
   const navigate = useNavigate();
- 
+
   const closeToastButton = (
     <button
       onClick={() => toast.dismiss()}
@@ -1097,7 +1068,7 @@ export function AnalysisPanel({
       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
     </button>
   );
- 
+
   // Reset state completely when file changes
   useEffect(() => {
     if (!file) {
@@ -1112,24 +1083,24 @@ export function AnalysisPanel({
       setQueryText('');
       return;
     }
- 
+
     // Fetch KPIs fresh every time file changes
     const { userId, jobId, isValid } = getDashboardContext();
- 
+
     if (!isValid) {
       toast.error("Missing user or job context", { action: closeToastButton });
       return;
     }
- 
+
     const csvBlobPath = `${userId}/${jobId}/${file}.csv`;
- 
+
     setIsAnalyzing(true);
-    setKpisWithDetails([]);           // clear previous result
-    setSelectedKpis(new Set());       // reset selections
+    setKpisWithDetails([]);
+    setSelectedKpis(new Set());
     setSelectedMetrics(new Set());
     setSelectedMeasurements(new Set());
     setCurrentStep('select-kpis');
- 
+
     const fetchKPIs = async () => {
       try {
         const response = await fetch('https://api.veriton.ai/api/service2/discover_kpis', {
@@ -1137,17 +1108,17 @@ export function AnalysisPanel({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ csv_blob: csvBlobPath })
         });
- 
+
         if (!response.ok) throw new Error(`Failed to discover KPIs: ${response.status}`);
- 
+
         const data = await response.json();
         const apiKpis = data.available_kpis || [];
- 
+
         const generatedKPIs: KPIWithTarget[] = apiKpis.map((item: { kpi_name: string }, index: number) => {
           const statuses: ('on-track' | 'at-risk' | 'off-track')[] = ['on-track', 'at-risk', 'off-track'];
           const status = statuses[index % 3];
           const percentage = 75 + (index * 8) % 35;
- 
+
           return {
             id: `kpi-${index}`,
             name: item.kpi_name,
@@ -1159,7 +1130,7 @@ export function AnalysisPanel({
             measurements: []
           };
         });
- 
+
         setKpisWithDetails(generatedKPIs);
         toast.success(`${apiKpis.length} KPIs discovered!`, { action: closeToastButton });
       } catch (err) {
@@ -1169,38 +1140,38 @@ export function AnalysisPanel({
         setIsAnalyzing(false);
       }
     };
- 
+
     fetchKPIs();
   }, [file]);
- 
+
   const handleGenerateDashboard = (data: any, query: string) => {
     setDashboardData(data);
     setQueryText(query);
     setShowDashboard(true);
   };
- 
+
   const handleBackToChat = () => {
     setShowDashboard(false);
   };
- 
+
   const handleGenerateMetrics = async () => {
     if (selectedKpis.size === 0) return;
- 
+
     setIsGeneratingMetrics(true);
- 
+
     const { userId, jobId, isValid } = getDashboardContext();
- 
+
     if (!isValid || !file) {
       toast.error("Missing required context or file", { action: closeToastButton });
       setIsGeneratingMetrics(false);
       return;
     }
- 
+
     const csvBlobPath = `${userId}/${jobId}/${file}.csv`;
     const selectedKpiNames = kpisWithDetails
       .filter(kpi => selectedKpis.has(kpi.id))
       .map(kpi => kpi.name);
- 
+
     try {
       const response = await fetch('https://api.veriton.ai/api/service2/compute_kpis', {
         method: 'POST',
@@ -1210,18 +1181,18 @@ export function AnalysisPanel({
           selected_kpi_names: selectedKpiNames
         })
       });
- 
+
       if (!response.ok) throw new Error(`Failed to compute KPIs: ${response.status}`);
- 
+
       const data = await response.json();
       const computedKpis = data.selected_kpis || [];
- 
+
       const updatedKpis = kpisWithDetails.map(kpi => {
         if (!selectedKpis.has(kpi.id)) return kpi;
- 
+
         const computed = computedKpis.find((c: any) => c.kpi_name === kpi.name);
         if (!computed) return kpi;
- 
+
         return {
           ...kpi,
           actual: computed.metrics.toString(),
@@ -1237,7 +1208,7 @@ export function AnalysisPanel({
           measurements: [computed.measures]
         };
       });
- 
+
       setKpisWithDetails(updatedKpis);
       toast.success("Metrics computed!", { action: closeToastButton });
       setCurrentStep('select-metrics');
@@ -1247,19 +1218,19 @@ export function AnalysisPanel({
       setIsGeneratingMetrics(false);
     }
   };
- 
+
   const handleBuildDashboard = async () => {
     if (!file) return;
- 
+
     const { userId, jobId, isValid } = getDashboardContext();
- 
+
     if (!isValid) {
       toast.error("User or Job ID missing", { action: closeToastButton });
       return;
     }
- 
+
     const csvBlobPath = `${userId}/${jobId}/${file}.csv`;
- 
+
     const selectedComputedKpis = kpisWithDetails
       .filter(kpi => selectedKpis.has(kpi.id))
       .map(kpi => ({
@@ -1267,12 +1238,12 @@ export function AnalysisPanel({
         measures: kpi.measurements[0] || "",
         metrics: parseFloat(kpi.actual.replace(/,/g, '')) || 0
       }));
- 
+
     if (selectedComputedKpis.length === 0) {
       toast.error("No KPIs selected", { action: closeToastButton });
       return;
     }
- 
+
     const fallbackKpis: KPI[] = selectedComputedKpis.map((k, i) => ({
       id: `fallback-${i}`,
       label: k.kpi_name,
@@ -1280,7 +1251,7 @@ export function AnalysisPanel({
       change: 0,
       changeLabel: 'From your selection'
     }));
- 
+
     try {
       const response = await fetch('https://api.veriton.ai/api/service2/generate_visuals', {
         method: 'POST',
@@ -1290,16 +1261,15 @@ export function AnalysisPanel({
           computed_kpis: selectedComputedKpis
         })
       });
- 
+
       const visualsData = response.ok ? await response.json() : { visuals: [], total_rows: 0 };
 
       sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({ ...visualsData, file_name: file }));
-// ── STORE for PowerBIPage to read ──────────────────────────────────────────
-sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
-  ...visualsData,
-  file_name: file,
-}));
- 
+      sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
+        ...visualsData,
+        file_name: file,
+      }));
+
       let finalKpis = visualsData.visuals
         ?.filter((v: any) => v.chart_type === "KPI")
         ?.map((v: any, i: number) => ({
@@ -1309,20 +1279,17 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
           change: Math.random() * 30 - 10,
           changeLabel: v.description || 'AI Generated'
         })) || [];
- 
+
       if (finalKpis.length === 0) {
         finalKpis = fallbackKpis;
       }
- 
+
       onBuildWithRecommendations({
         kpis: finalKpis,
         visuals: visualsData.visuals || [],
         total_rows: visualsData.total_rows || selectedComputedKpis.length
       });
- 
-    //  navigate('/workflow/powerbi-flow?from=analysis1');
 
-      // toast.success("Dashboard generated with real visuals!", { action: closeToastButton });
     } catch (err) {
       console.error("Generate visuals failed:", err);
       toast.info("Showing your selected KPIs", { action: closeToastButton });
@@ -1333,47 +1300,47 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       });
     }
   };
- 
+
   const handleBuildCustomDashboard = async () => {
     if (!file) {
       toast.error("No dataset selected", { action: closeToastButton });
       return;
     }
- 
+
     const { userId, jobId, isValid } = getDashboardContext();
- 
+
     if (!isValid || !userId || !jobId) {
       toast.error("Missing user or job context", { action: closeToastButton });
       return;
     }
- 
+
     const datasetName = localStorage.getItem("selected_dataset_name");
- 
+
     if (!datasetName) {
       toast.error("Dataset name not found in localStorage", { action: closeToastButton });
       return;
     }
- 
+
     setIsCreatingThread(true);
- 
+
     try {
       const threadResponse = await createThread();
       const threadId = threadResponse.thread_id;
       localStorage.setItem("thread_id", threadId);
- 
+
       let blobPath = `${userId}/${jobId}/${datasetName}`;
       if (!blobPath.toLowerCase().endsWith('.csv')) {
         blobPath += '.csv';
       }
- 
+
       await attachFileToAgent(blobPath);
- 
+
       toast.success("Dataset attached successfully — ready for analysis", { action: closeToastButton });
- 
+
       onBuildCustomDashboard();
     } catch (error: any) {
       console.error("Attachment / thread creation failed:", error);
- 
+
       const errMsg = error.message || 'Unknown error';
       if (errMsg.includes('404') || errMsg.includes('not found')) {
         toast.error(`File not found on server: ${datasetName}.csv`, { action: closeToastButton });
@@ -1386,7 +1353,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       setIsCreatingThread(false);
     }
   };
- 
+
   const toggleKpi = (kpiId: string) => {
     setSelectedKpis(prev => {
       const next = new Set(prev);
@@ -1394,7 +1361,21 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       return next;
     });
   };
- 
+
+  // ── NEW: Select All / Deselect All KPIs ──────────────────────────────────
+  const handleSelectAllKpis = () => {
+    if (selectedKpis.size === kpisWithDetails.length) {
+      // All are selected → deselect all
+      setSelectedKpis(new Set());
+    } else {
+      // Select all
+      setSelectedKpis(new Set(kpisWithDetails.map(k => k.id)));
+    }
+  };
+
+  const allKpisSelected = kpisWithDetails.length > 0 && selectedKpis.size === kpisWithDetails.length;
+  const someKpisSelected = selectedKpis.size > 0 && selectedKpis.size < kpisWithDetails.length;
+
   const toggleMetric = (metricId: string) => {
     setSelectedMetrics(prev => {
       const next = new Set(prev);
@@ -1402,7 +1383,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       return next;
     });
   };
- 
+
   const toggleMeasurement = (measurement: string, kpiId: string) => {
     const uniqueKey = `${kpiId}-${measurement}`;
     setSelectedMeasurements(prev => {
@@ -1411,7 +1392,37 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       return next;
     });
   };
- 
+
+  // ── NEW: Single Select All / Deselect All for both metrics AND measurements of one KPI ──
+  const handleSelectAllForKpi = (kpi: KPIWithTarget) => {
+    const allMetricIds = kpi.metrics.map(m => m.id);
+    const allMeasurementKeys = kpi.measurements.map(m => `${kpi.id}-${m}`);
+
+    const allMetricsSelected = allMetricIds.every(id => selectedMetrics.has(id));
+    const allMeasurementsSelected = allMeasurementKeys.every(k => selectedMeasurements.has(k));
+    const allSelected = allMetricsSelected && allMeasurementsSelected;
+
+    setSelectedMetrics(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        allMetricIds.forEach(id => next.delete(id));
+      } else {
+        allMetricIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+
+    setSelectedMeasurements(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        allMeasurementKeys.forEach(k => next.delete(k));
+      } else {
+        allMeasurementKeys.forEach(k => next.add(k));
+      }
+      return next;
+    });
+  };
+
   const handleProceedToConfirmation = () => setCurrentStep('confirmation');
   const handleBackToKpis = () => {
     setCurrentStep('select-kpis');
@@ -1419,10 +1430,37 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
     setSelectedMeasurements(new Set());
   };
   const handleBackToMetrics = () => setCurrentStep('select-metrics');
- 
+
   const selectedKpisData = kpisWithDetails.filter(kpi => selectedKpis.has(kpi.id));
   const hasMetricSelection = selectedMetrics.size > 0 || selectedMeasurements.size > 0;
- 
+
+  // ── Global Select All / Deselect All metrics+measurements across ALL KPI cards ──
+  // Placed here so selectedKpisData is already declared above.
+  const handleSelectAllMetricsAndMeasurements = () => {
+    const allMetricIds = selectedKpisData.flatMap(kpi => kpi.metrics.map(m => m.id));
+    const allMeasurementKeys = selectedKpisData.flatMap(kpi =>
+      kpi.measurements.map(m => `${kpi.id}-${m}`)
+    );
+    const allMetricsSelected = allMetricIds.every(id => selectedMetrics.has(id));
+    const allMeasurementsSelected = allMeasurementKeys.every(k => selectedMeasurements.has(k));
+    const allSelected = allMetricsSelected && allMeasurementsSelected;
+
+    setSelectedMetrics(new Set(allSelected ? [] : allMetricIds));
+    setSelectedMeasurements(new Set(allSelected ? [] : allMeasurementKeys));
+  };
+
+  const allMetricsAndMeasurementsSelected = (() => {
+    const allMetricIds = selectedKpisData.flatMap(kpi => kpi.metrics.map(m => m.id));
+    const allMeasurementKeys = selectedKpisData.flatMap(kpi =>
+      kpi.measurements.map(m => `${kpi.id}-${m}`)
+    );
+    if (allMetricIds.length === 0 && allMeasurementKeys.length === 0) return false;
+    return (
+      allMetricIds.every(id => selectedMetrics.has(id)) &&
+      allMeasurementKeys.every(k => selectedMeasurements.has(k))
+    );
+  })();
+
   const getStatusColor = (status: KPIWithTarget['status']) => {
     switch (status) {
       case 'on-track': return 'text-emerald-400';
@@ -1431,7 +1469,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       default: return 'text-muted-foreground';
     }
   };
- 
+
   const getStatusBg = (status: KPIWithTarget['status']) => {
     switch (status) {
       case 'on-track': return 'bg-emerald-400/10 border-emerald-400/30';
@@ -1440,7 +1478,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       default: return 'bg-secondary';
     }
   };
- 
+
   const getStatusIcon = (status: KPIWithTarget['status']) => {
     switch (status) {
       case 'on-track': return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
@@ -1449,10 +1487,10 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       default: return null;
     }
   };
- 
+
   if (showDashboard && dashboardData) {
     const dataFile: DataFile = createMinimalDataFile(file);
- 
+
     return (
       <DashboardPreview
         dashboardData={dashboardData}
@@ -1462,7 +1500,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       />
     );
   }
- 
+
   if (!file) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -1478,11 +1516,11 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       </div>
     );
   }
- 
+
   const fileExtension = file.split('.').pop()?.toLowerCase() || 'csv';
   const Icon = fileIcons[fileExtension as keyof typeof fileIcons] || FileText;
   const iconColor = fileColors[fileExtension as keyof typeof fileColors] || 'text-muted-foreground';
- 
+
   if (isAnalyzing) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -1501,7 +1539,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       </div>
     );
   }
- 
+
   if (kpisWithDetails.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-center">
@@ -1509,7 +1547,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       </div>
     );
   }
- 
+
   const StepIndicator = () => (
     <div className="flex items-center justify-center gap-2 mb-8">
       <div className={cn(
@@ -1539,7 +1577,8 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       </div>
     </div>
   );
- 
+
+  // ── STEP 1: SELECT KPIs ──────────────────────────────────────────────────
   if (currentStep === 'select-kpis') {
     return (
       <div className="flex-1 overflow-auto">
@@ -1555,18 +1594,43 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
               </div>
             </div>
           </div>
- 
+
           <StepIndicator />
- 
+
           <div className="space-y-4 animate-slide-up">
-            <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-semibold text-foreground">Select KPIs</h3>
+            {/* ── Section header with Select All ── */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">Select KPIs</h3>
+                <span className="text-xs text-muted-foreground">
+                  ({selectedKpis.size} / {kpisWithDetails.length} selected)
+                </span>
+              </div>
+
+              {/* Select All button */}
+              <button
+                onClick={handleSelectAllKpis}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
+                  allKpisSelected
+                    ? "bg-primary/20 border-primary/40 text-primary hover:bg-primary/30"
+                    : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                )}
+              >
+                {allKpisSelected ? (
+                  <CheckSquare className="w-3.5 h-3.5" />
+                ) : (
+                  <Square className="w-3.5 h-3.5" />
+                )}
+                {allKpisSelected ? 'Deselect All' : 'Select All'}
+              </button>
             </div>
+
             <p className="text-sm text-muted-foreground">
               Choose the Key Performance Indicators you want to track.
             </p>
- 
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {kpisWithDetails.map((kpi, index) => {
                 const isSelected = selectedKpis.has(kpi.id);
@@ -1591,9 +1655,9 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
                       </div>
                       {getStatusIcon(kpi.status)}
                     </div>
- 
+
                     <h4 className="text-sm font-semibold text-foreground mb-3">{kpi.name}</h4>
- 
+
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">Actual</span>
@@ -1613,18 +1677,18 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
                         <span className={cn("font-mono font-semibold", getStatusColor(kpi.status))}>{kpi.percentage}%</span>
                       </div>
                     </div>
- 
-                    <div className="mt-3 pt-3 border-t border-border/50">
+
+                    {/* <div className="mt-3 pt-3 border-t border-border/50">
                       <p className="text-xs text-muted-foreground">
                         {kpi.metrics.length} metrics • {kpi.measurements.length} measurements
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 );
               })}
             </div>
           </div>
- 
+
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button
               onClick={handleGenerateMetrics}
@@ -1645,7 +1709,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
                 </>
               )}
             </Button>
- 
+
             <Button
               onClick={handleBuildCustomDashboard}
               disabled={isLoading || isCreatingThread}
@@ -1670,7 +1734,8 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       </div>
     );
   }
- 
+
+  // ── STEP 2: SELECT METRICS ───────────────────────────────────────────────
   if (currentStep === 'select-metrics') {
     return (
       <div className="flex-1 overflow-auto">
@@ -1688,99 +1753,198 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
               </div>
             </div>
           </div>
- 
+
           <StepIndicator />
- 
-          <div className="space-y-8 animate-slide-up">
-            {selectedKpisData.map((kpi, kpiIndex) => (
-              <div key={kpi.id} className="space-y-4" style={{ animationDelay: `${kpiIndex * 100}ms` }}>
-                <div className="flex items-center gap-3 pb-2 border-b border-border/50">
-                  <div className={cn("p-2 rounded-lg", getStatusBg(kpi.status))}>
-                    {getStatusIcon(kpi.status)}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-foreground">{kpi.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {kpi.actual} / {kpi.target} ({kpi.percentage}%)
-                    </p>
-                  </div>
-                </div>
- 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">Metrics</span>
-                    <span className="text-xs text-muted-foreground">(Computed values)</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {kpi.metrics.map((metric) => {
-                      const isSelected = selectedMetrics.has(metric.id);
-                      return (
-                        <div
-                          key={metric.id}
-                          onClick={() => toggleMetric(metric.id)}
-                          className={cn(
-                            "p-4 rounded-lg border cursor-pointer transition-all",
-                            isSelected
-                              ? "border-primary bg-primary/10 ring-1 ring-primary/50"
-                              : "border-border bg-card/50 hover:border-primary/50"
-                          )}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className={cn(
-                                "w-5 h-5 rounded border-2 flex items-center justify-center",
-                                isSelected ? "bg-primary border-primary" : "border-muted-foreground/40"
-                              )}>
-                                {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-                              </div>
-                              <span className="text-sm text-muted-foreground truncate max-w-[140px]">{metric.label}</span>
-                            </div>
-                            <span className="text-base sm:text-lg font-bold text-foreground font-mono truncate max-w-full overflow-hidden">
-                              {metric.value}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs mt-2 ml-7 text-emerald-400">
-                            <TrendingUp className="w-3 h-3" />
-                            <span className="truncate">{metric.changeLabel}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
- 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">Measurements</span>
-                    <span className="text-xs text-muted-foreground">(DAX calculations)</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {kpi.measurements.map((measurement, idx) => {
-                      const uniqueKey = `${kpi.id}-${measurement}`;
-                      const isSelected = selectedMeasurements.has(uniqueKey);
-                      return (
-                        <button
-                          key={uniqueKey}
-                          onClick={() => toggleMeasurement(measurement, kpi.id)}
-                          className={cn(
-                            "px-4 py-2 rounded-full text-sm font-medium border transition-all",
-                            isSelected
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-primary/20 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-                          )}
-                        >
-                          {measurement}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+
+          <div className="space-y-6 animate-slide-up">
+            {/* ── Section header with global Select All ── */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">Metrics &amp; Measurements</h3>
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({selectedMetrics.size + selectedMeasurements.size} selected)
+                </span>
               </div>
-            ))}
+
+              {/* Global Select All — selects every metric + measurement across all KPI cards */}
+              <button
+                onClick={handleSelectAllMetricsAndMeasurements}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
+                  allMetricsAndMeasurementsSelected
+                    ? "bg-primary/20 border-primary/40 text-primary hover:bg-primary/30"
+                    : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                )}
+              >
+                {allMetricsAndMeasurementsSelected
+                  ? <CheckSquare className="w-3.5 h-3.5" />
+                  : <Square className="w-3.5 h-3.5" />
+                }
+                {allMetricsAndMeasurementsSelected ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+
+            <p className="text-sm text-muted-foreground -mt-4">
+              Each KPI card shows its computed metrics and DAX measurements. Use the card's "Select All" to pick everything for that KPI, or use the global button above to select across all cards.
+            </p>
+
+            {selectedKpisData.map((kpi, kpiIndex) => {
+              // Per-KPI: are ALL metrics + measurements selected?
+              const allMetricIds = kpi.metrics.map(m => m.id);
+              const allMeasurementKeys = kpi.measurements.map(m => `${kpi.id}-${m}`);
+              const kpiAllSelected =
+                (allMetricIds.length > 0 || allMeasurementKeys.length > 0) &&
+                allMetricIds.every(id => selectedMetrics.has(id)) &&
+                allMeasurementKeys.every(k => selectedMeasurements.has(k));
+
+              return (
+                <div
+                  key={kpi.id}
+                  className="rounded-2xl border border-border bg-card/60 overflow-hidden animate-fade-in"
+                  style={{ animationDelay: `${kpiIndex * 80}ms` }}
+                >
+                  {/* ── KPI Header — contains status info + single "Select All" for this card ── */}
+                  <div className={cn(
+                    "flex items-center justify-between px-5 py-3 border-b border-border",
+                    getStatusBg(kpi.status)
+                  )}>
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(kpi.status)}
+                      <div>
+                        <h4 className="text-sm font-bold text-foreground">{kpi.name}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          Actual: <span className="font-mono font-semibold text-foreground">{kpi.actual}</span>
+                          &nbsp;·&nbsp;Target: <span className="font-mono text-muted-foreground">{kpi.target}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "text-xs font-semibold px-2.5 py-1 rounded-full border",
+                        getStatusBg(kpi.status), getStatusColor(kpi.status)
+                      )}>
+                        {kpi.percentage}%
+                        &nbsp;·&nbsp;
+                        {kpi.status === 'on-track' ? 'On Track' : kpi.status === 'at-risk' ? 'At Risk' : 'Off Track'}
+                      </span>
+
+                      {/* Single "Select All" for this KPI — selects both metrics & measurements */}
+                      <button
+                        onClick={() => handleSelectAllForKpi(kpi)}
+                        className={cn(
+                          "flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border transition-all whitespace-nowrap",
+                          kpiAllSelected
+                            ? "bg-primary/20 border-primary/40 text-primary hover:bg-primary/30"
+                            : "bg-card/80 border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                        )}
+                      >
+                        {kpiAllSelected
+                          ? <CheckSquare className="w-3 h-3" />
+                          : <Square className="w-3 h-3" />
+                        }
+                        {kpiAllSelected ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-5 space-y-5">
+                    {/* ── Metrics sub-section ── */}
+                    {kpi.metrics.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-semibold text-foreground">Metrics</span>
+                          <span className="text-xs text-muted-foreground">(Computed values)</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {kpi.metrics.map((metric) => {
+                            const isSelected = selectedMetrics.has(metric.id);
+                            return (
+                              <div
+                                key={metric.id}
+                                onClick={() => toggleMetric(metric.id)}
+                                className={cn(
+                                  "p-4 rounded-xl border cursor-pointer transition-all",
+                                  isSelected
+                                    ? "border-primary bg-primary/10 ring-1 ring-primary/40 shadow-sm shadow-primary/10"
+                                    : "border-border bg-background/40 hover:border-primary/40 hover:bg-card"
+                                )}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className={cn(
+                                      "w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all",
+                                      isSelected ? "bg-primary border-primary" : "border-muted-foreground/40"
+                                    )}>
+                                      {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                                    </div>
+                                    <span className="text-sm text-muted-foreground truncate">{metric.label}</span>
+                                  </div>
+                                  <span className="text-base font-bold text-foreground font-mono flex-shrink-0">
+                                    {metric.value}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs mt-2 ml-7 text-emerald-400">
+                                  <TrendingUp className="w-3 h-3 flex-shrink-0" />
+                                  <span className="truncate">{metric.changeLabel}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── Divider ── */}
+                    {kpi.metrics.length > 0 && kpi.measurements.length > 0 && (
+                      <div className="border-t border-dashed border-border/60" />
+                    )}
+
+                    {/* ── Measurements sub-section ── */}
+                    {kpi.measurements.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-semibold text-foreground">Measurements</span>
+                          <span className="text-xs text-muted-foreground">(DAX calculations)</span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {kpi.measurements.map((measurement) => {
+                            const uniqueKey = `${kpi.id}-${measurement}`;
+                            const isSelected = selectedMeasurements.has(uniqueKey);
+                            return (
+                              <button
+                                key={uniqueKey}
+                                onClick={() => toggleMeasurement(measurement, kpi.id)}
+                                className={cn(
+                                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
+                                  isSelected
+                                    ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
+                                    : "bg-primary/10 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                                )}
+                              >
+                                {isSelected && <Check className="w-3 h-3" />}
+                                {measurement}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {kpi.metrics.length === 0 && kpi.measurements.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic">No metrics or measurements computed for this KPI.</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
- 
+
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button onClick={handleBackToKpis} variant="outline" size="lg" className="gap-2">
               Back to KPIs
@@ -1800,8 +1964,8 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
       </div>
     );
   }
- 
-  // Confirmation step
+
+  // ── STEP 3: CONFIRMATION ─────────────────────────────────────────────────
   return (
     <div className="flex-1 overflow-auto">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -1816,22 +1980,22 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
             </div>
           </div>
         </div>
- 
+
         <StepIndicator />
- 
+
         <div className="space-y-6 animate-slide-up">
           <div className="p-6 rounded-xl border border-primary/30 bg-primary/5">
             <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-primary" />
               Your Dashboard will include:
             </h3>
- 
+
             <div className="space-y-4">
               {selectedKpisData.map((kpi) => {
                 const selectedKpiMetrics = kpi.metrics.filter(m => selectedMetrics.has(m.id));
                 const selectedKpiMeasurements = kpi.measurements
                   .filter(m => selectedMeasurements.has(`${kpi.id}-${m}`));
- 
+
                 return (
                   <div key={kpi.id} className="p-4 rounded-lg bg-card/80 border border-border">
                     <div className="flex items-center gap-2 mb-3">
@@ -1841,7 +2005,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
                         {kpi.percentage}%
                       </span>
                     </div>
- 
+
                     {selectedKpiMetrics.length > 0 && (
                       <div className="mb-2">
                         <span className="text-xs text-muted-foreground">Metrics: </span>
@@ -1850,7 +2014,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
                         </span>
                       </div>
                     )}
- 
+
                     {selectedKpiMeasurements.length > 0 && (
                       <div>
                         <span className="text-xs text-muted-foreground">Measurements: </span>
@@ -1863,7 +2027,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
                 );
               })}
             </div>
- 
+
             <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{selectedKpis.size}</div>
@@ -1880,7 +2044,7 @@ sessionStorage.setItem('pbi_generate_visuals', JSON.stringify({
             </div>
           </div>
         </div>
- 
+
         <div className="flex flex-col sm:flex-row gap-4 pt-4">
           <Button onClick={handleBackToMetrics} variant="outline" size="lg" className="gap-2">
             Back to Metrics

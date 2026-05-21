@@ -198,17 +198,57 @@ import VeritonChatBot from "./pages/VeritonChatBot";
 // ── Inline AuthSuccess — no separate file needed ──────────────────────────────
 // The OAuth popup redirects here → sets flag → closes itself
 // PowerBIMicrosoftLogin detects the flag and proceeds to workspaces
+// function AuthSuccess() {
+//   useEffect(() => {
+//     localStorage.setItem('pbi_auth_success', 'true');
+//     window.close();
+//   }, []);
+//   return (
+//     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', fontFamily:'sans-serif' }}>
+//       <p style={{ color:'#555', fontSize:'0.9rem' }}>Authentication successful. Closing...</p>
+//     </div>
+//   );
+// }
+
 function AuthSuccess() {
   useEffect(() => {
-    localStorage.setItem('pbi_auth_success', 'true');
-    window.close();
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('access_token');
+    const userEmail = params.get('user_email');
+
+    if (accessToken) {
+      // Save token — apiFetch in PowerBIFlow reads this for every request
+      localStorage.setItem('pbi_access_token', accessToken);
+      if (userEmail) {
+        localStorage.setItem('pbi_user_email', userEmail);
+      }
+      // Timestamp used by PowerBIFlow to skip login for 1 hour
+      sessionStorage.setItem('pbi_auth_time', Date.now().toString());
+    }
+
+    // Redirect back into the app — PowerBIFlow's useEffect will detect
+    // the token and jump straight to the workspaces step
+    window.location.replace('/workflow/powerbi-flow');
   }, []);
+
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', fontFamily:'sans-serif' }}>
-      <p style={{ color:'#555', fontSize:'0.9rem' }}>Authentication successful. Closing...</p>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      fontFamily: 'sans-serif',
+      flexDirection: 'column',
+      gap: '12px',
+    }}>
+      <p style={{ color: '#555', fontSize: '0.9rem' }}>
+        Authentication successful. Redirecting...
+      </p>
     </div>
   );
 }
+
+
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const user = localStorage.getItem("user");

@@ -23,11 +23,16 @@
 //   GitBranch,
 //   Table as TableIcon,
 //   Loader2,
+//   Sparkles,
 // } from "lucide-react";
 // import { format } from "date-fns";
 // import { ThemeToggle } from "@/components/ThemeToggle";
 // import { toast } from "sonner";
 // import { cn } from "@/lib/utils";
+// import {
+//   Dialog,
+//   DialogContent,
+// } from "@/components/ui/dialog";
  
 // interface Dataset {
 //   id: string;
@@ -39,7 +44,7 @@
 //   columns: number;
 //   filePath: string;
 //   isScheduled: boolean;
-//   job_id?: string; // ← Added: we need job_id from /datasets API
+//   job_id?: string; // Must come from /datasets API response
 // }
  
 // interface PreviewData {
@@ -74,8 +79,9 @@
 //   const userId = user?.id || user?.user_id;
  
 //   const handleLogout = () => {
-//     localStorage.removeItem("user");
-//     localStorage.removeItem("token");
+//      localStorage.clear();
+//     // localStorage.removeItem("user");
+//     // localStorage.removeItem("token");
 //     toast.success("Logged out successfully");
 //     navigate("/", { replace: true });
 //   };
@@ -92,7 +98,7 @@
 //       try {
 //         setLoading(true);
 //         const response = await fetch(
-//           `https://20.81.213.147/datasets?user_id=${userId}`
+//           `https://api.veriton.ai/api/service2/datasets?user_id=${userId}`
 //         );
  
 //         if (!response.ok) {
@@ -120,7 +126,7 @@
 //           columns: item.columns_count || 0,
 //           filePath: item.file_path || "",
 //           isScheduled: item.is_scheduled || false,
-//           job_id: item.job_id, // ← IMPORTANT: must come from your API
+//           job_id: item.job_id, // ← Must be returned by your API
 //         }));
  
 //         setDatasets(mapped);
@@ -145,7 +151,7 @@
 //       setPreviewData(null);
  
 //       try {
-//         const url = `https://20.81.213.147/preview-dataset?user_id=${userId}&job_id=${previewDataset.job_id}&datasetname=${encodeURIComponent(previewDataset.datasetName)}`;
+//         const url = `https://api.veriton.ai/api/service2/preview-dataset?user_id=${userId}&job_id=${previewDataset.job_id}&datasetname=${encodeURIComponent(previewDataset.datasetName)}`;
  
 //         const response = await fetch(url);
  
@@ -186,13 +192,32 @@
 //     setDatasetDateFilter(undefined);
 //   };
  
+//   // Handle Navigation button click → store user_id, job_id, dataset_name
+//   const handleNavigateToPathSelection = (dataset: Dataset) => {
+//     if (!dataset.job_id) {
+//       toast.error("Missing job ID for this dataset");
+//       return;
+//     }
+ 
+//     // Store the required values in localStorage
+//     localStorage.setItem("selected_user_id", userId || "");
+//     localStorage.setItem("selected_job_id", dataset.job_id);
+//     localStorage.setItem("selected_dataset_name", dataset.datasetName);
+ 
+//     // Optional: toast confirmation
+//     toast.success(`Navigating with dataset: ${dataset.datasetName}`);
+ 
+//     // Navigate to the path selection page
+//     navigate("/PathSelection1");
+//   };
+ 
 //   return (
 //     <div className="h-screen flex flex-col overflow-hidden bg-background">
 //       {/* Header */}
 //       <header className="border-b border-border backdrop-blur-md sticky top-0 z-20 bg-background/80">
 //         <div className="container mx-auto px-6 py-4">
 //           <div className="flex items-center justify-between">
-//             <div className="flex items-center gap-3">
+//             {/* <div className="flex items-center gap-3">
 //               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
 //                 <Database className="w-5 h-5 text-primary" />
 //               </div>
@@ -201,9 +226,34 @@
 //                 <p className="text-sm text-muted-foreground">
 //                   Welcome, <span className="text-primary">{userName}</span>
 //                 </p>
-//               </div>
+//               </div> */}
+
+//               <div className="flex items-center gap-3 md:gap-4">
+//             {/* Logo */}
+//             <a href="/" className="flex-shrink-0">
+//               <img
+//                 src="/logo2.png"
+//                 alt="Veriton"
+//                 className="
+//                   h-10               /* mobile base size */
+//                   sm:h-10
+//                   md:h-9 lg:h-10    /* larger on desktop */
+//                   w-auto
+//                   object-contain
+//                   drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+//                   transition-transform duration-200
+//                   hover:scale-105
+//                 "
+//               />
+//             </a>
+
+//             {/* Welcome text – side by side */}
+//             <div className="flex flex-col">
+//               <p className="text-sm md:text-base text-muted-foreground">
+//                 Welcome, <span className="text-primary font-medium">{userName || "User"}</span>
+//               </p>
 //             </div>
- 
+//           </div>
 //             <nav className="flex items-center gap-6">
 //               <button
 //                 onClick={() => navigate("/jobs")}
@@ -231,6 +281,14 @@
 //               >
 //                 <TableIcon className="w-4 h-4" />
 //                 Datasets
+//               </button>
+
+//                <button
+//                 onClick={() => navigate("/workflow/automl/jobs1")}  // or any route you prefer
+//                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+//               >
+//                 <Sparkles className="w-4 h-4" />   {/* Perfect icon for datasets */}
+//                 AutoML
 //               </button>
  
 //               <div className="flex items-center gap-3">
@@ -377,7 +435,7 @@
 //                             size="icon"
 //                             className="h-8 w-8"
 //                             onClick={() => setPreviewDataset(dataset)}
-//                             disabled={!dataset.job_id} // Disable if no job_id
+//                             disabled={!dataset.job_id}
 //                           >
 //                             <Eye className="h-4 w-4" />
 //                           </Button>
@@ -387,7 +445,7 @@
 //                             variant="ghost"
 //                             size="icon"
 //                             className="h-8 w-8"
-//                             onClick={() => navigate("/workflow/path-selection")}
+//                             onClick={() => handleNavigateToPathSelection(dataset)}
 //                           >
 //                             <Navigation className="h-4 w-4" />
 //                           </Button>
@@ -402,132 +460,119 @@
 //         </div>
 //       </main>
  
-//       {/* Preview Modal – now dynamic from API with optimized scrolling */}
+//       {/* Preview Modal – unchanged from your version */}
 //       {previewDataset && (
-//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-//           <Card className="w-full max-w-4xl max-h-[85vh] flex flex-col relative bg-background border-border">
-//             {/* Fixed Header */}
-//             <div className="sticky top-0 bg-background border-b border-border z-10 p-6 pb-4">
-//               <Button
-//                 variant="ghost"
-//                 size="icon"
-//                 className="absolute top-4 right-4"
-//                 onClick={() => {
-//                   setPreviewDataset(null);
-//                   setPreviewData(null);
-//                   setPreviewError(null);
-//                 }}
-//               >
-//                 <X className="h-5 w-5" />
-//               </Button>
- 
-//               <h3 className="text-xl font-semibold mb-2 pr-10">
-//                 Preview: {previewDataset.datasetName}
-//               </h3>
-//               {/* <p className="text-sm text-muted-foreground">
-//                 Job ID: {previewDataset.job_id || "N/A"}
-//               </p> */}
-//             </div>
- 
-//             {/* Scrollable Content */}
-//             <div className="flex-1 overflow-y-auto p-6 pt-4">
-//               {previewLoading ? (
-//                 <div className="flex flex-col items-center justify-center py-12">
-//                   <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-//                   <p className="text-muted-foreground">Loading preview...</p>
-//                 </div>
-//               ) : previewError ? (
-//                 <div className="text-center py-12 text-destructive">
-//                   <p>Error: {previewError}</p>
-//                   <p className="text-sm mt-2">Please try again or check your connection.</p>
-//                 </div>
-//               ) : previewData ? (
-//                 <div className="space-y-6">
-//                   {/* Summary */}
-//                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-//                     <Card className="p-4 bg-muted/30">
-//                       <p className="text-sm text-muted-foreground">Total Rows</p>
-//                       <p className="text-2xl font-bold">{previewData.total_rows.toLocaleString()}</p>
-//                     </Card>
-//                     <Card className="p-4 bg-muted/30">
-//                       <p className="text-sm text-muted-foreground">Total Columns</p>
-//                       <p className="text-2xl font-bold">{previewData.total_columns}</p>
-//                     </Card>
-//                     <Card className="p-4 bg-muted/30">
-//                       <p className="text-sm text-muted-foreground">Preview Rows</p>
-//                       <p className="text-2xl font-bold">{previewData.preview_row_count}</p>
-//                     </Card>
-//                   </div>
- 
-//                   {/* Columns & Types */}
-//                   <div>
-//                     <h4 className="font-medium mb-3">Columns ({previewData.total_columns})</h4>
-//                     <div className="border rounded-md overflow-hidden max-h-[200px] overflow-y-auto">
-//                       <Table>
-//                         <TableHeader className="sticky top-0 bg-muted/40 z-10">
-//                           <TableRow>
-//                             <TableHead>Column Name</TableHead>
-//                             <TableHead>Data Type</TableHead>
-//                           </TableRow>
-//                         </TableHeader>
-//                         <TableBody>
-//                           {previewData.columns.map((col) => (
-//                             <TableRow key={col}>
-//                               <TableCell className="font-medium">{col}</TableCell>
-//                               <TableCell>{previewData.column_types[col] || "Unknown"}</TableCell>
-//                             </TableRow>
-//                           ))}
-//                         </TableBody>
-//                       </Table>
-//                     </div>
-//                   </div>
- 
-//                   {/* Preview Rows */}
-//                   <div>
-//                     <h4 className="font-medium mb-3">Preview Data (first {previewData.preview_row_count} rows)</h4>
-//                     <div className="border rounded-md overflow-auto max-h-[300px]">
-//                       <Table>
-//                         <TableHeader className="sticky top-0 bg-muted/40 z-10">
-//                           <TableRow>
-//                             {previewData.columns.map((col) => (
-//                               <TableHead key={col} className="whitespace-nowrap">
-//                                 {col}
-//                               </TableHead>
-//                             ))}
-//                           </TableRow>
-//                         </TableHeader>
-//                         <TableBody>
-//                           {previewData.preview_rows.map((row, idx) => (
-//                             <TableRow key={idx}>
-//                               {previewData.columns.map((col) => (
-//                                 <TableCell key={col} className="whitespace-nowrap">
-//                                   {row[col] ?? "-"}
-//                                 </TableCell>
-//                               ))}
-//                             </TableRow>
-//                           ))}
-//                         </TableBody>
-//                       </Table>
-//                     </div>
-//                   </div>
-//                 </div>
-//               ) : (
-//                 <div className="text-center py-12 text-muted-foreground">
-//                   No preview data available
-//                 </div>
-//               )}
-//             </div>
-//           </Card>
+//   <Dialog 
+//     open={!!previewDataset} 
+//     onOpenChange={() => {
+//       setPreviewDataset(null);
+//       setPreviewData(null);
+//       setPreviewError(null);
+//     }}
+//   >
+//     <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
+//       {/* Header area — very close to ETLOutput */}
+//       <div className="mb-4 flex justify-between items-center px-6 pt-6">
+//         <div>
+//           <h2 className="text-2xl font-bold text-foreground">Full Data Preview</h2>
+//           <p className="text-muted-foreground mt-1">
+//             Table: <span className="text-primary">{previewDataset.datasetName}</span> •{" "}
+//             {previewData 
+//               ? `${previewData.total_columns} columns × ${previewData.total_rows} rows` 
+//               : previewLoading ? "loading..." : "—"}
+//           </p>
 //         </div>
-//       )}
+//         <Button 
+//           variant="ghost" 
+//           size="icon" 
+//           onClick={() => {
+//             setPreviewDataset(null);
+//             setPreviewData(null);
+//             setPreviewError(null);
+//           }}
+//         >
+//           <X className="h-5 w-5" />
+//         </Button>
+//       </div>
+
+//       {/* Main content area */}
+//       <div className="flex-1 px-6 pb-6 overflow-hidden flex flex-col">
+//         {previewLoading ? (
+//           <div className="flex-1 flex items-center justify-center">
+//             <Loader2 className="h-10 w-10 animate-spin text-primary" />
+//           </div>
+//         ) : previewError ? (
+//           <div className="flex-1 flex items-center justify-center text-destructive text-center">
+//             <div className="max-w-md">
+//               <p className="font-medium text-lg mb-3">Failed to load preview</p>
+//               <p className="text-sm">{previewError}</p>
+//             </div>
+//           </div>
+//         ) : previewData ? (
+//           <div className="flex-1 overflow-auto border border-border rounded-lg">
+//             <table className="w-full min-w-max">
+//               <thead className="sticky top-0 bg-primary text-white">
+//                 <tr>
+//                   {previewData.columns.map((col) => (
+//                     <th
+//                       key={col}
+//                       className="text-left p-4 text-sm font-medium whitespace-nowrap border-b border-primary/30"
+//                     >
+//                       <div>{col}</div>
+//                       <div className="text-xs opacity-80 mt-0.5">
+//                         {previewData.column_types[col] || "?"}
+//                       </div>
+//                     </th>
+//                   ))}
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {previewData.preview_rows.map((row, rowIdx) => (
+//                   <tr
+//                     key={rowIdx}
+//                     className="border-b border-border hover:bg-muted/50 transition-colors last:border-b-0"
+//                   >
+//                     {previewData.columns.map((col) => (
+//                       <td
+//                         key={col}
+//                         className="p-4 text-sm text-foreground whitespace-nowrap"
+//                       >
+//                         {row[col] != null ? String(row[col]) : "-"}
+//                       </td>
+//                     ))}
+//                   </tr>
+//                 ))}
+
+//                 {previewData.preview_rows.length === 0 && (
+//                   <tr>
+//                     <td
+//                       colSpan={previewData.columns.length || 1}
+//                       className="p-10 text-center text-muted-foreground"
+//                     >
+//                       No preview data available
+//                     </td>
+//                   </tr>
+//                 )}
+//               </tbody>
+//             </table>
+//           </div>
+//         ) : (
+//           <div className="flex-1 flex items-center justify-center text-muted-foreground">
+//             Waiting for data...
+//           </div>
+//         )}
+//       </div>
+//     </DialogContent>
+//   </Dialog>
+// )}
+
 //     </div>
 //   );
 // };
  
 // export default DatasetTab;
  
- 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -553,6 +598,7 @@ import {
   Table as TableIcon,
   Loader2,
   Sparkles,
+  Upload,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -601,6 +647,10 @@ const DatasetTab = () => {
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+
+  // Upload state
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
  
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -609,10 +659,94 @@ const DatasetTab = () => {
  
   const handleLogout = () => {
      localStorage.clear();
-    // localStorage.removeItem("user");
-    // localStorage.removeItem("token");
     toast.success("Logged out successfully");
     navigate("/", { replace: true });
+  };
+
+  // Handle file upload
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!userId) {
+      toast.error("User not found. Please login again.");
+      return;
+    }
+
+    const allowedTypes = [
+      "text/csv",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/json",
+      "text/plain",
+    ];
+
+    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(csv|xlsx|xls|json|txt)$/i)) {
+      toast.error("Unsupported file type. Please upload CSV, Excel, JSON, or TXT files.");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("user_id", userId);
+
+      const response = await fetch(
+        `https://api.veriton.ai/api/service2/upload-dataset`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      toast.success(`"${file.name}" uploaded successfully!`);
+
+      // Refresh datasets list after upload
+      const refreshResponse = await fetch(
+        `https://api.veriton.ai/api/service2/datasets?user_id=${userId}`
+      );
+      if (refreshResponse.ok) {
+        const data = await refreshResponse.json();
+        const mapped = data.map((item: any, index: number) => ({
+          id: String(index + 1),
+          jobName: item.job_name || "Unnamed Job",
+          datasetName: item.dataset_name || "Unnamed Dataset",
+          lastRun: item.completed_at
+            ? new Date(item.completed_at).toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              })
+            : "—",
+          completedAt: item.completed_at,
+          rows: item.rows || 0,
+          columns: item.columns_count || 0,
+          filePath: item.file_path || "",
+          isScheduled: item.is_scheduled || false,
+          job_id: item.job_id,
+        }));
+        setDatasets(mapped);
+      }
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      toast.error(err.message || "Failed to upload dataset");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
   };
  
   // Fetch datasets list
@@ -655,7 +789,7 @@ const DatasetTab = () => {
           columns: item.columns_count || 0,
           filePath: item.file_path || "",
           isScheduled: item.is_scheduled || false,
-          job_id: item.job_id, // ← Must be returned by your API
+          job_id: item.job_id,
         }));
  
         setDatasets(mapped);
@@ -721,22 +855,17 @@ const DatasetTab = () => {
     setDatasetDateFilter(undefined);
   };
  
-  // Handle Navigation button click → store user_id, job_id, dataset_name
   const handleNavigateToPathSelection = (dataset: Dataset) => {
     if (!dataset.job_id) {
       toast.error("Missing job ID for this dataset");
       return;
     }
  
-    // Store the required values in localStorage
     localStorage.setItem("selected_user_id", userId || "");
     localStorage.setItem("selected_job_id", dataset.job_id);
     localStorage.setItem("selected_dataset_name", dataset.datasetName);
  
-    // Optional: toast confirmation
     toast.success(`Navigating with dataset: ${dataset.datasetName}`);
- 
-    // Navigate to the path selection page
     navigate("/PathSelection1");
   };
  
@@ -746,43 +875,32 @@ const DatasetTab = () => {
       <header className="border-b border-border backdrop-blur-md sticky top-0 z-20 bg-background/80">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Database className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg">Veritas</h1>
-                <p className="text-sm text-muted-foreground">
-                  Welcome, <span className="text-primary">{userName}</span>
+            <div className="flex items-center gap-3 md:gap-4">
+              {/* Logo */}
+              <a href="/" className="flex-shrink-0">
+                <img
+                  src="/logo2.png"
+                  alt="Veriton"
+                  className="
+                    h-10
+                    sm:h-10
+                    md:h-9 lg:h-10
+                    w-auto
+                    object-contain
+                    drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
+                    transition-transform duration-200
+                    hover:scale-105
+                  "
+                />
+              </a>
+
+              <div className="flex flex-col">
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Welcome, <span className="text-primary font-medium">{userName || "User"}</span>
                 </p>
-              </div> */}
-
-              <div className="flex items-center gap-3 md:gap-4">
-            {/* Logo */}
-            <a href="/" className="flex-shrink-0">
-              <img
-                src="/logo2.png"
-                alt="Veriton"
-                className="
-                  h-10               /* mobile base size */
-                  sm:h-10
-                  md:h-9 lg:h-10    /* larger on desktop */
-                  w-auto
-                  object-contain
-                  drop-shadow-[0_4px_16px_rgba(99,102,241,0.7)]
-                  transition-transform duration-200
-                  hover:scale-105
-                "
-              />
-            </a>
-
-            {/* Welcome text – side by side */}
-            <div className="flex flex-col">
-              <p className="text-sm md:text-base text-muted-foreground">
-                Welcome, <span className="text-primary font-medium">{userName || "User"}</span>
-              </p>
+              </div>
             </div>
-          </div>
+
             <nav className="flex items-center gap-6">
               <button
                 onClick={() => navigate("/jobs")}
@@ -812,11 +930,11 @@ const DatasetTab = () => {
                 Datasets
               </button>
 
-               <button
-                onClick={() => navigate("/workflow/automl/jobs1")}  // or any route you prefer
+              <button
+                onClick={() => navigate("/workflow/automl/jobs1")}
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Sparkles className="w-4 h-4" />   {/* Perfect icon for datasets */}
+                <Sparkles className="w-4 h-4" />
                 AutoML
               </button>
  
@@ -854,7 +972,7 @@ const DatasetTab = () => {
               </div>
             </div>
  
-            {/* Filters */}
+            {/* Filters row — Upload button pinned to the right */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-wrap">
               {/* Search */}
               <div className="relative w-full sm:w-80 lg:w-96">
@@ -876,7 +994,7 @@ const DatasetTab = () => {
                 )}
               </div>
  
-              {/* Date filter with clear button */}
+              {/* Date filter */}
               <div className="relative w-40">
                 <Input
                   type="date"
@@ -929,6 +1047,32 @@ const DatasetTab = () => {
                   Clear all
                 </Button>
               )}
+
+              {/* Spacer pushes Upload to the far right */}
+              <div className="flex-1" />
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls,.json,.txt"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+
+              {/* Upload button */}
+              <Button
+                onClick={handleUploadClick}
+                disabled={uploading}
+                className="h-10 gap-2 px-4"
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {uploading ? "Uploading..." : "Upload Dataset"}
+              </Button>
             </div>
  
             {/* Table */}
@@ -989,115 +1133,111 @@ const DatasetTab = () => {
         </div>
       </main>
  
-      {/* Preview Modal – unchanged from your version */}
+      {/* Preview Modal */}
       {previewDataset && (
-  <Dialog 
-    open={!!previewDataset} 
-    onOpenChange={() => {
-      setPreviewDataset(null);
-      setPreviewData(null);
-      setPreviewError(null);
-    }}
-  >
-    <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
-      {/* Header area — very close to ETLOutput */}
-      <div className="mb-4 flex justify-between items-center px-6 pt-6">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Full Data Preview</h2>
-          <p className="text-muted-foreground mt-1">
-            Table: <span className="text-primary">{previewDataset.datasetName}</span> •{" "}
-            {previewData 
-              ? `${previewData.total_columns} columns × ${previewData.total_rows} rows` 
-              : previewLoading ? "loading..." : "—"}
-          </p>
-        </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => {
+        <Dialog
+          open={!!previewDataset}
+          onOpenChange={() => {
             setPreviewDataset(null);
             setPreviewData(null);
             setPreviewError(null);
           }}
         >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Main content area */}
-      <div className="flex-1 px-6 pb-6 overflow-hidden flex flex-col">
-        {previewLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          </div>
-        ) : previewError ? (
-          <div className="flex-1 flex items-center justify-center text-destructive text-center">
-            <div className="max-w-md">
-              <p className="font-medium text-lg mb-3">Failed to load preview</p>
-              <p className="text-sm">{previewError}</p>
+          <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="mb-4 flex justify-between items-center px-6 pt-6">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Full Data Preview</h2>
+                <p className="text-muted-foreground mt-1">
+                  Table: <span className="text-primary">{previewDataset.datasetName}</span> •{" "}
+                  {previewData
+                    ? `${previewData.total_columns} columns × ${previewData.total_rows} rows`
+                    : previewLoading ? "loading..." : "—"}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setPreviewDataset(null);
+                  setPreviewData(null);
+                  setPreviewError(null);
+                }}
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
-          </div>
-        ) : previewData ? (
-          <div className="flex-1 overflow-auto border border-border rounded-lg">
-            <table className="w-full min-w-max">
-              <thead className="sticky top-0 bg-primary text-white">
-                <tr>
-                  {previewData.columns.map((col) => (
-                    <th
-                      key={col}
-                      className="text-left p-4 text-sm font-medium whitespace-nowrap border-b border-primary/30"
-                    >
-                      <div>{col}</div>
-                      <div className="text-xs opacity-80 mt-0.5">
-                        {previewData.column_types[col] || "?"}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewData.preview_rows.map((row, rowIdx) => (
-                  <tr
-                    key={rowIdx}
-                    className="border-b border-border hover:bg-muted/50 transition-colors last:border-b-0"
-                  >
-                    {previewData.columns.map((col) => (
-                      <td
-                        key={col}
-                        className="p-4 text-sm text-foreground whitespace-nowrap"
-                      >
-                        {row[col] != null ? String(row[col]) : "-"}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
 
-                {previewData.preview_rows.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={previewData.columns.length || 1}
-                      className="p-10 text-center text-muted-foreground"
-                    >
-                      No preview data available
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            Waiting for data...
-          </div>
-        )}
-      </div>
-    </DialogContent>
-  </Dialog>
-)}
+            <div className="flex-1 px-6 pb-6 overflow-hidden flex flex-col">
+              {previewLoading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                </div>
+              ) : previewError ? (
+                <div className="flex-1 flex items-center justify-center text-destructive text-center">
+                  <div className="max-w-md">
+                    <p className="font-medium text-lg mb-3">Failed to load preview</p>
+                    <p className="text-sm">{previewError}</p>
+                  </div>
+                </div>
+              ) : previewData ? (
+                <div className="flex-1 overflow-auto border border-border rounded-lg">
+                  <table className="w-full min-w-max">
+                    <thead className="sticky top-0 bg-primary text-white">
+                      <tr>
+                        {previewData.columns.map((col) => (
+                          <th
+                            key={col}
+                            className="text-left p-4 text-sm font-medium whitespace-nowrap border-b border-primary/30"
+                          >
+                            <div>{col}</div>
+                            <div className="text-xs opacity-80 mt-0.5">
+                              {previewData.column_types[col] || "?"}
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewData.preview_rows.map((row, rowIdx) => (
+                        <tr
+                          key={rowIdx}
+                          className="border-b border-border hover:bg-muted/50 transition-colors last:border-b-0"
+                        >
+                          {previewData.columns.map((col) => (
+                            <td
+                              key={col}
+                              className="p-4 text-sm text-foreground whitespace-nowrap"
+                            >
+                              {row[col] != null ? String(row[col]) : "-"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
 
+                      {previewData.preview_rows.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={previewData.columns.length || 1}
+                            className="p-10 text-center text-muted-foreground"
+                          >
+                            No preview data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                  Waiting for data...
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
  
 export default DatasetTab;
- 

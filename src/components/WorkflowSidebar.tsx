@@ -64,7 +64,7 @@ export function WorkflowSidebar() {
 
         <NavLink to="/workflow/ner" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-accent transition" activeClassName="bg-primary text-primary-foreground font-medium">
           <Hash className="h-4 w-4" />
-          <span>NER</span>
+          <span>Name Entity Resolution</span>
         </NavLink>
 
         <NavLink to="/workflow/business-logic" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-accent transition" activeClassName="bg-primary text-primary-foreground font-medium">

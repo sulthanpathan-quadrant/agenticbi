@@ -7,19 +7,16 @@
 // import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 // import { SchemaPreviewDialog } from "@/components/SchemaPreviewDialog";
-// import { Search, Plus, Eye, Trash2, Loader2 } from "lucide-react";
+// import { Search, Plus, Eye, Trash2, Loader2, X } from "lucide-react";
 // import { toast } from "sonner";
 
-
-// import { processJobForModeling, getProcessingStatus } from "@/components/api/api.ts"
-
+// import { processJobForModeling, getProcessingStatus } from "@/components/api/api.ts";
 
 // import {
 //   Dialog,
 //   DialogContent,
 //   DialogHeader,
 //   DialogTitle,
-//   DialogDescription,
 // } from "@/components/ui/dialog";
 
 // interface Document {
@@ -66,10 +63,24 @@
 //     : null;
 //   const jobId = localStorage.getItem("current_job_id");
 
+//   // Reusable close button for all toasts (Sonner style)
+//   const closeToastButton = (
+//     <button
+//       onClick={() => toast.dismiss()}
+//       className="absolute top-2 right-2 rounded-full p-1 hover:bg-muted/50 transition-colors"
+//       aria-label="Close toast"
+//     >
+//       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+//     </button>
+//   );
+
 //   // Fetch documents list
 //   useEffect(() => {
 //     if (!userId || !jobId) {
-//       toast.error("Missing user or job information. Please complete ingestion first.");
+//       toast.error("Missing user or job information. Please complete ingestion first.", {
+//         duration: 4000,
+//         action: closeToastButton,
+//       });
 //       setLoading(false);
 //       return;
 //     }
@@ -77,7 +88,7 @@
 //     const fetchDocuments = async () => {
 //       try {
 //         setLoading(true);
-//         const response = await fetch(`https://4.227.238.34/view-documents/${userId}/${jobId}`);
+//         const response = await fetch(`https://api.veriton.ai/api/service1/view-documents/${userId}/${jobId}`);
 
 //         if (!response.ok) throw new Error("Failed to fetch files");
 
@@ -93,11 +104,17 @@
 //           setData(formattedData);
 //         } else {
 //           setData([]);
-//           toast.info("No documents found for this job.");
+//           toast.info("No documents found for this job.", {
+//             duration: 3000,
+//             action: closeToastButton,
+//           });
 //         }
 //       } catch (error) {
 //         console.error("Error fetching documents:", error);
-//         toast.error("Failed to load ingested files.");
+//         toast.error("Please ingest the data", {
+//           duration: 1000,
+//           action: closeToastButton,
+//         });
 //         setData([]);
 //       } finally {
 //         setLoading(false);
@@ -110,7 +127,10 @@
 //   // Preview file
 //   const openPreview = async (fileName: string) => {
 //     if (!userId || !jobId) {
-//       toast.error("Missing user or job information");
+//       toast.error("Missing user or job information", {
+//         duration: 3000,
+//         action: closeToastButton,
+//       });
 //       return;
 //     }
 
@@ -122,7 +142,7 @@
 //     try {
 //       const encodedFileName = encodeURIComponent(fileName);
 //       const response = await fetch(
-//         `https://4.227.238.34/preview-file/${userId}/${jobId}/${encodedFileName}`
+//         `https://api.veriton.ai/api/service1/preview-file/${userId}/${jobId}/${encodedFileName}`
 //       );
 
 //       if (response.ok) {
@@ -133,7 +153,10 @@
 //         throw new Error(error.detail || "File not found");
 //       }
 //     } catch (error: any) {
-//       toast.error(error.message || "Failed to preview file");
+//       toast.error(error.message || "Failed to preview file", {
+//         duration: 4000,
+//         action: closeToastButton,
+//       });
 //       setPreviewData({ error: error.message });
 //     } finally {
 //       setPreviewLoading(false);
@@ -147,26 +170,35 @@
 
 //   const confirmDelete = async () => {
 //     if (!fileToDelete || !userId || !jobId) {
-//       toast.error("Missing file or job information");
+//       toast.error("Missing file or job information", {
+//         duration: 3000,
+//         action: closeToastButton,
+//       });
 //       return;
 //     }
 
 //     try {
 //       const encodedFileName = encodeURIComponent(fileToDelete);
 //       const response = await fetch(
-//         `https://4.227.238.34/delete-file/${userId}/${jobId}/${encodedFileName}`,
+//         `https://api.veriton.ai/api/service1/delete-file/${userId}/${jobId}/${encodedFileName}`,
 //         { method: "DELETE" }
 //       );
 
 //       if (response.ok) {
-//         toast.success(`"${fileToDelete}" deleted successfully`);
+//         toast.success(`"${fileToDelete}" deleted successfully`, {
+//           duration: 3000,
+//           action: closeToastButton,
+//         });
 //         setData(prev => prev.filter(item => item.fileName !== fileToDelete));
 //       } else {
 //         const error = await response.json();
 //         throw new Error(error.detail || "Failed to delete file");
 //       }
 //     } catch (error: any) {
-//       toast.error(error.message || "Failed to delete file");
+//       toast.error(error.message || "Failed to delete file", {
+//         duration: 4000,
+//         action: closeToastButton,
+//       });
 //     } finally {
 //       setDeleteConfirmOpen(false);
 //       setFileToDelete(null);
@@ -174,96 +206,105 @@
 //   };
 
 //   const handleProceedToModeling = async () => {
-//   if (!userId || !jobId) {
-//     toast.error("Missing user or job information");
-//     return;
-//   }
-
-//   if (data.length === 0) {
-//     toast.warning("No files available. Please ingest some data first.");
-//     return;
-//   }
-
-//   setProcessingToModeling(true);
-
-//   try {
-//     // Step 1: Detect fact-dimension
-//     toast.loading("Detecting fact & dimension tables...", { id: "modeling-progress" });
-
-//     const detectResponse = await fetch(
-//       `https://4.227.238.34/detect-fact-dimension?user_id=${userId}&job_id=${jobId}`,
-//       {
-//         method: "POST",
-//         headers: { "Accept": "application/json" },
-//       }
-//     );
-
-//     if (!detectResponse.ok) {
-//       throw new Error(`Fact/Dimension detection failed: ${await detectResponse.text()}`);
+//     if (!userId || !jobId) {
+//       toast.error("Missing user or job information", {
+//         duration: 3000,
+//         action: closeToastButton,
+//       });
+//       return;
 //     }
 
-//     // Step 2: Transfer to OneLake
-//     toast.loading("Transferring data to OneLake...", { id: "modeling-progress" });
-
-//     const transferResponse = await fetch(
-//       "https://4.227.238.34/transferfromblobtoonelake-relation",
-//       {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ user_id: userId, job_id: jobId }),
-//       }
-//     );
-
-//     if (!transferResponse.ok) {
-//       throw new Error(`Transfer to OneLake failed: ${await transferResponse.text()}`);
+//     if (data.length === 0) {
+//       toast.warning("No files available. Please ingest some data first.", {
+//         duration: 3000,
+//         action: closeToastButton,
+//       });
+//       return;
 //     }
 
-//     // Step 3: Process job for modeling
-//     toast.loading("Processing data model...", { id: "modeling-progress" });
+//     setProcessingToModeling(true);
 
-//     await processJobForModeling({ user_id: userId, job_id: jobId });
+//     try {
+//       // Step 1: Detect fact-dimension
+//       // toast.loading("Detecting fact & dimension tables...", { id: "modeling-progress" });
 
-//     // Step 4: Poll for status until completed
-//     toast.loading("Building star schema...", { id: "modeling-progress" });
+//       const detectResponse = await fetch(
+//         `https://api.veriton.ai/api/service1/detect-fact-dimension?user_id=${userId}&job_id=${jobId}`,
+//         {
+//           method: "POST",
+//           headers: { "Accept": "application/json" },
+//         }
+//       );
 
-//     let statusResponse;
-//     let attempts = 0;
-//     const maxAttempts = 30; // 30 attempts = 30 seconds max
-
-//     while (attempts < maxAttempts) {
-//       statusResponse = await getProcessingStatus(userId, jobId);
-
-//       if (statusResponse.status === "completed" && statusResponse.data) {
-//         // Store the processed data
-//         localStorage.setItem("modeling_data", JSON.stringify(statusResponse.data));
-//         break;
-//       } else if (statusResponse.status === "failed") {
-//         throw new Error(statusResponse.message || "Processing failed");
+//       if (!detectResponse.ok) {
+//         throw new Error(`Fact/Dimension detection failed: ${await detectResponse.text()}`);
 //       }
 
-//       // Wait 1 second before next poll
-//       await new Promise(resolve => setTimeout(resolve, 1000));
-//       attempts++;
+//       // Step 2: Transfer to OneLake
+//       // toast.loading("Transferring data to OneLake...", { id: "modeling-progress" });
+
+//       const transferResponse = await fetch(
+//         "https://api.veriton.ai/api/service1/transferfromblobtoonelake-relation",
+//         {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({ user_id: userId, job_id: jobId }),
+//         }
+//       );
+
+//       if (!transferResponse.ok) {
+//         throw new Error(`Transfer to OneLake failed: ${await transferResponse.text()}`);
+//       }
+
+//       // Step 3: Process job for modeling
+//       // toast.loading("Processing data model...", { id: "modeling-progress" });
+
+//       await processJobForModeling({ user_id: userId, job_id: jobId });
+
+//       // Step 4: Poll for status until completed
+//       // toast.loading("Building star schema...", { id: "modeling-progress" });
+
+//       let statusResponse;
+//       let attempts = 0;
+//       const maxAttempts = 30;
+
+//       while (attempts < maxAttempts) {
+//         statusResponse = await getProcessingStatus(userId, jobId);
+
+//         if (statusResponse.status === "completed" && statusResponse.data) {
+//           // localStorage.setItem("modeling_data", JSON.stringify(statusResponse.data));
+//           break;
+//         } else if (statusResponse.status === "failed") {
+//           throw new Error(statusResponse.message || "Processing failed");
+//         }
+
+//         await new Promise(resolve => setTimeout(resolve, 1000));
+//         attempts++;
+//       }
+
+//       if (attempts >= maxAttempts) {
+//         throw new Error("Processing timeout - please try again");
+//       }
+
+//       toast.dismiss("modeling-progress");
+//       toast.success("Data model generated successfully!", {
+//         duration: 3000,
+//         action: closeToastButton,
+//       });
+
+//       navigate("/workflow/data-modeling");
+
+//     } catch (error: any) {
+//       toast.dismiss("modeling-progress");
+//       console.error("Modeling preparation error:", error);
+//       toast.error(error.message || "Failed to prepare data for modeling", {
+//         duration: 4000,
+//         action: closeToastButton,
+//       });
+//     } finally {
+//       setProcessingToModeling(false);
 //     }
-
-//     if (attempts >= maxAttempts) {
-//       throw new Error("Processing timeout - please try again");
-//     }
-
-//     toast.dismiss("modeling-progress");
-//     toast.success("Data model generated successfully!");
-
-//     // Navigate to modeling page
-//     navigate("/workflow/data-modeling");
-
-//   } catch (error: any) {
-//     toast.dismiss("modeling-progress");
-//     console.error("Modeling preparation error:", error);
-//     toast.error(error.message || "Failed to prepare data for modeling");
-//   } finally {
-//     setProcessingToModeling(false);
-//   }
-// };
+//   };
 
 //   // Filter data
 //   const filteredData = data.filter(item => {
@@ -297,7 +338,7 @@
 //         </div>
 
 //         {/* Search and Filters */}
-//         <div className="flex gap-4 mb-6">
+//         <div className="flex flex-col sm:flex-row gap-4 mb-6">
 //           <div className="relative flex-1">
 //             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 //             <Input
@@ -308,7 +349,7 @@
 //             />
 //           </div>
 //           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-//             <SelectTrigger className="w-40">
+//             <SelectTrigger className="w-full sm:w-40">
 //               <SelectValue placeholder="Source: All" />
 //             </SelectTrigger>
 //             <SelectContent>
@@ -317,10 +358,12 @@
 //               <SelectItem value="blob">Blob</SelectItem>
 //               <SelectItem value="snowflake">Snowflake</SelectItem>
 //               <SelectItem value="onelake">OneLake</SelectItem>
+//               <SelectItem value="databricks">Databricks</SelectItem>
+//               <SelectItem value="databases">SQL Server</SelectItem>
 //             </SelectContent>
 //           </Select>
 //           <Select value={typeFilter} onValueChange={setTypeFilter}>
-//             <SelectTrigger className="w-40">
+//             <SelectTrigger className="w-full sm:w-40">
 //               <SelectValue placeholder="File Type: All" />
 //             </SelectTrigger>
 //             <SelectContent>
@@ -393,7 +436,7 @@
 
 //             {/* Pagination */}
 //             {filteredData.length > itemsPerPage && (
-//               <div className="flex justify-between items-center mb-8">
+//               <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
 //                 <p className="text-sm text-muted-foreground">
 //                   Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length} files
 //                 </p>
@@ -446,7 +489,7 @@
 //             )}
 
 //             {/* Action Buttons */}
-//             <div className="flex justify-between items-center">
+//             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
 //               <Button variant="outline" onClick={() => navigate("/workflow/data-ingestion")}>
 //                 Back
 //               </Button>
@@ -454,7 +497,7 @@
 //               <Button
 //                 onClick={handleProceedToModeling}
 //                 size="lg"
-//                 className="px-8 gap-2"
+//                 className="px-8 gap-2 w-full sm:w-auto"
 //                 disabled={data.length === 0 || loading || processingToModeling}
 //               >
 //                 {processingToModeling ? (
@@ -522,10 +565,7 @@
 //       </div>
 //     </WorkflowLayout>
 //   );
-// }                            
-
-
-
+// }
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -568,6 +608,15 @@ interface TableRowData {
   type: string;
 }
 
+// Progress steps for the modeling pipeline
+const modelingSteps = [
+  { label: 'Detecting Tables', threshold: 10 },
+  { label: 'Transferring Data', threshold: 35 },
+  { label: 'Processing Model', threshold: 60 },
+  { label: 'Building Schema', threshold: 85 },
+  { label: 'Done', threshold: 100 },
+];
+
 export default function LandingZone() {
   const navigate = useNavigate();
 
@@ -581,14 +630,18 @@ export default function LandingZone() {
   const [data, setData] = useState<TableRowData[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingToModeling, setProcessingToModeling] = useState(false);
+  // ── NEW: progress bar state ──────────────────────────────────────────────
+  const [modelingProgress, setModelingProgress] = useState(0);
+  const [modelingStatus, setModelingStatus] = useState('');
+  // ────────────────────────────────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<string | null>(null);
 
   const itemsPerPage = 4;
 
-  const userId = localStorage.getItem("user") 
-    ? JSON.parse(localStorage.getItem("user") || "{}").id 
+  const userId = localStorage.getItem("user")
+    ? JSON.parse(localStorage.getItem("user") || "{}").id
     : null;
   const jobId = localStorage.getItem("current_job_id");
 
@@ -752,11 +805,11 @@ export default function LandingZone() {
     }
 
     setProcessingToModeling(true);
+    setModelingProgress(10);
+    setModelingStatus('Detecting fact & dimension tables...');
 
     try {
       // Step 1: Detect fact-dimension
-      // toast.loading("Detecting fact & dimension tables...", { id: "modeling-progress" });
-
       const detectResponse = await fetch(
         `https://api.veriton.ai/api/service1/detect-fact-dimension?user_id=${userId}&job_id=${jobId}`,
         {
@@ -769,9 +822,10 @@ export default function LandingZone() {
         throw new Error(`Fact/Dimension detection failed: ${await detectResponse.text()}`);
       }
 
-      // Step 2: Transfer to OneLake
-      // toast.loading("Transferring data to OneLake...", { id: "modeling-progress" });
+      setModelingProgress(35);
+      setModelingStatus('Transferring data to OneLake...');
 
+      // Step 2: Transfer to OneLake
       const transferResponse = await fetch(
         "https://api.veriton.ai/api/service1/transferfromblobtoonelake-relation",
         {
@@ -785,14 +839,16 @@ export default function LandingZone() {
         throw new Error(`Transfer to OneLake failed: ${await transferResponse.text()}`);
       }
 
-      // Step 3: Process job for modeling
-      // toast.loading("Processing data model...", { id: "modeling-progress" });
+      setModelingProgress(60);
+      setModelingStatus('Processing data model...');
 
+      // Step 3: Process job for modeling
       await processJobForModeling({ user_id: userId, job_id: jobId });
 
-      // Step 4: Poll for status until completed
-      // toast.loading("Building star schema...", { id: "modeling-progress" });
+      setModelingProgress(75);
+      setModelingStatus('Building star schema...');
 
+      // Step 4: Poll for status until completed
       let statusResponse;
       let attempts = 0;
       const maxAttempts = 30;
@@ -801,11 +857,13 @@ export default function LandingZone() {
         statusResponse = await getProcessingStatus(userId, jobId);
 
         if (statusResponse.status === "completed" && statusResponse.data) {
-          // localStorage.setItem("modeling_data", JSON.stringify(statusResponse.data));
           break;
         } else if (statusResponse.status === "failed") {
           throw new Error(statusResponse.message || "Processing failed");
         }
+
+        // Nudge progress forward slightly while polling (capped at 92)
+        setModelingProgress(prev => (prev < 92 ? prev + 2 : prev));
 
         await new Promise(resolve => setTimeout(resolve, 1000));
         attempts++;
@@ -815,22 +873,25 @@ export default function LandingZone() {
         throw new Error("Processing timeout - please try again");
       }
 
-      toast.dismiss("modeling-progress");
+      setModelingProgress(100);
+      setModelingStatus('Completed! Redirecting...');
+
       toast.success("Data model generated successfully!", {
         duration: 3000,
         action: closeToastButton,
       });
 
-      navigate("/workflow/data-modeling");
+      setTimeout(() => navigate("/workflow/data-modeling"), 800);
 
     } catch (error: any) {
-      toast.dismiss("modeling-progress");
       console.error("Modeling preparation error:", error);
       toast.error(error.message || "Failed to prepare data for modeling", {
         duration: 4000,
         action: closeToastButton,
       });
-    } finally {
+      // Reset progress on failure
+      setModelingProgress(0);
+      setModelingStatus('');
       setProcessingToModeling(false);
     }
   };
@@ -1017,27 +1078,129 @@ export default function LandingZone() {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <Button variant="outline" onClick={() => navigate("/workflow/data-ingestion")}>
-                Back
-              </Button>
+            {/* ── Action Buttons + Progress Bar ── */}
+            <div className="flex flex-col gap-4">
 
-              <Button
-                onClick={handleProceedToModeling}
-                size="lg"
-                className="px-8 gap-2 w-full sm:w-auto"
-                disabled={data.length === 0 || loading || processingToModeling}
-              >
-                {processingToModeling ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  "Proceed to Data Modeling"
-                )}
-              </Button>
+              {/* Progress UI — only visible while processing to modeling */}
+              {processingToModeling && (
+                <div className="w-full rounded-xl border border-border bg-card/60 p-5 space-y-4">
+                  {/* Step indicators */}
+                  <div className="flex items-center justify-between">
+                    {modelingSteps.map((step, i) => {
+                      const reached = modelingProgress >= step.threshold;
+                      const active =
+                        modelingProgress >= step.threshold &&
+                        (i === modelingSteps.length - 1 ||
+                          modelingProgress < modelingSteps[i + 1].threshold);
+                      return (
+                        <div key={step.label} className="flex flex-col items-center gap-1 flex-1">
+                          <div
+                            className={[
+                              "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-500",
+                              reached
+                                ? "bg-primary border-primary text-primary-foreground"
+                                : "bg-muted border-border text-muted-foreground",
+                              active ? "ring-2 ring-primary/40 ring-offset-2" : "",
+                            ].join(" ")}
+                          >
+                            {reached && !active ? (
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none">
+                                <path
+                                  d="M2 6l3 3 5-5"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            ) : (
+                              i + 1
+                            )}
+                          </div>
+                          <span
+                            className={[
+                              "text-[10px] font-medium text-center leading-tight",
+                              reached ? "text-primary" : "text-muted-foreground",
+                            ].join(" ")}
+                          >
+                            {step.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bar */}
+                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700 ease-in-out"
+                      style={{
+                        width: `${modelingProgress}%`,
+                        background:
+                          modelingProgress === 100
+                            ? "hsl(var(--primary))"
+                            : "linear-gradient(90deg, hsl(var(--primary)/0.7), hsl(var(--primary)))",
+                      }}
+                    />
+                  </div>
+
+                  {/* Status text + percentage */}
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      {modelingProgress < 100 ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
+                      ) : (
+                        <svg
+                          className="w-3.5 h-3.5 text-primary flex-shrink-0"
+                          viewBox="0 0 12 12"
+                          fill="none"
+                        >
+                          <path
+                            d="M2 6l3 3 5-5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                      <span>{modelingStatus}</span>
+                    </div>
+                    <span className="font-semibold text-primary tabular-nums">
+                      {modelingProgress}%
+                    </span>
+                  </div>
+
+                  {modelingProgress < 100 && (
+                    <p className="text-xs text-muted-foreground">
+                      Please wait — building your data model may take a few minutes.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Back + Proceed row */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <Button variant="outline" onClick={() => navigate("/workflow/data-ingestion")}>
+                  Back
+                </Button>
+
+                <Button
+                  onClick={handleProceedToModeling}
+                  size="lg"
+                  className="px-8 gap-2 w-full sm:w-auto"
+                  disabled={data.length === 0 || loading || processingToModeling}
+                >
+                  {processingToModeling ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Proceed to Data Modeling"
+                  )}
+                </Button>
+              </div>
             </div>
           </>
         )}

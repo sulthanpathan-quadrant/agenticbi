@@ -303,6 +303,11 @@
 
 
 
+
+
+
+
+
 import { useState, useEffect } from "react";
 import { PowerBIMicrosoftLogin } from "./PowerBIMicrosoftLogin";
 import { PowerBIWorkspaces } from "./PowerBIWorkspaces";
@@ -317,6 +322,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, X, AlertCircle } from "lucide-react";
+ import { Workflowheader } from "../WorkFlowHeader1";
+import { PowerBIHeader } from "./PowerBIHeader";
 
 const API_BASE = "https://api.veriton.ai/api/service4";
 
@@ -487,6 +494,10 @@ export function PowerBIFlow({
 
   if (step === "report" && migrateResult) {
     return (
+  
+   <div className="min-h-screen flex flex-col bg-background">
+    <PowerBIHeader onBack={() => setStep("workspaces")} />
+     <div className="flex-1 pt-4">
       <PowerBIReport
         workspaceName={selectedWorkspaceName}
         embedUrl={migrateResult.embed_url}
@@ -497,12 +508,18 @@ export function PowerBIFlow({
         datasetId={migrateResult.dataset_id}
         onBack={() => setStep("workspaces")}
       />
+    </div>
+    </div>
+   
     );
   }
 
   if (step === "workspaces") {
     return (
-      <>
+       <div className="min-h-screen flex flex-col bg-background">
+        <PowerBIHeader onBack={() => setStep("microsoft")} />
+
+        <div className="flex-1 pt-4">
         <PowerBIWorkspaces
           onBack={() => setStep("microsoft")}
           onMigrate={handleMigrate}
@@ -519,6 +536,7 @@ export function PowerBIFlow({
             </button>
           </div>
         )}
+        </div>
 
         <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
           <DialogContent className="sm:max-w-sm p-0 bg-card border-border rounded-2xl overflow-hidden">
@@ -553,14 +571,19 @@ export function PowerBIFlow({
             </div>
           </DialogContent>
         </Dialog>
-      </>
+      </div>
     );
   }
 
   return (
+  <div className="min-h-screen flex flex-col bg-background">
+  <PowerBIHeader onBack={onBack} hideBackButton={false} />
+        <div className="flex-1 pt-4">
     <PowerBIMicrosoftLogin
       onBack={onBack}
       onSignInWithMicrosoft={() => setStep("workspaces")}
     />
+      </div>
+    </div>
   );
 }

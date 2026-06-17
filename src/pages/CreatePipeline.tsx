@@ -996,7 +996,7 @@ const CreatePipeline = () => {
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{job.name}</p>
-                      <p className="text-xs text-muted-foreground">{job.category}</p>
+                      {/* <p className="text-xs text-muted-foreground">{job.category}</p> */}
                       <Badge variant="secondary" className="mt-1 text-xs inline-block">
                         {job.stages} stages
                       </Badge>
@@ -1026,6 +1026,9 @@ const CreatePipeline = () => {
         <div className="flex-1 relative overflow-hidden bg-[#f8f9fb] dark:bg-[#1a1d21]">
           <div className="absolute top-4 left-4 text-sm font-medium text-foreground z-10">
             Pipeline Canvas
+          </div>
+          <div className="absolute top-4 right-4 text-sm text-muted-foreground flex items-center gap-1 z-10">
+           <Plus className="w-4 h-4" /> Click jobs from sidebar to add, click blue dots to connect
           </div>
  
           <div

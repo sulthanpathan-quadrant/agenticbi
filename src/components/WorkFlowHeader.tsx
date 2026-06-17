@@ -10,23 +10,22 @@ export function WorkflowHeader() {
   const user = storedUser ? JSON.parse(storedUser) : null;
   const userName = user?.name || user?.email?.split("@")[0] || "User";
   const userId = user?.id || user?.user_id;
+
+  const handleBackToJobs = () => {
+        // Clear modeling data and dataset-related keys
+        localStorage.removeItem("modeling_data");
+        localStorage.removeItem("current_dataset_name");
+        localStorage.removeItem("current_dataset_path");
+        localStorage.removeItem("current_onelake_path");
+          localStorage.removeItem("current_thread_id");
+        
+        navigate("/jobs");
+    };
+
+
   return (
     <header className="sticky top-0 z-50 h-20 w-full bg-card border-b border-border">
       <div className="h-full flex items-center justify-between px-6">
-        
-        {/* Left: Title */}
-        {/* <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Database className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg">Veritas</h1>
-                <p className="text-sm text-muted-foreground">
-                  Welcome, <span className="text-primary">{userName}</span>
-                </p>
-              </div>
-            </div> */}
-
             <div className="flex items-center gap-3 md:gap-4">
             {/* Logo */}
             <a href="/" className="flex-shrink-0">
@@ -59,7 +58,7 @@ export function WorkflowHeader() {
           <div className="flex items-center gap-3">
                             <ThemeToggle />
           </div>
-            <Button variant="outline" onClick={() => {localStorage.removeItem("modeling_data"); navigate("/jobs")}}>
+            <Button variant="outline" onClick={handleBackToJobs}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Jobs
           </Button>     

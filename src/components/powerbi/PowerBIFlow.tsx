@@ -495,8 +495,9 @@ export function PowerBIFlow({
   if (step === "report" && migrateResult) {
     return (
   
-   <div className="min-h-screen flex flex-col bg-background">
-    <PowerBIHeader onBack={() => setStep("workspaces")} />
+  //  <div className="min-h-screen flex flex-col bg-background">
+  //   <PowerBIHeader onBack={() => setStep("workspaces")} />
+  <>
      <div className="flex-1 pt-4">
       <PowerBIReport
         workspaceName={selectedWorkspaceName}
@@ -508,9 +509,9 @@ export function PowerBIFlow({
         datasetId={migrateResult.dataset_id}
         onBack={() => setStep("workspaces")}
       />
-    </div>
-    </div>
-   
+   </div>
+  </>
+  
     );
   }
 

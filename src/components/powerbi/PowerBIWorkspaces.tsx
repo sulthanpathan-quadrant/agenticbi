@@ -540,10 +540,10 @@ export function PowerBIWorkspaces({
         </div>
 
         <div className="px-6 py-4 border-t border-border bg-card flex items-center justify-between sticky bottom-0 z-10">
-          <Button variant="outline" className="gap-2" onClick={onBack}>
+          {/* <Button variant="outline" className="gap-2" onClick={onBack}>
             <ArrowLeft className="w-4 h-4" />
             Back
-          </Button>
+          </Button> */}
           <Button
             onClick={() => selectedWorkspace && setShowMigrateDialog(true)}
             disabled={!selectedWorkspace || isMigrating}

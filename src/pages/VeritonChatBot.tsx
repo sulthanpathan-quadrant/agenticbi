@@ -270,11 +270,24 @@ interface DQResult {
   dataset_path: string; next_actions?: { action: string; label: string }[];
 }
 
+// interface NERResult {
+//   status: string; blob_path: string; rows_processed: number; columns_processed: number;
+//   entity_columns_created: string[]; entities_detected: Record<string, number>;
+//   next_actions?: { action: string; label: string }[];
+// }
+
+interface NERResolution { column: string; original: string; resolved: string; confidence: number; }
 interface NERResult {
   status: string; blob_path: string; rows_processed: number; columns_processed: number;
-  entity_columns_created: string[]; entities_detected: Record<string, number>;
+  entities_detected: Record<string, number>;
+  summary?: string[];
+  resolutions_found: number;
+  resolutions: NERResolution[];
+  dataset_updated?: boolean;
   next_actions?: { action: string; label: string }[];
 }
+
+
 
 interface BLResult {
   status: string; blob_path: string; rules_received: number; rules_applied: number;
@@ -549,8 +562,48 @@ function DQResultCard({ dqResult, onActionClick }: { dqResult: DQResult; onActio
 // ─────────────────────────────────────────────────────────────
 // NERResultCard
 // ─────────────────────────────────────────────────────────────
+// function NERResultCard({ nerResult, onActionClick }: { nerResult: NERResult; onActionClick: (label: string) => void }) {
+//   const entityEntries = Object.entries(nerResult.entities_detected || {});
+//   return (
+//     <div className="mt-3 w-full max-w-lg bg-card border border-border rounded-xl p-4 shadow-sm space-y-3">
+//       <div className="flex items-center gap-2.5">
+//         <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0"><Tag className="w-4.5 h-4.5 text-violet-500" style={{ width: 18, height: 18 }} /></div>
+//         <div><div className="font-bold text-sm text-foreground">Name Entity Resolution Complete</div><div className="text-[11px] text-muted-foreground">Entities extracted from dataset</div></div>
+//       </div>
+//       <div className="flex flex-wrap gap-2">
+//         <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-violet-500/10 text-violet-600 border border-violet-500/20">{nerResult.rows_processed} rows processed</span>
+//         <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 border border-blue-500/20">{nerResult.columns_processed} columns processed</span>
+//         <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">{nerResult.entity_columns_created?.length || 0} entity columns created</span>
+//       </div>
+//       {entityEntries.length > 0 && (
+//         <div>
+//           <div className="text-[10px] text-muted-foreground font-semibold mb-1.5">ENTITIES DETECTED</div>
+//           <div className="flex flex-wrap gap-2">
+//             {entityEntries.map(([type, count]) => (
+//               <span key={type} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-muted border border-border">
+//                 <span className="text-violet-500 font-bold">{type}</span><span className="text-muted-foreground">×{count}</span>
+//               </span>
+//             ))}
+//           </div>
+//         </div>
+//       )}
+//       {nerResult.entity_columns_created && nerResult.entity_columns_created.length > 0 && (
+//         <div>
+//           <div className="text-[10px] text-muted-foreground font-semibold mb-1.5">ENTITY COLUMNS CREATED</div>
+//           <div className="flex flex-wrap gap-1">
+//             {nerResult.entity_columns_created.slice(0, 8).map((col) => <span key={col} className="text-[10px] bg-violet-500/8 border border-violet-500/20 text-violet-600 rounded px-1.5 py-0.5 font-mono">{col}</span>)}
+//             {nerResult.entity_columns_created.length > 8 && <span className="text-[10px] bg-muted border border-border rounded px-1.5 py-0.5 text-muted-foreground">+{nerResult.entity_columns_created.length - 8} more</span>}
+//           </div>
+//         </div>
+//       )}
+//       {nerResult.next_actions && nerResult.next_actions.length > 0 && <NextActionChips actions={nerResult.next_actions} onActionClick={onActionClick} />}
+//     </div>
+//   );
+// }
+
 function NERResultCard({ nerResult, onActionClick }: { nerResult: NERResult; onActionClick: (label: string) => void }) {
   const entityEntries = Object.entries(nerResult.entities_detected || {});
+  const resolutions = nerResult.resolutions || [];
   return (
     <div className="mt-3 w-full max-w-lg bg-card border border-border rounded-xl p-4 shadow-sm space-y-3">
       <div className="flex items-center gap-2.5">
@@ -560,8 +613,17 @@ function NERResultCard({ nerResult, onActionClick }: { nerResult: NERResult; onA
       <div className="flex flex-wrap gap-2">
         <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-violet-500/10 text-violet-600 border border-violet-500/20">{nerResult.rows_processed} rows processed</span>
         <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 border border-blue-500/20">{nerResult.columns_processed} columns processed</span>
-        <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">{nerResult.entity_columns_created?.length || 0} entity columns created</span>
+        {resolutions.length > 0 ? (
+          <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+            <Wrench className="w-3 h-3" />{nerResult.resolutions_found} resolution{nerResult.resolutions_found !== 1 ? "s" : ""} applied
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-green-500/10 text-green-600 border border-green-500/20">
+            <CheckCircle className="w-3 h-3" />No resolutions needed
+          </span>
+        )}
       </div>
+
       {entityEntries.length > 0 && (
         <div>
           <div className="text-[10px] text-muted-foreground font-semibold mb-1.5">ENTITIES DETECTED</div>
@@ -574,19 +636,30 @@ function NERResultCard({ nerResult, onActionClick }: { nerResult: NERResult; onA
           </div>
         </div>
       )}
-      {nerResult.entity_columns_created && nerResult.entity_columns_created.length > 0 && (
+
+      {resolutions.length > 0 && (
         <div>
-          <div className="text-[10px] text-muted-foreground font-semibold mb-1.5">ENTITY COLUMNS CREATED</div>
-          <div className="flex flex-wrap gap-1">
-            {nerResult.entity_columns_created.slice(0, 8).map((col) => <span key={col} className="text-[10px] bg-violet-500/8 border border-violet-500/20 text-violet-600 rounded px-1.5 py-0.5 font-mono">{col}</span>)}
-            {nerResult.entity_columns_created.length > 8 && <span className="text-[10px] bg-muted border border-border rounded px-1.5 py-0.5 text-muted-foreground">+{nerResult.entity_columns_created.length - 8} more</span>}
+          <div className="text-[10px] text-muted-foreground font-semibold mb-1.5">RESOLUTIONS APPLIED</div>
+          <div className="space-y-1.5">
+            {resolutions.map((r, i) => (
+              <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/50 flex-wrap">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-600 border border-violet-500/25 font-mono">{r.column}</span>
+                <span className="text-[11px] text-muted-foreground line-through">{r.original}</span>
+                <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[11px] font-semibold text-foreground">{r.resolved}</span>
+                <span className="ml-auto text-[10px] font-semibold text-green-600 bg-green-600/10 border border-green-600/20 rounded px-1.5 py-0.5">{r.confidence}%</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
+
       {nerResult.next_actions && nerResult.next_actions.length > 0 && <NextActionChips actions={nerResult.next_actions} onActionClick={onActionClick} />}
     </div>
   );
 }
+
+ 
 
 // ─────────────────────────────────────────────────────────────
 // BusinessLogicResultCard

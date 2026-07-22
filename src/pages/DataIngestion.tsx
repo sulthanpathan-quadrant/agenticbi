@@ -46,6 +46,10 @@
 //   const selectedItemsRef = useRef<HTMLDivElement>(null);
 
 //   const [isIngesting, setIsIngesting] = useState(false);
+//   // ── NEW: progress bar state ──────────────────────────────────────────────
+//   const [ingestProgress, setIngestProgress] = useState(0);
+//   const [ingestStatus, setIngestStatus] = useState('');
+//   // ────────────────────────────────────────────────────────────────────────
 //   const [userId, setUserId] = useState<string>("");
 //   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
 //   const [filePickerOpen, setFilePickerOpen] = useState(false);
@@ -120,73 +124,44 @@
 //                 const name = path.split('/').pop() || path;
 //                 restoredItems.push({
 //                   id: `restored-s3-${groupIndex}-${idx}-${Date.now()}`,
-//                   name,
-//                   source: sourceName,
-//                   size: "N/A",
-//                   rows: "N/A",
-//                   icon: "file",
-//                   sourceType,
-//                   fullPath: path
+//                   name, source: sourceName, size: "N/A", rows: "N/A",
+//                   icon: "file", sourceType, fullPath: path
 //                 });
 //               });
-//             }
-//             else if (sourceType === "blob" && Array.isArray(entry.blobpath)) {
+//             } else if (sourceType === "blob" && Array.isArray(entry.blobpath)) {
 //               entry.blobpath.forEach((path: string, idx: number) => {
 //                 const name = path.split('/').pop() || path;
 //                 restoredItems.push({
 //                   id: `restored-blob-${groupIndex}-${idx}-${Date.now()}`,
-//                   name,
-//                   source: sourceName,
-//                   size: "N/A",
-//                   rows: "N/A",
-//                   icon: "file",
-//                   sourceType,
-//                   fullPath: path
+//                   name, source: sourceName, size: "N/A", rows: "N/A",
+//                   icon: "file", sourceType, fullPath: path
 //                 });
 //               });
-//             }
-//             else if (sourceType === "onelake" && Array.isArray(entry.file_path)) {
+//             } else if (sourceType === "onelake" && Array.isArray(entry.file_path)) {
 //               entry.file_path.forEach((path: string, idx: number) => {
 //                 const name = path.split('/').pop() || path;
 //                 restoredItems.push({
 //                   id: `restored-onelake-${groupIndex}-${idx}-${Date.now()}`,
-//                   name,
-//                   source: sourceName,
-//                   size: "N/A",
-//                   rows: "N/A",
-//                   icon: "file",
-//                   sourceType,
-//                   fullPath: path
+//                   name, source: sourceName, size: "N/A", rows: "N/A",
+//                   icon: "file", sourceType, fullPath: path
 //                 });
 //               });
-//             }
-//             else if (sourceType === "databricks" && Array.isArray(entry.table)) {
+//             } else if (sourceType === "databricks" && Array.isArray(entry.table)) {
 //               entry.table.forEach((tbl: string, idx: number) => {
 //                 const name = tbl.split('.').pop() || tbl;
 //                 restoredItems.push({
 //                   id: `restored-databricks-${groupIndex}-${idx}-${Date.now()}`,
-//                   name,
-//                   source: sourceName,
-//                   size: "N/A",
-//                   rows: "N/A",
-//                   icon: "table",
-//                   sourceType,
-//                   fullPath: tbl
+//                   name, source: sourceName, size: "N/A", rows: "N/A",
+//                   icon: "table", sourceType, fullPath: tbl
 //                 });
 //               });
-//             }
-//             else if (sourceType === "sqlserver" && Array.isArray(entry.table)) {
+//             } else if (sourceType === "sqlserver" && Array.isArray(entry.table)) {
 //               entry.table.forEach((tbl: string, idx: number) => {
 //                 const name = tbl.split('.').pop() || tbl;
 //                 restoredItems.push({
 //                   id: `restored-sql-${groupIndex}-${idx}-${Date.now()}`,
-//                   name,
-//                   source: sourceName || "SQL Server",
-//                   size: "N/A",
-//                   rows: "N/A",
-//                   icon: "table",
-//                   sourceType,
-//                   fullPath: tbl
+//                   name, source: sourceName || "SQL Server", size: "N/A", rows: "N/A",
+//                   icon: "table", sourceType, fullPath: tbl
 //                 });
 //               });
 //             }
@@ -218,13 +193,10 @@
 //     sourceType: string
 //   ) => {
 //     const existing = JSON.parse(localStorage.getItem("ingestion_sources") || "[]");
-
 //     const paths = files.map(f => f.fullPath).filter(Boolean);
 //     if (paths.length === 0) return;
 
-//     let newEntry: any = {
-//       destination_path: userId,
-//     };
+//     let newEntry: any = { destination_path: userId };
 
 //     switch (sourceType) {
 //       case "s3":
@@ -237,20 +209,18 @@
 //           s3ServiceUrl: credentials?.s3ServiceUrl || "https://s3.amazonaws.com"
 //         };
 //         break;
-
 //       case "azure":
 //         newEntry = {
 //           ...newEntry,
 //           source_type: "blob",
 //           blobpath: paths,
 //           blobAccountName: credentials?.accountName ||
-//                           credentials?.connection_string?.match(/AccountName=([^;]+)/)?.[1] ||
-//                           "agenticbistorage",
+//             credentials?.connection_string?.match(/AccountName=([^;]+)/)?.[1] ||
+//             "agenticbistorage",
 //           blobAccountKey: credentials?.accountKey ||
-//                          credentials?.connection_string?.match(/AccountKey=([^;]+)/)?.[1]
+//             credentials?.connection_string?.match(/AccountKey=([^;]+)/)?.[1]
 //         };
 //         break;
-
 //       case "onelake":
 //         newEntry = {
 //           ...newEntry,
@@ -264,7 +234,6 @@
 //           tenant_id: credentials?.tenant_id
 //         };
 //         break;
-
 //       case "databricks":
 //         newEntry = {
 //           ...newEntry,
@@ -276,9 +245,41 @@
 //           schema: credentials?.schema || "default",
 //           table: paths
 //         };
-//         break;
+//         break; 
+        
+//     case "snowflake": {
+//         const snowflakeEntries = paths.map(p => {
+//         const parts = p.split("/"); // e.g. ["TEST_DB", "PUBLIC", "PART"]
+//         const [db, schema, table] = parts.length === 3 ? parts : [credentials?.database, credentials?.schema, parts[parts.length - 1]];
+ 
+//         return {
+//           destination_path: userId,
+//           source_type: "snowflake",
+//           snowflakeAccount: credentials?.account_identifier,
+//           snowflakeUser: credentials?.username,
+//           snowflakePassword: credentials?.password,
+//           snowflakeWarehouse: credentials?.warehouse,
+//           snowflakeDatabase: db,
+//           snowflake_schema: schema,
+//           snowflake_table: table
+//         };
+//       });
+ 
+//       const isDup = (e) => existing.some((ex) =>
+//         ex.source_type === "snowflake" && JSON.stringify(ex) === JSON.stringify(e)
+//       );
+//       const newOnes = snowflakeEntries.filter(e => !isDup(e));
+//       const updated = [...existing, ...newOnes];
+//       localStorage.setItem("ingestion_sources", JSON.stringify(updated));
+//       toast.success(`Added ${newOnes.length} item(s) from snowflake`, {
+//         duration: 1000,
+//         action: closeToastButton
+//       });
+//       return;
+//     }
+ 
 
-//       case "databases":
+//      case "databases":
 //         newEntry = {
 //           ...newEntry,
 //           source_type: "sqlserver",
@@ -290,6 +291,7 @@
 //         };
 //         break;
 
+
 //       default:
 //         console.warn(`Unsupported source type: ${sourceType}`);
 //         return;
@@ -300,11 +302,7 @@
 //       JSON.stringify(e) === JSON.stringify(newEntry)
 //     );
 
-//     let updated = existing;
-//     if (!isDuplicate) {
-//       updated = [...existing, newEntry];
-//     }
-
+//     const updated = isDuplicate ? existing : [...existing, newEntry];
 //     localStorage.setItem("ingestion_sources", JSON.stringify(updated));
 //     toast.success(`Added ${paths.length} item(s) from ${sourceType}`, {
 //       duration: 1000,
@@ -316,47 +314,27 @@
 //     files: Array<{ id: string; name: string; size: string; rows: string; fullPath?: string }>,
 //     credentials?: any,
 //     extra?: { currentContainer?: string | null }
-//   ) => 
-//     // {
-//     // if (credentials && currentSource && files.length > 0) {
-//     //   saveSelectionToStorage(
-//     //     files.map(f => ({
-//     //       name: f.name,
-//     //       fullPath: f.fullPath || f.name
-//     //     })),
-//     //     credentials,
-//     //     currentSource
-//     //   );  
-//     // }
-
-//     {if (credentials && currentSource && files.length > 0) {
-//   saveSelectionToStorage(
-//     files.map(f => {
-//       // Start with the best available path
-//       let pathToUse = f.fullPath ?? f.id ?? f.name;
-
-//       // For Azure: prepend container name if we have it and it's missing
-//       if (currentSource === "azure" && extra?.currentContainer) {
-//         const containerPrefix = `${extra.currentContainer}/`;
-//         if (!pathToUse.startsWith(containerPrefix)) {
-//           pathToUse = containerPrefix + pathToUse;
-//         }
-//       }
-
-//       return {
-//         name: f.name,
-//         fullPath: pathToUse   // ← explicit key, no shorthand confusion
-//       };
-//     }),
-//     credentials,
-//     currentSource
-//   );
-// }
+//   ) => {
+//     if (credentials && currentSource && files.length > 0) {
+//       saveSelectionToStorage(
+//         files.map(f => {
+//           let pathToUse = f.fullPath ?? f.id ?? f.name;
+//           if (currentSource === "azure" && extra?.currentContainer) {
+//             const containerPrefix = `${extra.currentContainer}/`;
+//             if (!pathToUse.startsWith(containerPrefix)) {
+//               pathToUse = containerPrefix + pathToUse;
+//             }
+//           }
+//           return { name: f.name, fullPath: pathToUse };
+//         }),
+//         credentials,
+//         currentSource
+//       );
+//     }
 
 //     const newItems: SelectedItem[] = files.map(file => {
 //       let icon: "file" | "table" | "folder" = "file";
 //       if (["snowflake", "databricks", "databases"].includes(currentSource)) icon = "table";
-
 //       return {
 //         id: `${currentSource}-${file.id || Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
 //         name: file.name,
@@ -375,8 +353,7 @@
 //   const handleProceed = async () => {
 //     if (!userId || userId === "unknown-user") {
 //       toast.error("User not authenticated. Please login again.", {
-//         duration: 1000,
-//         action: closeToastButton
+//         duration: 1000, action: closeToastButton
 //       });
 //       return;
 //     }
@@ -384,8 +361,7 @@
 //     const currentJobId = localStorage.getItem("current_job_id");
 //     if (!currentJobId) {
 //       toast.error("No job ID found. Please create a job first.", {
-//         duration: 1000,
-//         action: closeToastButton
+//         duration: 1000, action: closeToastButton
 //       });
 //       return;
 //     }
@@ -393,19 +369,22 @@
 //     const payloadStr = localStorage.getItem("ingestion_sources");
 //     if (!payloadStr || JSON.parse(payloadStr).length === 0) {
 //       toast.error("No files selected for ingestion", {
-//         duration: 1000,
-//         action: closeToastButton
+//         duration: 1000, action: closeToastButton
 //       });
 //       return;
 //     }
 
 //     setIsIngesting(true);
+//     setIngestProgress(10);
+//     setIngestStatus('Submitting ingestion job...');
+
 //     let pollingInterval: NodeJS.Timeout | null = null;
 
 //     try {
 //       // 1. Trigger ingestion
-//       const ingestUrl = `https://api.veriton.ai/api/service1/ingest-now?user_id=${userId}&job_id=${currentJobId}`;
-
+//       // const ingestUrl = `https://api.veriton.ai/api/service1/ingest-now?user_id=${userId}&job_id=${currentJobId}`;
+//        const ingestUrl = `http://127.0.0.1:8000/ingest-now?user_id=${userId}&job_id=${currentJobId}`;
+      
 //       const ingestResponse = await fetch(ingestUrl, {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
@@ -413,21 +392,22 @@
 //       });
 
 //       const ingestData = await ingestResponse.json();
-
 //       if (!ingestResponse.ok) {
 //         throw new Error(ingestData.note || ingestData.message || "Ingestion request failed");
 //       }
 
-//       // toast.success("Ingestion job started", {
-//       //   description: `Job ID: ${currentJobId.slice(0, 8)}...`,
-//       //   action: closeToastButton
-//       // });
+//       setIngestProgress(25);
+//       setIngestStatus('Ingestion job started, transferring data...');
 
 //       // 2. Poll status
 //       const statusUrl = `https://api.veriton.ai/api/service1/ingest-now/status/${currentJobId}?user_id=${userId}`;
 
 //       pollingInterval = setInterval(async () => {
 //         try {
+//           // Slowly increment progress while polling (capped at 85)
+//           setIngestProgress(prev => (prev < 85 ? prev + 3 : prev));
+//           setIngestStatus('Transferring and processing files...');
+
 //           const statusRes = await fetch(statusUrl, {
 //             method: "GET",
 //             headers: { "Accept": "application/json" }
@@ -445,20 +425,21 @@
 //             clearInterval(pollingInterval!);
 //             pollingInterval = null;
 
+//             setIngestProgress(100);
+//             setIngestStatus('Completed! Redirecting...');
+
 //             localStorage.removeItem("ingestion_sources");
 //             setSelectedItems([]);
 
 //             toast.success("Ingestion completed successfully", {
-//               // description: "Files transferred to landing zone",
 //               action: closeToastButton
 //             });
 
-//             navigate("/workflow/landing-zone");
-//           }
-//           else if (["failed", "error"].includes(jobStatus)) {
+//             setTimeout(() => navigate("/workflow/landing-zone"), 800);
+
+//           } else if (["failed", "error"].includes(jobStatus)) {
 //             clearInterval(pollingInterval!);
 //             pollingInterval = null;
-
 //             const reason = statusData?.results?.[0]?.response?.message || "Unknown error";
 //             throw new Error(`Ingestion failed: ${reason}`);
 //           }
@@ -466,25 +447,22 @@
 
 //         } catch (pollErr) {
 //           console.error("Polling error:", pollErr);
-//           // continue polling
 //         }
-//       }, 10000); // check every 4 seconds
+//       }, 10000);
 
 //     } catch (err: any) {
 //       console.error("Ingestion error:", err);
-
 //       if (pollingInterval) clearInterval(pollingInterval);
 
+//       setIngestProgress(0);
+//       setIngestStatus('');
+//       setIsIngesting(false);
+
 //       toast.error(err.message || "Failed to complete ingestion process", {
-//         duration: 2000,
-//         action: closeToastButton
+//         duration: 2000, action: closeToastButton
 //       });
-//     } finally {
-//       // Keep button disabled during polling
-//       // Navigation happens inside polling success block
 //     }
 
-//     // Cleanup on unmount
 //     return () => {
 //       if (pollingInterval) clearInterval(pollingInterval);
 //     };
@@ -559,10 +537,7 @@
 //     setSelectedItems(prev => [...prev, ...newItems]);
 
 //     saveSelectionToStorage(
-//       config.selectedTables.map(table => ({
-//         name: table,
-//         fullPath: table
-//       })),
+//       config.selectedTables.map(table => ({ name: table, fullPath: table })),
 //       {
 //         server: config.server,
 //         database: config.database,
@@ -572,6 +547,15 @@
 //       "databases"
 //     );
 //   };
+
+//   // ── Progress bar step labels ──────────────────────────────────────────────
+//   const progressSteps = [
+//     { label: 'Submitted', threshold: 10 },
+//     { label: 'Transferring', threshold: 25 },
+//     { label: 'Processing', threshold: 60 },
+//     { label: 'Finalizing', threshold: 85 },
+//     { label: 'Done', threshold: 100 },
+//   ];
 
 //   return (
 //     <WorkflowLayout>
@@ -615,7 +599,9 @@
 
 //         {/* Selected Items */}
 //         <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2" ref={selectedItemsRef}>
-//           <h2 className="text-xl font-semibold text-foreground mb-6 sticky top-0 bg-background z-10 pb-4">Selected Items</h2>
+//           <h2 className="text-xl font-semibold text-foreground mb-6 sticky top-0 bg-background z-10 pb-4">
+//             Selected Items
+//           </h2>
 //           <div className="space-y-3">
 //             {selectedItems.length === 0 ? (
 //               <p className="text-muted-foreground text-center py-8">No items selected yet</p>
@@ -645,23 +631,109 @@
 //           </div>
 //         </div>
 
-//         {/* Action Button */}
-//         <div className="flex justify-end mt-6">
-//           <Button
-//             onClick={handleProceed}
-//             size="lg"
-//             className="px-10 flex items-center gap-2 min-w-[220px]"
-//             disabled={selectedItems.length === 0 || !userId || isIngesting}
-//           >
-//             {isIngesting ? (
-//               <>
-//                 <Loader2 className="h-5 w-5 animate-spin" />
-//                 Processing Ingestion...
-//               </>
-//             ) : (
-//               "Ingest / Proceed"
-//             )}
-//           </Button>
+//         {/* ── Action Button + Progress Bar ── */}
+//         <div className="flex flex-col gap-4 mt-6">
+
+//           {/* Progress UI — only visible while ingesting */}
+//           {isIngesting && (
+//             <div className="w-full rounded-xl border border-border bg-card/60 p-5 space-y-4">
+//               {/* Step indicators */}
+//               <div className="flex items-center justify-between">
+//                 {progressSteps.map((step, i) => {
+//                   const reached = ingestProgress >= step.threshold;
+//                   const active =
+//                     ingestProgress >= step.threshold &&
+//                     (i === progressSteps.length - 1 || ingestProgress < progressSteps[i + 1].threshold);
+//                   return (
+//                     <div key={step.label} className="flex flex-col items-center gap-1 flex-1">
+//                       <div
+//                         className={[
+//                           "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-500",
+//                           reached
+//                             ? "bg-primary border-primary text-primary-foreground"
+//                             : "bg-muted border-border text-muted-foreground",
+//                           active ? "ring-2 ring-primary/40 ring-offset-2" : "",
+//                         ].join(" ")}
+//                       >
+//                         {reached && !active ? (
+//                           <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none">
+//                             <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+//                           </svg>
+//                         ) : (
+//                           i + 1
+//                         )}
+//                       </div>
+//                       <span
+//                         className={[
+//                           "text-[10px] font-medium text-center leading-tight",
+//                           reached ? "text-primary" : "text-muted-foreground",
+//                         ].join(" ")}
+//                       >
+//                         {step.label}
+//                       </span>
+//                       {/* Connector line between steps */}
+//                       {i < progressSteps.length - 1 && (
+//                         <div className="absolute" />
+//                       )}
+//                     </div>
+//                   );
+//                 })}
+//               </div>
+
+//               {/* Bar */}
+//               <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+//                 <div
+//                   className="h-full rounded-full transition-all duration-700 ease-in-out"
+//                   style={{
+//                     width: `${ingestProgress}%`,
+//                     background: ingestProgress === 100
+//                       ? 'hsl(var(--primary))'
+//                       : 'linear-gradient(90deg, hsl(var(--primary)/0.7), hsl(var(--primary)))',
+//                   }}
+//                 />
+//               </div>
+
+//               {/* Status text + percentage */}
+//               <div className="flex items-center justify-between text-sm">
+//                 <div className="flex items-center gap-2 text-muted-foreground">
+//                   {ingestProgress < 100 ? (
+//                     <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
+//                   ) : (
+//                     <svg className="w-3.5 h-3.5 text-primary flex-shrink-0" viewBox="0 0 12 12" fill="none">
+//                       <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+//                     </svg>
+//                   )}
+//                   <span>{ingestStatus}</span>
+//                 </div>
+//                 <span className="font-semibold text-primary tabular-nums">{ingestProgress}%</span>
+//               </div>
+
+//               {ingestProgress < 100 && (
+//                 <p className="text-xs text-muted-foreground">
+//                   Please wait — this may take a few minutes depending on file size.
+//                 </p>
+//               )}
+//             </div>
+//           )}
+
+//           {/* Button — right-aligned */}
+//           <div className="flex justify-end">
+//             <Button
+//               onClick={handleProceed}
+//               size="lg"
+//               className="px-10 flex items-center gap-2 min-w-[220px]"
+//               disabled={selectedItems.length === 0 || !userId || isIngesting}
+//             >
+//               {isIngesting ? (
+//                 <>
+//                   <Loader2 className="h-5 w-5 animate-spin" />
+//                   Processing Ingestion...
+//                 </>
+//               ) : (
+//                 "Ingest / Proceed"
+//               )}
+//             </Button>
+//           </div>
 //         </div>
 
 //         {/* Dialogs */}
@@ -689,8 +761,16 @@
 //           snowflakeCredentials={snowflakeCredentials}
 //           isSnowflake={currentSource === "snowflake"}
 //         />
-//         <SchemaPreviewDialog open={schemaPreviewOpen} onOpenChange={setSchemaPreviewOpen} fileName={previewFileName} />
-//         <DatabaseConnectionDialog open={databaseDialogOpen} onOpenChange={setDatabaseDialogOpen} onConnect={handleDatabaseConnect} />
+//         <SchemaPreviewDialog
+//           open={schemaPreviewOpen}
+//           onOpenChange={setSchemaPreviewOpen}
+//           fileName={previewFileName}
+//         />
+//         <DatabaseConnectionDialog
+//           open={databaseDialogOpen}
+//           onOpenChange={setDatabaseDialogOpen}
+//           onConnect={handleDatabaseConnect}
+//         />
 //       </div>
 //     </WorkflowLayout>
 //   );
@@ -854,6 +934,7 @@ export default function DataIngestion() {
                   icon: "table", sourceType, fullPath: tbl
                 });
               });
+              
             } else if (sourceType === "sqlserver" && Array.isArray(entry.table)) {
               entry.table.forEach((tbl: string, idx: number) => {
                 const name = tbl.split('.').pop() || tbl;
@@ -945,6 +1026,37 @@ export default function DataIngestion() {
           table: paths
         };
         break;
+      
+      case "snowflake": {
+        const snowflakeEntries = paths.map(p => {
+        const parts = p.split("/"); // e.g. ["TEST_DB", "PUBLIC", "PART"]
+        const [db, schema, table] = parts.length === 3 ? parts : [credentials?.database, credentials?.schema, parts[parts.length - 1]];
+
+        return {
+          destination_path: userId,
+          source_type: "snowflake",
+          snowflakeAccount: credentials?.account_identifier,
+          snowflakeUser: credentials?.username,
+          snowflakePassword: credentials?.password,
+          snowflakeWarehouse: credentials?.warehouse,
+          snowflakeDatabase: db,
+          snowflake_schema: schema,
+          snowflake_table: table
+        };
+      });
+
+      const isDup = (e) => existing.some((ex) =>
+        ex.source_type === "snowflake" && JSON.stringify(ex) === JSON.stringify(e)
+      );
+      const newOnes = snowflakeEntries.filter(e => !isDup(e));
+      const updated = [...existing, ...newOnes];
+      localStorage.setItem("ingestion_sources", JSON.stringify(updated));
+      toast.success(`Added ${newOnes.length} item(s) from snowflake`, {
+        duration: 1000,
+        action: closeToastButton
+      });
+      return;
+    }
       case "databases":
         newEntry = {
           ...newEntry,
@@ -1153,7 +1265,8 @@ export default function DataIngestion() {
         }
       };
       input.click();
-    } else if (sourceId === "databases") {
+    }
+     else if (sourceId === "databases") {
       setDatabaseDialogOpen(true);
     } else {
       const source = sources.find(s => s.id === sourceId);

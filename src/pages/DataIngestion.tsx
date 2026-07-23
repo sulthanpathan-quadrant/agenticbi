@@ -1028,35 +1028,57 @@ export default function DataIngestion() {
         break;
       
       case "snowflake": {
-        const snowflakeEntries = paths.map(p => {
-        const parts = p.split("/"); // e.g. ["TEST_DB", "PUBLIC", "PART"]
-        const [db, schema, table] = parts.length === 3 ? parts : [credentials?.database, credentials?.schema, parts[parts.length - 1]];
 
-        return {
-          destination_path: userId,
-          source_type: "snowflake",
-          snowflakeAccount: credentials?.account_identifier,
-          snowflakeUser: credentials?.username,
-          snowflakePassword: credentials?.password,
-          snowflakeWarehouse: credentials?.warehouse,
-          snowflakeDatabase: db,
-          snowflake_schema: schema,
-          snowflake_table: table
-        };
-      });
+            const snowflakeTables = paths.map(p => {
 
-      const isDup = (e) => existing.some((ex) =>
-        ex.source_type === "snowflake" && JSON.stringify(ex) === JSON.stringify(e)
-      );
-      const newOnes = snowflakeEntries.filter(e => !isDup(e));
-      const updated = [...existing, ...newOnes];
-      localStorage.setItem("ingestion_sources", JSON.stringify(updated));
-      toast.success(`Added ${newOnes.length} item(s) from snowflake`, {
-        duration: 1000,
-        action: closeToastButton
-      });
-      return;
-    }
+              const parts = p.split("/");
+
+              return parts[parts.length - 1]; // just the table name
+
+            });
+          
+            const newEntry = {
+
+              destination_path: userId,
+
+              source_type: "snowflake",
+
+              snowflakeAccount: credentials?.account_identifier,
+
+              snowflakeUser: credentials?.username,
+
+              snowflakePassword: credentials?.password,
+
+              snowflakeWarehouse: credentials?.warehouse,
+
+              snowflakeDatabase: credentials?.database,
+
+              snowflake_schema: credentials?.schema,
+
+              snowflake_table: snowflakeTables   // ARRAY now
+
+            };
+          
+            const isDuplicate = existing.some((e) =>
+
+              e.source_type === "snowflake" && JSON.stringify(e) === JSON.stringify(newEntry)
+
+            );
+
+            const updated = isDuplicate ? existing : [...existing, newEntry];
+
+            localStorage.setItem("ingestion_sources", JSON.stringify(updated));
+
+            toast.success(`Added ${paths.length} item(s) from snowflake`, {
+
+              duration: 1000, action: closeToastButton
+
+            });
+
+            return;
+
+          }
+ 
       case "databases":
         newEntry = {
           ...newEntry,
@@ -1155,7 +1177,7 @@ export default function DataIngestion() {
     setIngestStatus('Submitting ingestion job...');
 
     let pollingInterval: NodeJS.Timeout | null = null;
-
+ 
     try {
       // 1. Trigger ingestion
       const ingestUrl = `https://api.veriton.ai/api/service1/ingest-now?user_id=${userId}&job_id=${currentJobId}`;

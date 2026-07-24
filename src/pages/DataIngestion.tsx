@@ -155,6 +155,7 @@
 //                   icon: "table", sourceType, fullPath: tbl
 //                 });
 //               });
+
 //             } else if (sourceType === "sqlserver" && Array.isArray(entry.table)) {
 //               entry.table.forEach((tbl: string, idx: number) => {
 //                 const name = tbl.split('.').pop() || tbl;
@@ -245,41 +246,61 @@
 //           schema: credentials?.schema || "default",
 //           table: paths
 //         };
-//         break; 
-        
-//     case "snowflake": {
-//         const snowflakeEntries = paths.map(p => {
-//         const parts = p.split("/"); // e.g. ["TEST_DB", "PUBLIC", "PART"]
-//         const [db, schema, table] = parts.length === 3 ? parts : [credentials?.database, credentials?.schema, parts[parts.length - 1]];
- 
-//         return {
-//           destination_path: userId,
-//           source_type: "snowflake",
-//           snowflakeAccount: credentials?.account_identifier,
-//           snowflakeUser: credentials?.username,
-//           snowflakePassword: credentials?.password,
-//           snowflakeWarehouse: credentials?.warehouse,
-//           snowflakeDatabase: db,
-//           snowflake_schema: schema,
-//           snowflake_table: table
-//         };
-//       });
- 
-//       const isDup = (e) => existing.some((ex) =>
-//         ex.source_type === "snowflake" && JSON.stringify(ex) === JSON.stringify(e)
-//       );
-//       const newOnes = snowflakeEntries.filter(e => !isDup(e));
-//       const updated = [...existing, ...newOnes];
-//       localStorage.setItem("ingestion_sources", JSON.stringify(updated));
-//       toast.success(`Added ${newOnes.length} item(s) from snowflake`, {
-//         duration: 1000,
-//         action: closeToastButton
-//       });
-//       return;
-//     }
- 
+//         break;
 
-//      case "databases":
+//       case "snowflake": {
+
+//             const snowflakeTables = paths.map(p => {
+
+//               const parts = p.split("/");
+
+//               return parts[parts.length - 1]; // just the table name
+
+//             });
+
+//             const newEntry = {
+
+//               destination_path: userId,
+
+//               source_type: "snowflake",
+
+//               snowflakeAccount: credentials?.account_identifier,
+
+//               snowflakeUser: credentials?.username,
+
+//               snowflakePassword: credentials?.password,
+
+//               snowflakeWarehouse: credentials?.warehouse,
+
+//               snowflakeDatabase: credentials?.database,
+
+//               snowflake_schema: credentials?.schema,
+
+//               snowflake_table: snowflakeTables   // ARRAY now
+
+//             };
+
+//             const isDuplicate = existing.some((e) =>
+
+//               e.source_type === "snowflake" && JSON.stringify(e) === JSON.stringify(newEntry)
+
+//             );
+
+//             const updated = isDuplicate ? existing : [...existing, newEntry];
+
+//             localStorage.setItem("ingestion_sources", JSON.stringify(updated));
+
+//             toast.success(`Added ${paths.length} item(s) from snowflake`, {
+
+//               duration: 1000, action: closeToastButton
+
+//             });
+
+//             return;
+
+//           }
+
+//       case "databases":
 //         newEntry = {
 //           ...newEntry,
 //           source_type: "sqlserver",
@@ -290,8 +311,6 @@
 //           table: paths
 //         };
 //         break;
-
-
 //       default:
 //         console.warn(`Unsupported source type: ${sourceType}`);
 //         return;
@@ -382,9 +401,7 @@
 
 //     try {
 //       // 1. Trigger ingestion
-//       // const ingestUrl = `https://api.veriton.ai/api/service1/ingest-now?user_id=${userId}&job_id=${currentJobId}`;
-//        const ingestUrl = `http://127.0.0.1:8000/ingest-now?user_id=${userId}&job_id=${currentJobId}`;
-      
+//       const ingestUrl = `https://api.veriton.ai/api/service1/ingest-now?user_id=${userId}&job_id=${currentJobId}`;
 //       const ingestResponse = await fetch(ingestUrl, {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
@@ -491,7 +508,8 @@
 //         }
 //       };
 //       input.click();
-//     } else if (sourceId === "databases") {
+//     }
+//      else if (sourceId === "databases") {
 //       setDatabaseDialogOpen(true);
 //     } else {
 //       const source = sources.find(s => s.id === sourceId);
@@ -776,47 +794,138 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import { WorkflowLayout } from "@/components/WorkflowLayout";
+
 import { Button } from "@/components/ui/button";
+
 import { Card } from "@/components/ui/card";
-import { Database, Cloud, Snowflake, FileText, FolderOpen, X, FileSpreadsheet, Table, Upload } from "lucide-react";
+
+import {
+  Database,
+  Cloud,
+  Snowflake,
+  FileText,
+  FolderOpen,
+  X,
+  FileSpreadsheet,
+  Table,
+  Upload,
+} from "lucide-react";
+
 import { FilePickerDialog } from "@/components/FilePickerDialog";
+
 import { SchemaPreviewDialog } from "@/components/SchemaPreviewDialog";
+
 import { DatabaseConnectionDialog } from "@/components/DatabaseConnectionDialog";
+
 import { SourceCredentialDialog } from "@/components/SourceCredentialDialog";
+
 import { toast } from "sonner";
+
 import { Loader2 } from "lucide-react";
-import { S3Credentials, AzureCredentials, OneLakeCredentials, DatabricksCredentials, SnowflakeCredentials } from "@/components/api/api";
+
+import {
+  S3Credentials,
+  AzureCredentials,
+  OneLakeCredentials,
+  DatabricksCredentials,
+  SnowflakeCredentials,
+} from "@/components/api/api";
 
 interface SelectedItem {
   id: string;
+
   name: string;
+
   source: string;
+
   size: string;
+
   rows: string;
+
   icon: "file" | "table" | "folder";
+
   sourceType: string;
+
   fullPath: string;
 }
 
 interface UserDetails {
   id: string;
+
   email: string;
+
   name: string;
 }
 
 const sources = [
-  { id: "s3", name: "S3", description: "Cloud Storage", icon: Database, requiresCredentials: true },
-  { id: "azure", name: "Azure Blob", description: "Cloud Storage", icon: Cloud, requiresCredentials: true },
-  { id: "snowflake", name: "Snowflake", description: "Database", icon: Snowflake, requiresCredentials: true },
-  { id: "sap", name: "SAP", description: "Database", icon: Database, requiresCredentials: true },
-  { id: "databases", name: "Databases", description: "Generic SQL", icon: Database, requiresCredentials: false },
-  { id: "onelake", name: "OneLake", description: "Microsoft Fabric", icon: Database, requiresCredentials: true },
-  { id: "databricks", name: "Databricks", description: "Delta Lake", icon: Table, requiresCredentials: true },
-  { id: "local", name: "Local files", description: "Upload", icon: Upload, requiresCredentials: false },
+  {
+    id: "s3",
+    name: "S3",
+    description: "Cloud Storage",
+    icon: Database,
+    requiresCredentials: true,
+  },
+
+  {
+    id: "azure",
+    name: "Azure Blob",
+    description: "Cloud Storage",
+    icon: Cloud,
+    requiresCredentials: true,
+  },
+
+  {
+    id: "snowflake",
+    name: "Snowflake",
+    description: "Database",
+    icon: Snowflake,
+    requiresCredentials: true,
+  },
+
+  {
+    id: "sap",
+    name: "SAP",
+    description: "Database",
+    icon: Database,
+    requiresCredentials: true,
+  },
+
+  {
+    id: "databases",
+    name: "Databases",
+    description: "Generic SQL",
+    icon: Database,
+    requiresCredentials: false,
+  },
+
+  {
+    id: "onelake",
+    name: "OneLake",
+    description: "Microsoft Fabric",
+    icon: Database,
+    requiresCredentials: true,
+  },
+
+  {
+    id: "databricks",
+    name: "Databricks",
+    description: "Delta Lake",
+    icon: Table,
+    requiresCredentials: true,
+  },
+
+  {
+    id: "local",
+    name: "Local files",
+    description: "Upload",
+    icon: Upload,
+    requiresCredentials: false,
+  },
 ];
 
 export default function DataIngestion() {
@@ -825,26 +934,51 @@ export default function DataIngestion() {
   const selectedItemsRef = useRef<HTMLDivElement>(null);
 
   const [isIngesting, setIsIngesting] = useState(false);
+
   // ── NEW: progress bar state ──────────────────────────────────────────────
+
   const [ingestProgress, setIngestProgress] = useState(0);
-  const [ingestStatus, setIngestStatus] = useState('');
+
+  const [ingestStatus, setIngestStatus] = useState("");
+
   // ────────────────────────────────────────────────────────────────────────
+
   const [userId, setUserId] = useState<string>("");
+
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+
   const [filePickerOpen, setFilePickerOpen] = useState(false);
+
   const [currentSource, setCurrentSource] = useState<string>("");
+
   const [schemaPreviewOpen, setSchemaPreviewOpen] = useState(false);
+
   const [previewFileName, setPreviewFileName] = useState("");
+
   const [databaseDialogOpen, setDatabaseDialogOpen] = useState(false);
+
   const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
+
   const [pendingSourceId, setPendingSourceId] = useState<string>("");
-  const [s3Credentials, setS3Credentials] = useState<S3Credentials | null>(null);
-  const [azureCredentials, setAzureCredentials] = useState<AzureCredentials | null>(null);
-  const [oneLakeCredentials, setOneLakeCredentials] = useState<OneLakeCredentials | null>(null);
-  const [databricksCredentials, setDatabricksCredentials] = useState<DatabricksCredentials | null>(null);
-  const [snowflakeCredentials, setSnowflakeCredentials] = useState<SnowflakeCredentials | null>(null);
+
+  const [s3Credentials, setS3Credentials] = useState<S3Credentials | null>(
+    null,
+  );
+
+  const [azureCredentials, setAzureCredentials] =
+    useState<AzureCredentials | null>(null);
+
+  const [oneLakeCredentials, setOneLakeCredentials] =
+    useState<OneLakeCredentials | null>(null);
+
+  const [databricksCredentials, setDatabricksCredentials] =
+    useState<DatabricksCredentials | null>(null);
+
+  const [snowflakeCredentials, setSnowflakeCredentials] =
+    useState<SnowflakeCredentials | null>(null);
 
   // Reusable X close button for all toasts
+
   const closeToastButton = (
     <button
       onClick={() => toast.dismiss()}
@@ -856,16 +990,21 @@ export default function DataIngestion() {
   );
 
   // Auto-scroll to selected items section when items are added
+
   useEffect(() => {
     if (selectedItems.length > 0 && selectedItemsRef.current) {
       setTimeout(() => {
-        const scrollableParent = selectedItemsRef.current?.closest('main');
+        const scrollableParent = selectedItemsRef.current?.closest("main");
+
         if (scrollableParent && selectedItemsRef.current) {
           const elementTop = selectedItemsRef.current.offsetTop;
+
           const targetScroll = elementTop - 80;
+
           scrollableParent.scrollTo({
             top: targetScroll,
-            behavior: 'smooth'
+
+            behavior: "smooth",
           });
         }
       }, 150);
@@ -873,79 +1012,141 @@ export default function DataIngestion() {
   }, [selectedItems.length]);
 
   // Load user & restore selected items from localStorage
+
   useEffect(() => {
     const userData = localStorage.getItem("user");
+
     if (userData) {
       try {
         const user: UserDetails = JSON.parse(userData);
+
         setUserId(user.id || "unknown-user");
       } catch (err) {
         console.error("Failed to parse user data:", err);
+
         setUserId("unknown-user");
       }
     } else {
-      toast.error("No user logged in.", { duration: 1000, action: closeToastButton });
+      toast.error("No user logged in.", {
+        duration: 1000,
+        action: closeToastButton,
+      });
+
       setUserId("unknown-user");
     }
 
     const saved = localStorage.getItem("ingestion_sources");
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+
         if (Array.isArray(parsed) && parsed.length > 0) {
           const restoredItems: SelectedItem[] = [];
+
           parsed.forEach((entry: any, groupIndex: number) => {
             const sourceType = entry.source_type || "unknown";
-            const sourceName = sources.find(s => s.id === sourceType)?.name || sourceType;
+
+            const sourceName =
+              sources.find((s) => s.id === sourceType)?.name || sourceType;
 
             if (sourceType === "s3" && Array.isArray(entry.s3path)) {
               entry.s3path.forEach((path: string, idx: number) => {
-                const name = path.split('/').pop() || path;
+                const name = path.split("/").pop() || path;
+
                 restoredItems.push({
                   id: `restored-s3-${groupIndex}-${idx}-${Date.now()}`,
-                  name, source: sourceName, size: "N/A", rows: "N/A",
-                  icon: "file", sourceType, fullPath: path
+
+                  name,
+                  source: sourceName,
+                  size: "N/A",
+                  rows: "N/A",
+
+                  icon: "file",
+                  sourceType,
+                  fullPath: path,
                 });
               });
             } else if (sourceType === "blob" && Array.isArray(entry.blobpath)) {
               entry.blobpath.forEach((path: string, idx: number) => {
-                const name = path.split('/').pop() || path;
+                const name = path.split("/").pop() || path;
+
                 restoredItems.push({
                   id: `restored-blob-${groupIndex}-${idx}-${Date.now()}`,
-                  name, source: sourceName, size: "N/A", rows: "N/A",
-                  icon: "file", sourceType, fullPath: path
+
+                  name,
+                  source: sourceName,
+                  size: "N/A",
+                  rows: "N/A",
+
+                  icon: "file",
+                  sourceType,
+                  fullPath: path,
                 });
               });
-            } else if (sourceType === "onelake" && Array.isArray(entry.file_path)) {
+            } else if (
+              sourceType === "onelake" &&
+              Array.isArray(entry.file_path)
+            ) {
               entry.file_path.forEach((path: string, idx: number) => {
-                const name = path.split('/').pop() || path;
+                const name = path.split("/").pop() || path;
+
                 restoredItems.push({
                   id: `restored-onelake-${groupIndex}-${idx}-${Date.now()}`,
-                  name, source: sourceName, size: "N/A", rows: "N/A",
-                  icon: "file", sourceType, fullPath: path
+
+                  name,
+                  source: sourceName,
+                  size: "N/A",
+                  rows: "N/A",
+
+                  icon: "file",
+                  sourceType,
+                  fullPath: path,
                 });
               });
-            } else if (sourceType === "databricks" && Array.isArray(entry.table)) {
+            } else if (
+              sourceType === "databricks" &&
+              Array.isArray(entry.table)
+            ) {
               entry.table.forEach((tbl: string, idx: number) => {
-                const name = tbl.split('.').pop() || tbl;
+                const name = tbl.split(".").pop() || tbl;
+
                 restoredItems.push({
                   id: `restored-databricks-${groupIndex}-${idx}-${Date.now()}`,
-                  name, source: sourceName, size: "N/A", rows: "N/A",
-                  icon: "table", sourceType, fullPath: tbl
+
+                  name,
+                  source: sourceName,
+                  size: "N/A",
+                  rows: "N/A",
+
+                  icon: "table",
+                  sourceType,
+                  fullPath: tbl,
                 });
               });
-              
-            } else if (sourceType === "sqlserver" && Array.isArray(entry.table)) {
+            } else if (
+              sourceType === "sqlserver" &&
+              Array.isArray(entry.table)
+            ) {
               entry.table.forEach((tbl: string, idx: number) => {
-                const name = tbl.split('.').pop() || tbl;
+                const name = tbl.split(".").pop() || tbl;
+
                 restoredItems.push({
                   id: `restored-sql-${groupIndex}-${idx}-${Date.now()}`,
-                  name, source: sourceName || "SQL Server", size: "N/A", rows: "N/A",
-                  icon: "table", sourceType, fullPath: tbl
+
+                  name,
+                  source: sourceName || "SQL Server",
+                  size: "N/A",
+                  rows: "N/A",
+
+                  icon: "table",
+                  sourceType,
+                  fullPath: tbl,
                 });
               });
             }
           });
+
           setSelectedItems(restoredItems);
         }
       } catch (err) {
@@ -954,26 +1155,126 @@ export default function DataIngestion() {
     }
   }, []);
 
-  const removeItem = (id: string) => {
-    setSelectedItems(prev => prev.filter(item => item.id !== id));
+  const LOCAL_UPLOADS_CONTAINER = "local-uploads";
+
+  const removeItem = async (id: string) => {
+    const item = selectedItems.find((i) => i.id === id);
+
+    if (!item) return;
+
+    setSelectedItems((prev) => prev.filter((i) => i.id !== id));
+
+    if (item.sourceType === "local") {
+      try {
+        const res = await fetch(
+          `https://api.veriton.ai/api/service1/ingest-now/delete-local?blob_path=${encodeURIComponent(item.fullPath)}`,
+
+          { method: "DELETE" },
+        );
+
+        if (!res.ok) throw new Error("Delete request failed");
+      } catch (err) {
+        console.error("Failed to delete local blob:", err);
+
+        toast.error(`Failed to remove ${item.name} from storage`, {
+          duration: 2000,
+          action: closeToastButton,
+        });
+      }
+
+      try {
+        const existing = JSON.parse(
+          localStorage.getItem("ingestion_sources") || "[]",
+        );
+
+        const updated = existing
+
+          .map((entry: any) => {
+            if (entry.source_type === "blob" && Array.isArray(entry.blobpath)) {
+              // Only strip paths that belong to the local-uploads container —
+
+              // identified by path prefix, not blobAccountName
+
+              const filteredPaths = entry.blobpath.filter((p: string) =>
+                p.startsWith(`${LOCAL_UPLOADS_CONTAINER}/`)
+                  ? p !== item.fullPath
+                  : true,
+              );
+
+              return { ...entry, blobpath: filteredPaths };
+            }
+
+            return entry;
+          })
+
+          .filter(
+            (entry: any) =>
+              !(entry.source_type === "blob" && entry.blobpath?.length === 0),
+          );
+
+        localStorage.setItem("ingestion_sources", JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to update ingestion_sources:", err);
+      }
+
+      // Step 3: NEW — remove it from the tracked local-files list too,
+
+      // so Landing Zone doesn't still think this filename is a local file
+
+      // if the same name ever reappears from a real Azure source later
+
+      try {
+        const jobId = localStorage.getItem("current_job_id");
+
+        const localFilesKey = `local_files_${jobId}`;
+
+        const existingLocalFiles = JSON.parse(
+          localStorage.getItem(localFilesKey) || "[]",
+        );
+
+        localStorage.setItem(
+          localFilesKey,
+
+          JSON.stringify(
+            existingLocalFiles.filter((name: string) => name !== item.name),
+          ),
+        );
+      } catch (err) {
+        console.error("Failed to update local_files tracking:", err);
+      }
+    }
   };
 
   const getItemIcon = (iconType: "file" | "table" | "folder") => {
     switch (iconType) {
-      case "file": return <FileSpreadsheet className="h-5 w-5 text-green-500" />;
-      case "table": return <Table className="h-5 w-5 text-blue-500" />;
-      case "folder": return <FolderOpen className="h-5 w-5 text-yellow-500" />;
-      default: return <FileText className="h-5 w-5" />;
+      case "file":
+        return <FileSpreadsheet className="h-5 w-5 text-green-500" />;
+
+      case "table":
+        return <Table className="h-5 w-5 text-blue-500" />;
+
+      case "folder":
+        return <FolderOpen className="h-5 w-5 text-yellow-500" />;
+
+      default:
+        return <FileText className="h-5 w-5" />;
     }
   };
 
   const saveSelectionToStorage = (
     files: Array<{ name: string; fullPath: string }>,
+
     credentials: any,
-    sourceType: string
+
+    sourceType: string,
+    displayLabel?: string
   ) => {
-    const existing = JSON.parse(localStorage.getItem("ingestion_sources") || "[]");
-    const paths = files.map(f => f.fullPath).filter(Boolean);
+    const existing = JSON.parse(
+      localStorage.getItem("ingestion_sources") || "[]",
+    );
+
+    const paths = files.map((f) => f.fullPath).filter(Boolean);
+
     if (paths.length === 0) return;
 
     let newEntry: any = { destination_path: userId };
@@ -982,280 +1283,381 @@ export default function DataIngestion() {
       case "s3":
         newEntry = {
           ...newEntry,
+
           source_type: "s3",
-          s3path: paths.map(p => p.startsWith("s3://") ? p : `s3://${p}`),
-          s3AccessKey: credentials?.aws_access_key_id || credentials?.accessKey || credentials?.s3AccessKey,
-          s3SecretKey: credentials?.aws_secret_access_key || credentials?.secretKey || credentials?.s3SecretKey,
-          s3ServiceUrl: credentials?.s3ServiceUrl || "https://s3.amazonaws.com"
+
+          s3path: paths.map((p) => (p.startsWith("s3://") ? p : `s3://${p}`)),
+
+          s3AccessKey:
+            credentials?.aws_access_key_id ||
+            credentials?.accessKey ||
+            credentials?.s3AccessKey,
+
+          s3SecretKey:
+            credentials?.aws_secret_access_key ||
+            credentials?.secretKey ||
+            credentials?.s3SecretKey,
+
+          s3ServiceUrl: credentials?.s3ServiceUrl || "https://s3.amazonaws.com",
         };
+
         break;
+
       case "azure":
         newEntry = {
           ...newEntry,
+
           source_type: "blob",
+
           blobpath: paths,
-          blobAccountName: credentials?.accountName ||
+
+          blobAccountName:
+            credentials?.accountName ||
             credentials?.connection_string?.match(/AccountName=([^;]+)/)?.[1] ||
             "agenticbistorage",
-          blobAccountKey: credentials?.accountKey ||
-            credentials?.connection_string?.match(/AccountKey=([^;]+)/)?.[1]
+
+          blobAccountKey:
+            credentials?.accountKey ||
+            credentials?.connection_string?.match(/AccountKey=([^;]+)/)?.[1],
         };
+
         break;
+
       case "onelake":
         newEntry = {
           ...newEntry,
+
           source_type: "onelake",
+
           workspace_name: credentials?.workspace_name || "agenticBI",
+
           lakehouse_name: credentials?.lakehouse_name || "newagenticBI",
+
           copy_type: "file",
+
           file_path: paths,
+
           client_id: credentials?.client_id,
+
           client_secret: credentials?.client_secret,
-          tenant_id: credentials?.tenant_id
+
+          tenant_id: credentials?.tenant_id,
         };
+
         break;
+
       case "databricks":
         newEntry = {
           ...newEntry,
+
           source_type: "databricks",
+
           databricks_host: credentials?.host || credentials?.databricks_host,
+
           warehouse_id: credentials?.warehouse_id,
+
           access_token: credentials?.access_token,
+
           catalog: credentials?.catalog || "agenticbi_adb",
+
           schema: credentials?.schema || "default",
-          table: paths
+
+          table: paths,
         };
+
         break;
-      
+
       case "snowflake": {
+        const snowflakeTables = paths.map((p) => {
+          const parts = p.split("/");
 
-            const snowflakeTables = paths.map(p => {
+          return parts[parts.length - 1]; // just the table name
+        });
 
-              const parts = p.split("/");
+        const newEntry = {
+          destination_path: userId,
 
-              return parts[parts.length - 1]; // just the table name
+          source_type: "snowflake",
 
-            });
-          
-            const newEntry = {
+          snowflakeAccount: credentials?.account_identifier,
 
-              destination_path: userId,
+          snowflakeUser: credentials?.username,
 
-              source_type: "snowflake",
+          snowflakePassword: credentials?.password,
 
-              snowflakeAccount: credentials?.account_identifier,
+          snowflakeWarehouse: credentials?.warehouse,
 
-              snowflakeUser: credentials?.username,
+          snowflakeDatabase: credentials?.database,
 
-              snowflakePassword: credentials?.password,
+          snowflake_schema: credentials?.schema,
 
-              snowflakeWarehouse: credentials?.warehouse,
+          snowflake_table: snowflakeTables, // ARRAY now
+        };
 
-              snowflakeDatabase: credentials?.database,
+        const isDuplicate = existing.some(
+          (e) =>
+            e.source_type === "snowflake" &&
+            JSON.stringify(e) === JSON.stringify(newEntry),
+        );
 
-              snowflake_schema: credentials?.schema,
+        const updated = isDuplicate ? existing : [...existing, newEntry];
 
-              snowflake_table: snowflakeTables   // ARRAY now
+        localStorage.setItem("ingestion_sources", JSON.stringify(updated));
 
-            };
-          
-            const isDuplicate = existing.some((e) =>
+        toast.success(`Added ${paths.length} item(s) from snowflake`, {
+          duration: 1000,
+          action: closeToastButton,
+        });
 
-              e.source_type === "snowflake" && JSON.stringify(e) === JSON.stringify(newEntry)
+        return;
+      }
 
-            );
-
-            const updated = isDuplicate ? existing : [...existing, newEntry];
-
-            localStorage.setItem("ingestion_sources", JSON.stringify(updated));
-
-            toast.success(`Added ${paths.length} item(s) from snowflake`, {
-
-              duration: 1000, action: closeToastButton
-
-            });
-
-            return;
-
-          }
- 
       case "databases":
         newEntry = {
           ...newEntry,
+
           source_type: "sqlserver",
+
           server: credentials?.server || credentials?.host,
+
           database: credentials?.database,
+
           username: credentials?.username,
+
           password: credentials?.password,
-          table: paths
+
+          table: paths,
         };
+
         break;
+
       default:
         console.warn(`Unsupported source type: ${sourceType}`);
+
         return;
     }
 
-    const isDuplicate = existing.some((e: any) =>
-      e.source_type === newEntry.source_type &&
-      JSON.stringify(e) === JSON.stringify(newEntry)
+    const isDuplicate = existing.some(
+      (e: any) =>
+        e.source_type === newEntry.source_type &&
+        JSON.stringify(e) === JSON.stringify(newEntry),
     );
 
     const updated = isDuplicate ? existing : [...existing, newEntry];
+
     localStorage.setItem("ingestion_sources", JSON.stringify(updated));
-    toast.success(`Added ${paths.length} item(s) from ${sourceType}`, {
+
+    toast.success(`Added ${paths.length} item(s) from ${displayLabel || sourceType}`, {
       duration: 1000,
-      action: closeToastButton
+
+      action: closeToastButton,
     });
   };
 
   const handleFileSelection = (
-    files: Array<{ id: string; name: string; size: string; rows: string; fullPath?: string }>,
+    files: Array<{
+      id: string;
+      name: string;
+      size: string;
+      rows: string;
+      fullPath?: string;
+    }>,
+
     credentials?: any,
-    extra?: { currentContainer?: string | null }
+
+    extra?: { currentContainer?: string | null },
   ) => {
     if (credentials && currentSource && files.length > 0) {
       saveSelectionToStorage(
-        files.map(f => {
+        files.map((f) => {
           let pathToUse = f.fullPath ?? f.id ?? f.name;
+
           if (currentSource === "azure" && extra?.currentContainer) {
             const containerPrefix = `${extra.currentContainer}/`;
+
             if (!pathToUse.startsWith(containerPrefix)) {
               pathToUse = containerPrefix + pathToUse;
             }
           }
+
           return { name: f.name, fullPath: pathToUse };
         }),
+
         credentials,
-        currentSource
+
+        currentSource,
       );
     }
 
-    const newItems: SelectedItem[] = files.map(file => {
+    const newItems: SelectedItem[] = files.map((file) => {
       let icon: "file" | "table" | "folder" = "file";
-      if (["snowflake", "databricks", "databases"].includes(currentSource)) icon = "table";
+
+      if (["snowflake", "databricks", "databases"].includes(currentSource))
+        icon = "table";
+
       return {
         id: `${currentSource}-${file.id || Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+
         name: file.name,
-        source: sources.find(s => s.id === currentSource)?.name || "Unknown",
+
+        source: sources.find((s) => s.id === currentSource)?.name || "Unknown",
+
         size: file.size,
+
         rows: file.rows,
+
         icon,
+
         sourceType: currentSource,
-        fullPath: file.fullPath || file.name
+
+        fullPath: file.fullPath || file.name,
       };
     });
 
-    setSelectedItems(prev => [...prev, ...newItems]);
+    setSelectedItems((prev) => [...prev, ...newItems]);
   };
 
   const handleProceed = async () => {
     if (!userId || userId === "unknown-user") {
       toast.error("User not authenticated. Please login again.", {
-        duration: 1000, action: closeToastButton
+        duration: 1000,
+        action: closeToastButton,
       });
+
       return;
     }
 
     const currentJobId = localStorage.getItem("current_job_id");
+
     if (!currentJobId) {
       toast.error("No job ID found. Please create a job first.", {
-        duration: 1000, action: closeToastButton
+        duration: 1000,
+        action: closeToastButton,
       });
+
       return;
     }
 
     const payloadStr = localStorage.getItem("ingestion_sources");
+
     if (!payloadStr || JSON.parse(payloadStr).length === 0) {
       toast.error("No files selected for ingestion", {
-        duration: 1000, action: closeToastButton
+        duration: 1000,
+        action: closeToastButton,
       });
+
       return;
     }
 
     setIsIngesting(true);
+
     setIngestProgress(10);
-    setIngestStatus('Submitting ingestion job...');
+
+    setIngestStatus("Submitting ingestion job...");
 
     let pollingInterval: NodeJS.Timeout | null = null;
- 
+
     try {
       // 1. Trigger ingestion
+
       const ingestUrl = `https://api.veriton.ai/api/service1/ingest-now?user_id=${userId}&job_id=${currentJobId}`;
+
       const ingestResponse = await fetch(ingestUrl, {
         method: "POST",
+
         headers: { "Content-Type": "application/json" },
-        body: payloadStr
+
+        body: payloadStr,
       });
 
       const ingestData = await ingestResponse.json();
+
       if (!ingestResponse.ok) {
-        throw new Error(ingestData.note || ingestData.message || "Ingestion request failed");
+        throw new Error(
+          ingestData.note || ingestData.message || "Ingestion request failed",
+        );
       }
 
       setIngestProgress(25);
-      setIngestStatus('Ingestion job started, transferring data...');
+
+      setIngestStatus("Ingestion job started, transferring data...");
 
       // 2. Poll status
+
       const statusUrl = `https://api.veriton.ai/api/service1/ingest-now/status/${currentJobId}?user_id=${userId}`;
 
       pollingInterval = setInterval(async () => {
         try {
           // Slowly increment progress while polling (capped at 85)
-          setIngestProgress(prev => (prev < 85 ? prev + 3 : prev));
-          setIngestStatus('Transferring and processing files...');
+
+          setIngestProgress((prev) => (prev < 85 ? prev + 3 : prev));
+
+          setIngestStatus("Transferring and processing files...");
 
           const statusRes = await fetch(statusUrl, {
             method: "GET",
-            headers: { "Accept": "application/json" }
+
+            headers: { Accept: "application/json" },
           });
 
           if (!statusRes.ok) {
             console.warn(`Status check failed: ${statusRes.status}`);
+
             return;
           }
 
           const statusData = await statusRes.json();
+
           const jobStatus = statusData?.status?.toLowerCase();
 
           if (jobStatus === "completed") {
             clearInterval(pollingInterval!);
+
             pollingInterval = null;
 
             setIngestProgress(100);
-            setIngestStatus('Completed! Redirecting...');
+
+            setIngestStatus("Completed! Redirecting...");
 
             localStorage.removeItem("ingestion_sources");
+
             setSelectedItems([]);
 
             toast.success("Ingestion completed successfully", {
-              action: closeToastButton
+              action: closeToastButton,
             });
 
             setTimeout(() => navigate("/workflow/landing-zone"), 800);
-
           } else if (["failed", "error"].includes(jobStatus)) {
             clearInterval(pollingInterval!);
+
             pollingInterval = null;
-            const reason = statusData?.results?.[0]?.response?.message || "Unknown error";
+
+            const reason =
+              statusData?.results?.[0]?.response?.message || "Unknown error";
+
             throw new Error(`Ingestion failed: ${reason}`);
           }
-          // else → still in progress → continue polling
 
+          // else → still in progress → continue polling
         } catch (pollErr) {
           console.error("Polling error:", pollErr);
         }
       }, 10000);
-
     } catch (err: any) {
       console.error("Ingestion error:", err);
+
       if (pollingInterval) clearInterval(pollingInterval);
 
       setIngestProgress(0);
-      setIngestStatus('');
+
+      setIngestStatus("");
+
       setIsIngesting(false);
 
       toast.error(err.message || "Failed to complete ingestion process", {
-        duration: 2000, action: closeToastButton
+        duration: 2000,
+        action: closeToastButton,
       });
     }
 
@@ -1267,91 +1669,207 @@ export default function DataIngestion() {
   const openFilePicker = (sourceId: string) => {
     if (sourceId === "local") {
       const input = document.createElement("input");
+
       input.type = "file";
+
       input.multiple = true;
+
       input.accept = ".csv,.xlsx,.json,.parquet";
-      input.onchange = (e) => {
+
+      input.onchange = async (e) => {
         const files = (e.target as HTMLInputElement).files;
-        if (files) {
-          const newItems: SelectedItem[] = Array.from(files).map((file, idx) => ({
-            id: `local-${Date.now()}-${idx}`,
-            name: file.name,
-            source: "Local File",
-            size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-            rows: "Calculating...",
-            icon: "file",
-            sourceType: "local",
-            fullPath: file.name
-          }));
-          setSelectedItems(prev => [...prev, ...newItems]);
+
+        if (!files || files.length === 0) return;
+
+        const jobId = localStorage.getItem("current_job_id");
+
+        if (!jobId) {
+          toast.error("No job ID found. Please create a job first.", {
+            duration: 1500,
+            action: closeToastButton,
+          });
+
+          return;
+        }
+
+        const formData = new FormData();
+
+        formData.append("user_id", userId);
+
+        formData.append("job_id", jobId);
+
+        Array.from(files).forEach((f) => formData.append("files", f));
+
+        toast.loading("Uploading local files...", { id: "local-upload" });
+
+        try {
+          const uploadRes = await fetch(
+            "https://api.veriton.ai/api/service1/ingest-now/upload-local",
+            {
+              method: "POST",
+
+              body: formData,
+            },
+          );
+
+          if (!uploadRes.ok) throw new Error("Upload failed");
+
+          const { blobpath, blobAccountName, blobAccountKey } =
+            await uploadRes.json();
+
+          const newItems: SelectedItem[] = Array.from(files).map(
+            (file, idx) => ({
+              id: `local-${Date.now()}-${idx}`,
+
+              name: file.name,
+
+              source: "Local File",
+
+              size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+
+              rows: "N/A",
+
+              icon: "file",
+
+              sourceType: "local",
+
+              fullPath: blobpath[idx],
+            }),
+          );
+
+          setSelectedItems((prev) => [...prev, ...newItems]);
+
+          const localFilesKey = `local_files_${jobId}`;
+
+          const existingLocalFiles = JSON.parse(
+            localStorage.getItem(localFilesKey) || "[]",
+          );
+
+          const updatedLocalFiles = [
+            ...existingLocalFiles,
+            ...newItems.map((i) => i.name),
+          ];
+
+          localStorage.setItem(
+            localFilesKey,
+            JSON.stringify(updatedLocalFiles),
+          );
+
+          saveSelectionToStorage(
+            newItems.map((item) => ({
+              name: item.name,
+              fullPath: item.fullPath,
+            })),
+
+            { accountName: blobAccountName, accountKey: blobAccountKey },
+
+            "azure",
+            "local",
+          );
+
+          toast.success("Local files uploaded", { id: "local-upload" });
+        } catch (err) {
+          console.error("Local upload error:", err);
+
+          toast.error("Failed to upload local files", { id: "local-upload" });
         }
       };
+
       input.click();
-    }
-     else if (sourceId === "databases") {
+    } else if (sourceId === "databases") {
       setDatabaseDialogOpen(true);
     } else {
-      const source = sources.find(s => s.id === sourceId);
+      const source = sources.find((s) => s.id === sourceId);
+
       if (source?.requiresCredentials) {
         setPendingSourceId(sourceId);
+
         setCredentialDialogOpen(true);
       } else {
         setCurrentSource(sourceId);
+
         setFilePickerOpen(true);
       }
     }
   };
 
   const handleCredentialProceed = (credentials: any) => {
-    if (pendingSourceId === "s3") setS3Credentials(credentials as S3Credentials);
-    else if (pendingSourceId === "azure") setAzureCredentials(credentials as AzureCredentials);
-    else if (pendingSourceId === "onelake") setOneLakeCredentials(credentials as OneLakeCredentials);
-    else if (pendingSourceId === "databricks") setDatabricksCredentials(credentials as DatabricksCredentials);
-    else if (pendingSourceId === "snowflake") setSnowflakeCredentials(credentials as SnowflakeCredentials);
+    if (pendingSourceId === "s3")
+      setS3Credentials(credentials as S3Credentials);
+    else if (pendingSourceId === "azure")
+      setAzureCredentials(credentials as AzureCredentials);
+    else if (pendingSourceId === "onelake")
+      setOneLakeCredentials(credentials as OneLakeCredentials);
+    else if (pendingSourceId === "databricks")
+      setDatabricksCredentials(credentials as DatabricksCredentials);
+    else if (pendingSourceId === "snowflake")
+      setSnowflakeCredentials(credentials as SnowflakeCredentials);
 
     setCurrentSource(pendingSourceId);
+
     setFilePickerOpen(true);
   };
 
   const handleDatabaseConnect = (config: {
     server: string;
+
     database: string;
+
     username: string;
+
     password: string;
+
     selectedTables: string[];
   }) => {
-    const newItems: SelectedItem[] = config.selectedTables.map(table => ({
+    const newItems: SelectedItem[] = config.selectedTables.map((table) => ({
       id: `db-${config.database}-${table}-${Date.now()}`,
-      name: table.split('.').pop() || table,
+
+      name: table.split(".").pop() || table,
+
       source: "SQL Server",
+
       size: "N/A",
+
       rows: "N/A",
+
       icon: "table",
+
       sourceType: "databases",
-      fullPath: table
+
+      fullPath: table,
     }));
 
-    setSelectedItems(prev => [...prev, ...newItems]);
+    setSelectedItems((prev) => [...prev, ...newItems]);
 
     saveSelectionToStorage(
-      config.selectedTables.map(table => ({ name: table, fullPath: table })),
+      config.selectedTables.map((table) => ({ name: table, fullPath: table })),
+
       {
         server: config.server,
+
         database: config.database,
+
         username: config.username,
+
         password: config.password,
       },
-      "databases"
+
+      "databases",
     );
   };
 
   // ── Progress bar step labels ──────────────────────────────────────────────
+
   const progressSteps = [
-    { label: 'Submitted', threshold: 10 },
-    { label: 'Transferring', threshold: 25 },
-    { label: 'Processing', threshold: 60 },
-    { label: 'Finalizing', threshold: 85 },
-    { label: 'Done', threshold: 100 },
+    { label: "Submitted", threshold: 10 },
+
+    { label: "Transferring", threshold: 25 },
+
+    { label: "Processing", threshold: 60 },
+
+    { label: "Finalizing", threshold: 85 },
+
+    { label: "Done", threshold: 100 },
   ];
 
   return (
@@ -1360,19 +1878,25 @@ export default function DataIngestion() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Data Ingestion</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              Data Ingestion
+            </h1>
             <p className="text-muted-foreground">
-              Connect to your sources and select the files or tables you want to process.
+              Connect to your sources and select the files or tables you want to
+              process.
             </p>
           </div>
         </div>
 
         {/* Select a Source */}
         <div className="mb-12">
-          <h2 className="text-xl font-semibold text-foreground mb-6">Select a Source</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-6">
+            Select a Source
+          </h2>
           <div className="grid grid-cols-4 gap-4">
             {sources.map((source) => {
               const IconComponent = source.icon;
+
               return (
                 <Card
                   key={source.id}
@@ -1384,8 +1908,12 @@ export default function DataIngestion() {
                       <IconComponent className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                     <div>
-                      <p className="font-medium text-foreground text-sm">{source.name}</p>
-                      <p className="text-xs text-muted-foreground">{source.description}</p>
+                      <p className="font-medium text-foreground text-sm">
+                        {source.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {source.description}
+                      </p>
                     </div>
                   </div>
                 </Card>
@@ -1395,22 +1923,34 @@ export default function DataIngestion() {
         </div>
 
         {/* Selected Items */}
-        <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2" ref={selectedItemsRef}>
+        <div
+          className="space-y-3 overflow-y-auto max-h-[400px] pr-2"
+          ref={selectedItemsRef}
+        >
           <h2 className="text-xl font-semibold text-foreground mb-6 sticky top-0 bg-background z-10 pb-4">
             Selected Items
           </h2>
           <div className="space-y-3">
             {selectedItems.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No items selected yet</p>
+              <p className="text-muted-foreground text-center py-8">
+                No items selected yet
+              </p>
             ) : (
               selectedItems.map((item) => (
-                <Card key={item.id} className="p-4 border border-border hover:border-primary/50 transition-colors">
+                <Card
+                  key={item.id}
+                  className="p-4 border border-border hover:border-primary/50 transition-colors"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
                       {getItemIcon(item.icon)}
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">{item.source}</p>
+                        <p className="font-medium text-foreground">
+                          {item.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.source}
+                        </p>
                       </div>
                     </div>
                     <Button
@@ -1430,31 +1970,49 @@ export default function DataIngestion() {
 
         {/* ── Action Button + Progress Bar ── */}
         <div className="flex flex-col gap-4 mt-6">
-
           {/* Progress UI — only visible while ingesting */}
+
           {isIngesting && (
             <div className="w-full rounded-xl border border-border bg-card/60 p-5 space-y-4">
               {/* Step indicators */}
               <div className="flex items-center justify-between">
                 {progressSteps.map((step, i) => {
                   const reached = ingestProgress >= step.threshold;
+
                   const active =
                     ingestProgress >= step.threshold &&
-                    (i === progressSteps.length - 1 || ingestProgress < progressSteps[i + 1].threshold);
+                    (i === progressSteps.length - 1 ||
+                      ingestProgress < progressSteps[i + 1].threshold);
+
                   return (
-                    <div key={step.label} className="flex flex-col items-center gap-1 flex-1">
+                    <div
+                      key={step.label}
+                      className="flex flex-col items-center gap-1 flex-1"
+                    >
                       <div
                         className={[
                           "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-500",
+
                           reached
                             ? "bg-primary border-primary text-primary-foreground"
                             : "bg-muted border-border text-muted-foreground",
+
                           active ? "ring-2 ring-primary/40 ring-offset-2" : "",
                         ].join(" ")}
                       >
                         {reached && !active ? (
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none">
-                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <svg
+                            className="w-3.5 h-3.5"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                          >
+                            <path
+                              d="M2 6l3 3 5-5"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
                           </svg>
                         ) : (
                           i + 1
@@ -1463,12 +2021,15 @@ export default function DataIngestion() {
                       <span
                         className={[
                           "text-[10px] font-medium text-center leading-tight",
+
                           reached ? "text-primary" : "text-muted-foreground",
                         ].join(" ")}
                       >
                         {step.label}
                       </span>
+
                       {/* Connector line between steps */}
+
                       {i < progressSteps.length - 1 && (
                         <div className="absolute" />
                       )}
@@ -1483,9 +2044,11 @@ export default function DataIngestion() {
                   className="h-full rounded-full transition-all duration-700 ease-in-out"
                   style={{
                     width: `${ingestProgress}%`,
-                    background: ingestProgress === 100
-                      ? 'hsl(var(--primary))'
-                      : 'linear-gradient(90deg, hsl(var(--primary)/0.7), hsl(var(--primary)))',
+
+                    background:
+                      ingestProgress === 100
+                        ? "hsl(var(--primary))"
+                        : "linear-gradient(90deg, hsl(var(--primary)/0.7), hsl(var(--primary)))",
                   }}
                 />
               </div>
@@ -1496,18 +2059,31 @@ export default function DataIngestion() {
                   {ingestProgress < 100 ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
                   ) : (
-                    <svg className="w-3.5 h-3.5 text-primary flex-shrink-0" viewBox="0 0 12 12" fill="none">
-                      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg
+                      className="w-3.5 h-3.5 text-primary flex-shrink-0"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                    >
+                      <path
+                        d="M2 6l3 3 5-5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   )}
                   <span>{ingestStatus}</span>
                 </div>
-                <span className="font-semibold text-primary tabular-nums">{ingestProgress}%</span>
+                <span className="font-semibold text-primary tabular-nums">
+                  {ingestProgress}%
+                </span>
               </div>
 
               {ingestProgress < 100 && (
                 <p className="text-xs text-muted-foreground">
-                  Please wait — this may take a few minutes depending on file size.
+                  Please wait — this may take a few minutes depending on file
+                  size.
                 </p>
               )}
             </div>
@@ -1537,14 +2113,14 @@ export default function DataIngestion() {
         <SourceCredentialDialog
           open={credentialDialogOpen}
           onOpenChange={setCredentialDialogOpen}
-          sourceName={sources.find(s => s.id === pendingSourceId)?.name || ""}
+          sourceName={sources.find((s) => s.id === pendingSourceId)?.name || ""}
           sourceId={pendingSourceId}
           onProceed={handleCredentialProceed}
         />
         <FilePickerDialog
           open={filePickerOpen}
           onOpenChange={setFilePickerOpen}
-          sourceName={sources.find(s => s.id === currentSource)?.name || ""}
+          sourceName={sources.find((s) => s.id === currentSource)?.name || ""}
           files={[]}
           onSelect={handleFileSelection}
           s3Credentials={s3Credentials}

@@ -1700,7 +1700,7 @@ export default function DataIngestion() {
 
         Array.from(files).forEach((f) => formData.append("files", f));
 
-        toast.loading("Uploading local files...", { id: "local-upload" });
+        toast.loading("Uploading local files...", { id: "local-upload",duration:1000, });
 
         try {
           const uploadRes = await fetch(
@@ -1767,11 +1767,11 @@ export default function DataIngestion() {
             "local",
           );
 
-          toast.success("Local files uploaded", { id: "local-upload" });
+          toast.success("Local files uploaded", { id: "local-upload" ,duration:1000, });
         } catch (err) {
           console.error("Local upload error:", err);
 
-          toast.error("Failed to upload local files", { id: "local-upload" });
+          toast.error("Failed to upload local files", { id: "local-upload",duration:1000, });
         }
       };
 

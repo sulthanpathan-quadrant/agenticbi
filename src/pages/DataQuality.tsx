@@ -1784,13 +1784,13 @@ export default function DataQuality() {
         validationResult={validationResult}
       />
 
-      <QuickFixDialog
+      {/* <QuickFixDialog
         open={showQuickFix}
         onOpenChange={setShowQuickFix}
         isComplete={quickFixComplete}
         onContinue={handleQuickFixContinue}
         fixMessage={fixResult?.message}
-      />
+      /> */}
     </WorkflowLayout>
   );
 }

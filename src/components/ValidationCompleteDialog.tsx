@@ -71,7 +71,7 @@ export function ValidationCompleteDialog({
               <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                 Modify DQ Rules
               </Button>
-              <Button
+              {/* <Button
                 variant="default"
                 className="flex-1 bg-orange-600 hover:bg-orange-700"
                 onClick={onAnalyzeFailures}
@@ -79,7 +79,7 @@ export function ValidationCompleteDialog({
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Analyze Failures
-              </Button>
+              </Button> */}
               <Button className="flex-1" onClick={onProceedToNER}>
                 <ArrowRight className="h-4 w-4 mr-2" />
                 Proceed to NER

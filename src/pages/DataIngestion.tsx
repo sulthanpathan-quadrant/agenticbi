@@ -1157,93 +1157,278 @@ export default function DataIngestion() {
 
   const LOCAL_UPLOADS_CONTAINER = "local-uploads";
 
+  // const removeItem = async (id: string) => {
+  //   const item = selectedItems.find((i) => i.id === id);
+
+  //   if (!item) return;
+
+  //   setSelectedItems((prev) => prev.filter((i) => i.id !== id));
+
+  //   if (item.sourceType === "local") {
+  //     try {
+  //       const res = await fetch(
+  //         `https://api.veriton.ai/api/service1/ingest-now/delete-local?blob_path=${encodeURIComponent(item.fullPath)}`,
+
+  //         { method: "DELETE" },
+  //       );
+
+  //       if (!res.ok) throw new Error("Delete request failed");
+  //     } catch (err) {
+  //       console.error("Failed to delete local blob:", err);
+
+  //       toast.error(`Failed to remove ${item.name} from storage`, {
+  //         duration: 2000,
+  //         action: closeToastButton,
+  //       });
+  //     }
+
+  //     try {
+  //       const existing = JSON.parse(
+  //         localStorage.getItem("ingestion_sources") || "[]",
+  //       );
+
+  //       const updated = existing
+
+  //         .map((entry: any) => {
+  //           if (entry.source_type === "blob" && Array.isArray(entry.blobpath)) {
+  //             // Only strip paths that belong to the local-uploads container —
+
+  //             // identified by path prefix, not blobAccountName
+
+  //             const filteredPaths = entry.blobpath.filter((p: string) =>
+  //               p.startsWith(`${LOCAL_UPLOADS_CONTAINER}/`)
+  //                 ? p !== item.fullPath
+  //                 : true,
+  //             );
+
+  //             return { ...entry, blobpath: filteredPaths };
+  //           }
+
+  //           return entry;
+  //         })
+
+  //         .filter(
+  //           (entry: any) =>
+  //             !(entry.source_type === "blob" && entry.blobpath?.length === 0),
+  //         );
+
+  //       localStorage.setItem("ingestion_sources", JSON.stringify(updated));
+  //     } catch (err) {
+  //       console.error("Failed to update ingestion_sources:", err);
+  //     }
+
+  //     // Step 3: NEW — remove it from the tracked local-files list too,
+
+  //     // so Landing Zone doesn't still think this filename is a local file
+
+  //     // if the same name ever reappears from a real Azure source later
+
+  //     try {
+  //       const jobId = localStorage.getItem("current_job_id");
+
+  //       const localFilesKey = `local_files_${jobId}`;
+
+  //       const existingLocalFiles = JSON.parse(
+  //         localStorage.getItem(localFilesKey) || "[]",
+  //       );
+
+  //       localStorage.setItem(
+  //         localFilesKey,
+
+  //         JSON.stringify(
+  //           existingLocalFiles.filter((name: string) => name !== item.name),
+  //         ),
+  //       );
+  //     } catch (err) {
+  //       console.error("Failed to update local_files tracking:", err);
+  //     }
+  //   }
+  // };
+
   const removeItem = async (id: string) => {
-    const item = selectedItems.find((i) => i.id === id);
+  const item = selectedItems.find((i) => i.id === id);
 
-    if (!item) return;
+  if (!item) return;
 
-    setSelectedItems((prev) => prev.filter((i) => i.id !== id));
+  // ---------------------------------------------------------
+  // 1. Remove from UI immediately
+  // ---------------------------------------------------------
+  setSelectedItems((prev) => prev.filter((i) => i.id !== id));
 
-    if (item.sourceType === "local") {
-      try {
-        const res = await fetch(
-          `https://api.veriton.ai/api/service1/ingest-now/delete-local?blob_path=${encodeURIComponent(item.fullPath)}`,
+  // ---------------------------------------------------------
+  // 2. Remove item from ingestion_sources localStorage
+  // ---------------------------------------------------------
+  try {
+    const existing = JSON.parse(
+      localStorage.getItem("ingestion_sources") || "[]"
+    );
 
-          { method: "DELETE" },
-        );
+    // Map UI sourceType -> localStorage source_type
+    const sourceTypeMap: Record<string, string> = {
+      s3: "s3",
+      azure: "blob",
+      onelake: "onelake",
+      databricks: "databricks",
+      snowflake: "snowflake",
+      databases: "sqlserver",
+      local: "blob",
+    };
 
-        if (!res.ok) throw new Error("Delete request failed");
-      } catch (err) {
-        console.error("Failed to delete local blob:", err);
+    const storageSourceType = sourceTypeMap[item.sourceType];
 
-        toast.error(`Failed to remove ${item.name} from storage`, {
-          duration: 2000,
-          action: closeToastButton,
-        });
+    // Determine which field contains the selected paths/tables
+    const getPathField = (sourceType: string) => {
+      switch (sourceType) {
+        case "s3":
+          return "s3path";
+
+        case "blob":
+          return "blobpath";
+
+        case "onelake":
+          return "file_path";
+
+        case "databricks":
+          return "table";
+
+        case "snowflake":
+          return "snowflake_table";
+
+        case "sqlserver":
+          return "table";
+
+        default:
+          return null;
       }
+    };
 
-      try {
-        const existing = JSON.parse(
-          localStorage.getItem("ingestion_sources") || "[]",
-        );
+    const pathField = getPathField(storageSourceType);
 
-        const updated = existing
+    if (!storageSourceType || !pathField) {
+      console.warn(
+        `Unable to remove item. Unsupported source: ${item.sourceType}`
+      );
+      return;
+    }
 
-          .map((entry: any) => {
-            if (entry.source_type === "blob" && Array.isArray(entry.blobpath)) {
-              // Only strip paths that belong to the local-uploads container —
+    const updated = existing
+      .map((entry: any) => {
+        // Only modify entries belonging to this source
+        if (
+          entry.source_type !== storageSourceType ||
+          !Array.isArray(entry[pathField])
+        ) {
+          return entry;
+        }
 
-              // identified by path prefix, not blobAccountName
+        // Remove the selected item
+        const filteredPaths = entry[pathField].filter(
+          (path: string) => {
+            // For S3
+            if (storageSourceType === "s3") {
+              const normalizedItemPath = item.fullPath.startsWith("s3://")
+                ? item.fullPath
+                : `s3://${item.fullPath}`;
 
-              const filteredPaths = entry.blobpath.filter((p: string) =>
-                p.startsWith(`${LOCAL_UPLOADS_CONTAINER}/`)
-                  ? p !== item.fullPath
-                  : true,
-              );
-
-              return { ...entry, blobpath: filteredPaths };
+              return path !== normalizedItemPath;
             }
 
-            return entry;
-          })
+            // For Snowflake
+            if (storageSourceType === "snowflake") {
+              return path !== item.name;
+            }
 
-          .filter(
-            (entry: any) =>
-              !(entry.source_type === "blob" && entry.blobpath?.length === 0),
-          );
+            // For all other sources
+            return path !== item.fullPath;
+          }
+        );
 
-        localStorage.setItem("ingestion_sources", JSON.stringify(updated));
-      } catch (err) {
-        console.error("Failed to update ingestion_sources:", err);
+        return {
+          ...entry,
+          [pathField]: filteredPaths,
+        };
+      })
+      // Remove the complete source entry if no files/tables remain
+      .filter((entry: any) => {
+        const field = getPathField(entry.source_type);
+
+        if (!field || !Array.isArray(entry[field])) {
+          return true;
+        }
+
+        return entry[field].length > 0;
+      });
+
+    localStorage.setItem(
+      "ingestion_sources",
+      JSON.stringify(updated)
+    );
+
+    console.log(
+      `Removed ${item.name} from ingestion_sources localStorage`
+    );
+  } catch (err) {
+    console.error(
+      "Failed to update ingestion_sources localStorage:",
+      err
+    );
+  }
+
+  // ---------------------------------------------------------
+  // 3. Special handling for local uploaded files
+  // ---------------------------------------------------------
+  if (item.sourceType === "local") {
+    try {
+      // Delete uploaded blob from Azure storage
+      const res = await fetch(
+        `https://api.veriton.ai/api/service1/ingest-now/delete-local?blob_path=${encodeURIComponent(
+          item.fullPath
+        )}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Delete request failed");
       }
+    } catch (err) {
+      console.error("Failed to delete local blob:", err);
 
-      // Step 3: NEW — remove it from the tracked local-files list too,
+      toast.error(`Failed to remove ${item.name} from storage`, {
+        duration: 2000,
+        action: closeToastButton,
+      });
+    }
 
-      // so Landing Zone doesn't still think this filename is a local file
+    // Remove from local_files_<jobId>
+    try {
+      const jobId = localStorage.getItem("current_job_id");
 
-      // if the same name ever reappears from a real Azure source later
-
-      try {
-        const jobId = localStorage.getItem("current_job_id");
-
+      if (jobId) {
         const localFilesKey = `local_files_${jobId}`;
 
         const existingLocalFiles = JSON.parse(
-          localStorage.getItem(localFilesKey) || "[]",
+          localStorage.getItem(localFilesKey) || "[]"
+        );
+
+        const updatedLocalFiles = existingLocalFiles.filter(
+          (name: string) => name !== item.name
         );
 
         localStorage.setItem(
           localFilesKey,
-
-          JSON.stringify(
-            existingLocalFiles.filter((name: string) => name !== item.name),
-          ),
+          JSON.stringify(updatedLocalFiles)
         );
-      } catch (err) {
-        console.error("Failed to update local_files tracking:", err);
       }
+    } catch (err) {
+      console.error(
+        "Failed to update local_files tracking:",
+        err
+      );
     }
-  };
+  }
+};
 
   const getItemIcon = (iconType: "file" | "table" | "folder") => {
     switch (iconType) {

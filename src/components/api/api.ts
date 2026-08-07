@@ -492,6 +492,43 @@ export const getSnowflakeTables = async (
 };
  
  
+
+// ---------------- SAP HANA ----------------
+export interface SapCredentials {
+  sap_host: string;
+  sap_port: number;
+  sap_username: string;
+  sap_password: string;
+}
+
+export const getSapSchemas = async (
+  credentials: SapCredentials
+): Promise<string[]> => {
+  const res = await fetch(`${API_BASE}/sap-hana/schemas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(credentials),
+  });
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch schemas");
+  return result.schemas || [];
+};
+
+export const getSapTables = async (
+  schema: string,
+  credentials: SapCredentials
+): Promise<string[]> => {
+  const res = await fetch(`${API_BASE}/sap-hana/tables`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({ ...credentials, schema }),
+  });
+  const result = await safeJsonParse(res);
+  if (!res.ok) throw new Error(result.detail || "Failed to fetch tables");
+  return result.tables || [];
+};
+
+
 // ---------------- DATA MODELING PROCESS (MODELING_API) ----------------
 // export interface ProcessJobRequest {
 //   user_id: string;

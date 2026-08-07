@@ -4,7 +4,7 @@
 // import { Input } from "@/components/ui/input";
 // import { Label } from "@/components/ui/label";
 // import { Loader2, Eye, EyeOff } from "lucide-react";
-// import { toast } from "sonner";  // ← correct import (from sonner)
+// import { toast } from "sonner";
  
 // import {
 //   S3Credentials,
@@ -41,7 +41,7 @@
 //   const [secretAccessKey, setSecretAccessKey] = useState("");
 //   const [region, setRegion] = useState("us-east-1");
  
-//   // Azure
+//   // Azure — starts empty (user must provide their own connection string)
 //   const [connectionString, setConnectionString] = useState("");
  
 //   // OneLake
@@ -63,6 +63,7 @@
 //   // Visibility toggles
 //   const [showAccessKeyId, setShowAccessKeyId] = useState(false);
 //   const [showSecretAccessKey, setShowSecretAccessKey] = useState(false);
+//   const [showConnectionString, setShowConnectionString] = useState(false);
 //   const [showClientId, setShowClientId] = useState(false);
 //   const [showClientSecret, setShowClientSecret] = useState(false);
 //   const [showAccessToken, setShowAccessToken] = useState(false);
@@ -74,7 +75,6 @@
 //     try {
 //       let credentials: any = null;
  
-//       // Real validation using backend APIs
 //       if (sourceId === "s3") {
 //         credentials = {
 //           aws_access_key_id: accessKeyId.trim(),
@@ -82,28 +82,24 @@
 //           region: region.trim(),
 //         };
 //         await getS3Buckets(credentials);
-//       }
-//       else if (sourceId === "azure") {
+//       } else if (sourceId === "azure") {
 //         credentials = { connection_string: connectionString.trim() };
 //         await getAzureContainers(credentials);
-//       }
-//       else if (sourceId === "onelake") {
+//       } else if (sourceId === "onelake") {
 //         credentials = {
 //           tenant_id: tenantId.trim(),
 //           client_id: clientId.trim(),
 //           client_secret: clientSecret.trim(),
 //         };
 //         await getOneLakeWorkspaces(credentials);
-//       }
-//       else if (sourceId === "databricks") {
+//       } else if (sourceId === "databricks") {
 //         credentials = {
 //           host: host.trim(),
 //           warehouse_id: warehouseId.trim(),
 //           access_token: accessToken.trim(),
 //         };
 //         await getDatabricksCatalogs(credentials);
-//       }
-//       else if (sourceId === "snowflake") {
+//       } else if (sourceId === "snowflake") {
 //         credentials = {
 //           account_identifier: accountIdentifier.trim(),
 //           username: username.trim(),
@@ -113,30 +109,27 @@
 //         await getSnowflakeDatabases(credentials);
 //       }
  
-//       // Success case
 //       toast.success(`Connected to ${sourceName} successfully`, {
 //         description: "You can now select files or tables.",
 //       });
  
 //       onProceed(credentials);
 //       onOpenChange(false);
- 
 //     } catch (error: any) {
 //       toast.error("Connection Failed", {
 //         description: error.message || "Invalid credentials. Please check your details and try again.",
 //       });
-//       // Dialog stays open — user can fix credentials
 //     } finally {
 //       setIsValidating(false);
 //     }
 //   };
  
 //   const handleClose = () => {
-//     // Reset all fields
 //     setAccessKeyId("");
 //     setSecretAccessKey("");
 //     setRegion("us-east-1");
  
+//     // Reset to empty — no default/hardcoded value
 //     setConnectionString("");
  
 //     setTenantId("");
@@ -152,9 +145,9 @@
 //     setPassword("");
 //     setWarehouse("");
  
-//     // Reset visibility toggles
 //     setShowAccessKeyId(false);
 //     setShowSecretAccessKey(false);
+//     setShowConnectionString(false);
 //     setShowClientId(false);
 //     setShowClientSecret(false);
 //     setShowAccessToken(false);
@@ -264,14 +257,26 @@
 //           {sourceId === "azure" && (
 //             <div className="space-y-2">
 //               <Label htmlFor="connectionString">Connection String</Label>
-//               <Input
-//                 id="connectionString"
-//                 type="password"
-//                 placeholder="DefaultEndpointsProtocol=https;AccountName=..."
-//                 value={connectionString}
-//                 onChange={(e) => setConnectionString(e.target.value)}
-//                 disabled={isValidating}
-//               />
+//               <div className="relative">
+//                 <Input
+//                   id="connectionString"
+//                   type={showConnectionString ? "text" : "password"}
+//                   placeholder="DefaultEndpointsProtocol=https;AccountName=..."
+//                   value={connectionString}
+//                   onChange={(e) => setConnectionString(e.target.value)}
+//                   disabled={isValidating}
+//                   className="pr-10 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+//                   autoComplete="off"
+//                 />
+//                 <button
+//                   type="button"
+//                   onClick={() => setShowConnectionString(!showConnectionString)}
+//                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+//                   disabled={isValidating}
+//                 >
+//                   {showConnectionString ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+//                 </button>
+//               </div>
 //               <p className="text-xs text-muted-foreground">
 //                 Format: DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=...
 //               </p>
@@ -483,7 +488,7 @@
 //   );
 // }
  
- import { useState } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -502,6 +507,8 @@ import {
   getOneLakeWorkspaces,
   getDatabricksCatalogs,
   getSnowflakeDatabases,
+  SapCredentials,
+  getSapSchemas
 } from "@/components/api/api";
  
 interface SourceCredentialDialogProps {
@@ -509,7 +516,7 @@ interface SourceCredentialDialogProps {
   onOpenChange: (open: boolean) => void;
   sourceName: string;
   sourceId: string;
-  onProceed: (credentials: S3Credentials | AzureCredentials | OneLakeCredentials | DatabricksCredentials | SnowflakeCredentials) => void;
+  onProceed: (credentials: S3Credentials | AzureCredentials | OneLakeCredentials | DatabricksCredentials | SnowflakeCredentials | SapCredentials) => void;
 }
  
 export function SourceCredentialDialog({
@@ -544,6 +551,12 @@ export function SourceCredentialDialog({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [warehouse, setWarehouse] = useState("");
+
+  // SAP
+  const [sapHost, setSapHost] = useState("");
+  const [sapPort, setSapPort] = useState("443");
+  const [sapUsername, setSapUsername] = useState("");
+  const [sapPassword, setSapPassword] = useState("");
  
   // Visibility toggles
   const [showAccessKeyId, setShowAccessKeyId] = useState(false);
@@ -553,6 +566,7 @@ export function SourceCredentialDialog({
   const [showClientSecret, setShowClientSecret] = useState(false);
   const [showAccessToken, setShowAccessToken] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showSapPassword, setShowSapPassword] = useState(false);
  
   const handleProceed = async () => {
     setIsValidating(true);
@@ -592,7 +606,16 @@ export function SourceCredentialDialog({
           warehouse: warehouse.trim(),
         };
         await getSnowflakeDatabases(credentials);
+      } else if (sourceId === "sap") {
+        credentials = {
+          sap_host: sapHost.trim(),
+          sap_port: parseInt(sapPort.trim(), 10) || 443,
+          sap_username: sapUsername.trim(),
+          sap_password: sapPassword.trim(),
+        };
+        await getSapSchemas(credentials);
       }
+
  
       toast.success(`Connected to ${sourceName} successfully`, {
         description: "You can now select files or tables.",
@@ -637,6 +660,12 @@ export function SourceCredentialDialog({
     setShowClientSecret(false);
     setShowAccessToken(false);
     setShowPassword(false);
+
+    setSapHost("");
+    setSapPort("443");
+    setSapUsername("");
+    setSapPassword("");
+    setShowSapPassword(false);
  
     onOpenChange(false);
   };
@@ -660,6 +689,14 @@ export function SourceCredentialDialog({
         username.trim() !== "" &&
         password.trim() !== "" &&
         warehouse.trim() !== ""
+      );
+    }
+    if (sourceId === "sap") {
+      return (
+        sapHost.trim() !== "" &&
+        sapPort.trim() !== "" &&
+        sapUsername.trim() !== "" &&
+        sapPassword.trim() !== ""
       );
     }
     return false;
@@ -950,8 +987,74 @@ export function SourceCredentialDialog({
               </div>
             </>
           )}
- 
-          {!["s3", "azure", "onelake", "databricks", "snowflake"].includes(sourceId) && (
+
+          {/* SAP Credentials */}
+          {sourceId === "sap" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="sapHost">SAP Host</Label>
+                <Input
+                  id="sapHost"
+                  type="text"
+                  placeholder="xxxxx.prod-ap21.hanacloud.ondemand.com"
+                  value={sapHost}
+                  onChange={(e) => setSapHost(e.target.value)}
+                  disabled={isValidating}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sapPort">Port</Label>
+                <Input
+                  id="sapPort"
+                  type="text"
+                  placeholder="443"
+                  value={sapPort}
+                  onChange={(e) => setSapPort(e.target.value)}
+                  disabled={isValidating}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sapUsername">Username</Label>
+                <Input
+                  id="sapUsername"
+                  type="text"
+                  placeholder="XXXXXXX"
+                  value={sapUsername}
+                  onChange={(e) => setSapUsername(e.target.value)}
+                  disabled={isValidating}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sapPassword">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="sapPassword"
+                    type={showSapPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={sapPassword}
+                    onChange={(e) => setSapPassword(e.target.value)}
+                    disabled={isValidating}
+                    className="pr-10 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSapPassword(!showSapPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    disabled={isValidating}
+                  >
+                    {showSapPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {!["s3", "azure", "onelake", "databricks", "snowflake", "sap"].includes(sourceId) && (
+
             <div className="text-center py-4 text-muted-foreground">
               Credentials configuration for {sourceName} coming soon.
             </div>

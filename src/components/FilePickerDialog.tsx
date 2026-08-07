@@ -3,7 +3,8 @@
 // import { Button } from "@/components/ui/button";
 // import { Checkbox } from "@/components/ui/checkbox";
 // import { ScrollArea } from "@/components/ui/scroll-area";
-// import { Loader2, Folder, ArrowLeft } from "lucide-react";
+// import { Input } from "@/components/ui/input";
+// import { Loader2, Folder, ArrowLeft, Search } from "lucide-react";
  
 // import {
 //   getS3Buckets,
@@ -109,6 +110,11 @@
 //   const [currentDatabase, setCurrentDatabase] = useState<string | null>(null);
 //   const [currentSnowflakeSchema, setCurrentSnowflakeSchema] = useState<string | null>(null);
 //   const [snowflakeTables, setSnowflakeTables] = useState<string[]>([]);
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const [azurePrefix, setAzurePrefix] = useState<string>("");
+//   const [azureFolders, setAzureFolders] = useState<string[]>([]);
+//   const [azureFiles, setAzureFiles] = useState<string[]>([]);
+ 
  
 //   useEffect(() => {
 //     if (!open) return;
@@ -120,6 +126,21 @@
 //     else if (isDatabricks && databricksCredentials) loadDatabricksCatalogs();
 //     else if (isSnowflake && snowflakeCredentials) loadSnowflakeDatabases();
 //   }, [open]);
+
+// useEffect(() => {
+//   setSearchQuery("");
+// }, [
+//   currentContainer,
+//   currentPrefix,
+//   azurePrefix,
+//   currentWorkspace,
+//   currentLakehouse,
+//   currentPath,
+//   currentCatalog,
+//   currentSchema,
+//   currentDatabase,
+//   currentSnowflakeSchema,
+// ]);
  
 //   const loadS3Buckets = async () => {
 //     if (!s3Credentials) return;
@@ -193,10 +214,7 @@
 //     }
 //   };
  
-//   const [azurePrefix, setAzurePrefix] = useState<string>("");
-//   const [azureFolders, setAzureFolders] = useState<string[]>([]);
-//   const [azureFiles, setAzureFiles] = useState<string[]>([]);
- 
+  
 //   const loadAzureBlobs = async (containerName: string, prefix: string = "") => {
 //     if (!azureCredentials) return;
  
@@ -482,6 +500,7 @@
 //       setIsLoading(false);
 //     }
 //   };
+
  
 //   const toggleFile = (fileId: string) => {
 //     setSelectedFiles(prev =>
@@ -489,6 +508,10 @@
 //     );
 //   };
  
+
+//   const matchesSearch = (name: string) =>
+//   name.toLowerCase().includes(searchQuery.toLowerCase());
+
 //   const displayFiles =
 //     (isS3 ||
 //       isAzure ||
@@ -701,13 +724,23 @@
 //           <DialogHeader>
 //             <DialogTitle>Select Catalog - Databricks</DialogTitle>
 //           </DialogHeader>
+
+//           <div className="relative mb-2">
+//   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//   <Input
+//     placeholder="Search..."
+//     value={searchQuery}
+//     onChange={(e) => setSearchQuery(e.target.value)}
+//     className="pl-9"
+//   />
+// </div>
  
 //           {isLoading ? (
 //             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
 //           ) : (
 //             <ScrollArea className="max-h-96">
 //               <div className="space-y-2 pr-4">
-//                 {catalogs.map(catalog => (
+//                 {catalogs.filter(matchesSearch).map(catalog => (
 //                   <div
 //                     key={catalog}
 //                     className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer"
@@ -743,13 +776,23 @@
 //               </div>
 //             </DialogTitle>
 //           </DialogHeader>
+
+//           <div className="relative mb-2">
+//   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//   <Input
+//     placeholder="Search..."
+//     value={searchQuery}
+//     onChange={(e) => setSearchQuery(e.target.value)}
+//     className="pl-9"
+//   />
+// </div>
  
 //           {isLoading ? (
 //             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
 //           ) : (
 //             <ScrollArea className="max-h-96">
 //               <div className="space-y-2 pr-4">
-//                 {schemas.map(schema => (
+//                 {schemas.filter(matchesSearch).map(schema => (
 //                   <div
 //                     key={schema}
 //                     className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer"
@@ -778,13 +821,23 @@
 //           <DialogHeader>
 //             <DialogTitle>Select Workspace from {sourceName}</DialogTitle>
 //           </DialogHeader>
+
+//           <div className="relative mb-2">
+//   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//   <Input
+//     placeholder="Search..."
+//     value={searchQuery}
+//     onChange={(e) => setSearchQuery(e.target.value)}
+//     className="pl-9"
+//   />
+// </div>
  
 //           {isLoading ? (
 //             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
 //           ) : (
 //             <ScrollArea className="max-h-96">
 //               <div className="space-y-2 pr-4">
-//                 {containers.map(workspace => (
+//                 {containers.filter(matchesSearch).map(workspace => (
 //                   <div
 //                     key={workspace}
 //                     className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer"
@@ -820,13 +873,23 @@
 //               </div>
 //             </DialogTitle>
 //           </DialogHeader>
+
+//           <div className="relative mb-2">
+//   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//   <Input
+//     placeholder="Search..."
+//     value={searchQuery}
+//     onChange={(e) => setSearchQuery(e.target.value)}
+//     className="pl-9"
+//   />
+// </div>
  
 //           {isLoading ? (
 //             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
 //           ) : (
 //             <ScrollArea className="max-h-96">
 //               <div className="space-y-2 pr-4">
-//                 {lakehouses.map(lakehouse => (
+//                 {lakehouses.filter(matchesSearch).map(lakehouse => (
 //                   <div
 //                     key={lakehouse}
 //                     className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer"
@@ -855,13 +918,23 @@
 //           <DialogHeader>
 //             <DialogTitle>Select {isS3 ? "Bucket" : "Container"} from {sourceName}</DialogTitle>
 //           </DialogHeader>
+
+//           <div className="relative mb-2">
+//   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//   <Input
+//     placeholder="Search..."
+//     value={searchQuery}
+//     onChange={(e) => setSearchQuery(e.target.value)}
+//     className="pl-9"
+//   />
+// </div>
  
 //           {isLoading ? (
 //             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
 //           ) : (
 //             <ScrollArea className="max-h-96">
 //               <div className="space-y-2 pr-4">
-//                 {containers.map(container => (
+//                 {containers.filter(matchesSearch).map(container => (
 //                   <div
 //                     key={container}
 //                     className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer"
@@ -890,13 +963,23 @@
 //           <DialogHeader>
 //             <DialogTitle>Select Database - Snowflake</DialogTitle>
 //           </DialogHeader>
+
+//           <div className="relative mb-2">
+//   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//   <Input
+//     placeholder="Search..."
+//     value={searchQuery}
+//     onChange={(e) => setSearchQuery(e.target.value)}
+//     className="pl-9"
+//   />
+// </div>
  
 //           {isLoading ? (
 //             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
 //           ) : (
 //             <ScrollArea className="max-h-96">
 //               <div className="space-y-2 pr-4">
-//                 {snowflakeDatabases.map(database => (
+//                 {snowflakeDatabases.filter(matchesSearch).map(database => (
 //                   <div
 //                     key={database}
 //                     className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer"
@@ -933,12 +1016,22 @@
 //             </DialogTitle>
 //           </DialogHeader>
  
+// <div className="relative mb-2">
+//   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//   <Input
+//     placeholder="Search..."
+//     value={searchQuery}
+//     onChange={(e) => setSearchQuery(e.target.value)}
+//     className="pl-9"
+//   />
+// </div>
+
 //           {isLoading ? (
 //             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
 //           ) : (
 //             <ScrollArea className="max-h-96">
 //               <div className="space-y-2 pr-4">
-//                 {snowflakeSchemas.map(schema => (
+//                 {snowflakeSchemas.filter(matchesSearch).map(schema => (
 //                   <div
 //                     key={schema}
 //                     className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer"
@@ -978,6 +1071,16 @@
 //             )}
 //           </DialogTitle>
 //         </DialogHeader>
+
+//         <div className="relative mb-2">
+//   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//   <Input
+//     placeholder="Search..."
+//     value={searchQuery}
+//     onChange={(e) => setSearchQuery(e.target.value)}
+//     className="pl-9"
+//   />
+// </div>
  
 //         {isLoading ? (
 //           <div className="flex justify-center py-12">
@@ -990,7 +1093,7 @@
 //               {/* S3 Folders */}
 //               {isS3 && currentContainer && (
 //                 <>
-//                   {s3Folders.map((folder) => {
+//                   {s3Folders.filter(matchesSearch).map((folder) => {
 //                     const segments = folder.replace(/\/$/, "").split("/");
 //                     const folderLabel = segments[segments.length - 1] || folder;
  
@@ -1013,9 +1116,9 @@
 //               )}
  
 //               {/* Azure Blob Folders */}
-//               {isAzure && currentContainer && azureFolders.length > 0 && (
+//               {isAzure && currentContainer && azureFolders.filter(matchesSearch).length > 0 && (
 //                 <>
-//                   {azureFolders.map((folder) => (
+//                   {azureFolders.filter(matchesSearch).map((folder) => (
 //                     <div
 //                       key={folder}
 //                       className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent cursor-pointer"
@@ -1033,7 +1136,7 @@
 //               )}
  
 //               {/* OneLake folder navigation */}
-//               {isOneLake && folders.length > 0 && (
+//               {isOneLake && folders.filter(matchesSearch).length > 0 && (
 //                 <>
 //                   {currentPath !== "Files" && (
 //                     <div
@@ -1045,7 +1148,7 @@
 //                     </div>
 //                   )}
  
-//                   {folders.map((folder) => (
+//                   {folders.filter(matchesSearch).map((folder) => (
 //                     <div
 //                       key={folder}
 //                       className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent cursor-pointer"
@@ -1063,7 +1166,7 @@
 //               )}
  
 //               {/* Files list – square checkboxes */}
-//               {displayFiles.map((file) => (
+//               {displayFiles.filter(f => matchesSearch(f.name)).map((file) => (
 //                 <div
 //                   key={file.id}
 //                   className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent cursor-pointer"
@@ -1096,8 +1199,6 @@
 //   );
 // }
  
-
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -1126,7 +1227,10 @@ import {
   getSnowflakeDatabases,
   getSnowflakeSchemas,
   getSnowflakeTables,
-  SnowflakeCredentials
+  SnowflakeCredentials,
+  getSapSchemas,
+  getSapTables,
+  SapCredentials
 } from "@/components/api/api";
  
 import { toast } from "@/hooks/use-toast";
@@ -1160,6 +1264,8 @@ interface FilePickerDialogProps {
   isDelta?: boolean;
   isDatabricks?: boolean;
   isSnowflake?: boolean;
+  sapCredentials?: SapCredentials | null;
+  isSap?: boolean;
 }
  
 export function FilePickerDialog({
@@ -1174,6 +1280,8 @@ export function FilePickerDialog({
   deltaCredentials,
   databricksCredentials,
   snowflakeCredentials,
+  sapCredentials,
+  isSap=false,
   isS3 = false,
   isAzure = false,
   isOneLake = false,
@@ -1214,7 +1322,9 @@ export function FilePickerDialog({
   const [azurePrefix, setAzurePrefix] = useState<string>("");
   const [azureFolders, setAzureFolders] = useState<string[]>([]);
   const [azureFiles, setAzureFiles] = useState<string[]>([]);
- 
+  const [sapSchemas, setSapSchemas] = useState<string[]>([]);
+  const [currentSapSchema, setCurrentSapSchema] = useState<string | null>(null);
+  const [sapTables, setSapTables] = useState<string[]>([]);
  
   useEffect(() => {
     if (!open) return;
@@ -1225,6 +1335,7 @@ export function FilePickerDialog({
     else if (isDelta && deltaCredentials) loadDeltaWorkspaces();
     else if (isDatabricks && databricksCredentials) loadDatabricksCatalogs();
     else if (isSnowflake && snowflakeCredentials) loadSnowflakeDatabases();
+    else if (isSap && sapCredentials) loadSapSchemas();
   }, [open]);
 
 useEffect(() => {
@@ -1240,6 +1351,7 @@ useEffect(() => {
   currentSchema,
   currentDatabase,
   currentSnowflakeSchema,
+  currentSapSchema
 ]);
  
   const loadS3Buckets = async () => {
@@ -1601,6 +1713,34 @@ useEffect(() => {
     }
   };
 
+const loadSapSchemas = async () => {
+    if (!sapCredentials) return;
+    setIsLoading(true);
+    try {
+      const schemaList = await getSapSchemas(sapCredentials);
+      setSapSchemas(schemaList);
+    } catch (error: any) {
+      toast({ title: "Failed to Load Schemas", description: error.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadSapTablesList = async (schemaName: string) => {
+    if (!sapCredentials) return;
+    setIsLoading(true);
+    setCurrentSapSchema(schemaName);
+    try {
+      const tableList = await getSapTables(schemaName, sapCredentials);
+      setSapTables(tableList);
+    } catch (error: any) {
+      toast({ title: "Failed to Load Tables", description: error.message, variant: "destructive" });
+      setCurrentSapSchema(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
  
   const toggleFile = (fileId: string) => {
     setSelectedFiles(prev =>
@@ -1618,12 +1758,23 @@ useEffect(() => {
       isOneLake ||
       isDelta ||
       isDatabricks ||
-      isSnowflake) &&
+      isSnowflake ||
+      isSap) &&
     (currentContainer ||
       currentLakehouse ||
       currentSchema ||
-      currentSnowflakeSchema)
+      currentSnowflakeSchema ||
+      currentSapSchema)
       ? (() => {
+        if (isSap) {
+            return sapTables.map((table) => ({
+              id: table,
+              name: table,
+              size: "SAP Table",
+              rows: "Table",
+            }));
+          }
+
           if (isDelta) {
             return tables.map((table) => {
               const tableName =
@@ -1703,7 +1854,7 @@ useEffect(() => {
       : files;
  
   const handleConfirm = () => {
-    if (isS3 || isAzure || isOneLake || isDelta || isDatabricks || isSnowflake) {
+    if (isS3 || isAzure || isOneLake || isDelta || isDatabricks || isSnowflake || isSap) {
       const selected = displayFiles
         .filter(f => selectedFiles.includes(f.id))
         .map(file => {
@@ -1720,6 +1871,8 @@ useEffect(() => {
             fullPath = file.name;
           } else if (isSnowflake && currentDatabase && currentSnowflakeSchema) {
             fullPath = `${currentDatabase}/${currentSnowflakeSchema}/${file.name}`;
+          } else if (isSap && currentSapSchema) {
+            fullPath = file.name;
           }
  
           return {
@@ -1738,6 +1891,7 @@ useEffect(() => {
         isOneLake ? { ...oneLakeCredentials, workspace_name: currentWorkspace, lakehouse_name: currentLakehouse } :
         isDatabricks ? { ...databricksCredentials, catalog: currentCatalog, schema: currentSchema } :
         isSnowflake ? { ...snowflakeCredentials, database: currentDatabase, schema: currentSnowflakeSchema } :
+        isSap ? { ...sapCredentials, schema: currentSapSchema } :
         undefined as any,
         { currentContainer }
       );
@@ -1773,6 +1927,9 @@ useEffect(() => {
     setCurrentDatabase(null);
     setCurrentSnowflakeSchema(null);
     setSnowflakeTables([]);
+    setSapSchemas([]);
+    setCurrentSapSchema(null);
+    setSapTables([]);
     onOpenChange(false);
   };
  
@@ -1805,6 +1962,10 @@ useEffect(() => {
     } else if (isSnowflake && currentDatabase) {
       setCurrentDatabase(null);
       setSnowflakeSchemas([]);
+    }
+    else if (isSap && currentSapSchema) {
+      setCurrentSapSchema(null);
+      setSapTables([]);
     }
     else {
       setCurrentContainer(null);
@@ -2153,18 +2314,63 @@ useEffect(() => {
     );
   }
  
+  if (isSap && !currentSapSchema) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Select Schema - SAP</DialogTitle>
+          </DialogHeader>
+
+          <div className="relative mb-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {isLoading ? (
+            <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
+          ) : (
+            <ScrollArea className="max-h-96">
+              <div className="space-y-2 pr-4">
+                {sapSchemas.filter(matchesSearch).map(schema => (
+                  <div
+                    key={schema}
+                    className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent cursor-pointer"
+                    onClick={() => loadSapTablesList(schema)}
+                  >
+                    <Folder className="h-5 w-5 text-blue-500" />
+                    <p className="font-medium">{schema}</p>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   // ─── Main content ────────────────────────────────────────────────────────
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {(isS3 || isAzure || isOneLake || isDatabricks || isSnowflake) ? (
+            {(isS3 || isAzure || isOneLake || isDatabricks || isSnowflake || isSap) ? (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" onClick={handleBack}>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                Select {isDatabricks || isSnowflake ? "Tables" : "Files"}
+                Select {isDatabricks || isSnowflake || isSap ? "Tables" : "Files"}
               </div>
             ) : (
               `Select Files from ${sourceName}`
@@ -2299,4 +2505,6 @@ useEffect(() => {
   );
 }
  
+
+
 

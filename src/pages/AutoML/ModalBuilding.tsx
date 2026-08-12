@@ -19,7 +19,7 @@
 // import { useEffect, useMemo, useRef, useState } from "react";
 // import ReactMarkdown from "react-markdown";
 // import remarkGfm from "remark-gfm";
-
+ 
 // type SortMetric =
 //   | "accuracy"
 //   | "f1"
@@ -30,7 +30,7 @@
 //   | "mae"
 //   | "r2"
 //   | "mape";
-
+ 
 // const MetricLabels: Record<SortMetric, string> = {
 //   accuracy: "Accuracy",
 //   f1: "F1",
@@ -42,13 +42,13 @@
 //   r2: "R²",
 //   mape: "MAPE",
 // };
-
+ 
 // const ModalBuilding = () => {
 //   const navigate = useNavigate();
 //   const { buildId } = useParams<{ buildId: string }>();
-
+ 
 //   const { isAuthenticated } = useAuth();
-
+ 
 //   const {
 //     getSessionByBuildId,
 //     openChatWithSession,
@@ -56,19 +56,19 @@
 //     setCurrentSessionId, // ← add this
 //     setMessages, // ← add this
 //   } = useChatContext();
-
+ 
 //   const [sortBy, setSortBy] = useState<SortMetric>("rmse");
 //   const continueButtonRef = useRef<HTMLButtonElement>(null);
-
+ 
 //   // local UI state for fallback message or manual refresh
 //   const [localMessage, setLocalMessage] = useState<string | null>(null);
-
+ 
 //   type MetricSpec = {
 //     key: string;
 //     label: string;
 //     isLowerBetter?: boolean;
 //   };
-
+ 
 //   const metricsByTask: Record<string, MetricSpec[]> = {
 //     Classification: [
 //       { key: "accuracy", label: "Accuracy" },
@@ -78,7 +78,7 @@
 //       { key: "roc_auc", label: "ROC-AUC" },
 //       { key: "precision_recall_auc", label: "PR-AUC" },
 //     ],
-
+ 
 //     Regression: [
 //       { key: "rmse", label: "RMSE" },
 //       { key: "mae", label: "MAE" },
@@ -89,7 +89,7 @@
 //       { key: "pred_mean", label: "Pred Mean" },
 //       { key: "pred_std", label: "Pred Std" },
 //     ],
-
+ 
 //     Forecasting: [
 //       { key: "rmse", label: "RMSE" },
 //       { key: "mae", label: "MAE" },
@@ -97,7 +97,7 @@
 //       { key: "mape", label: "MAPE" },
 //       { key: "mse", label: "MSE" },
 //     ],
-
+ 
 //     Clustering: [
 //       { key: "n_clusters", label: "Clusters" },
 //       { key: "n_noise_points", label: "Noise Points" },
@@ -105,17 +105,24 @@
 //       { key: "davies_bouldin_score", label: "Davies-Bouldin" },
 //       { key: "calinski_harabasz", label: "Calinski-Harabasz" },
 //     ],
-
+ 
 //     "Anomaly Detection": [
 //       { key: "n_anomalies", label: "Anomalies" },
 //       { key: "anomaly_percentage", label: "Anomaly %" },
 //       { key: "anomaly_score", label: "Anomaly Score" },
 //     ],
+ 
+//     Multi_Step_Forecasting: [
+//       { key: "avg_rmse", label: "Avg RMSE", isLowerBetter: true },
+//       { key: "avg_mae", label: "Avg MAE", isLowerBetter: true },
+//       { key: "avg_r2", label: "Avg R²" },
+//       { key: "avg_mape", label: "Avg MAPE", isLowerBetter: true },
+//     ],
 //   };
-
+ 
 //   // Try to find a session that has this build id
 //   const session = buildId ? getSessionByBuildId(buildId) : null;
-
+ 
 //   // Extract buildData from the session (search for a message with type 'build-complete')
 //   const buildMessage = useMemo(() => {
 //     if (!session) return null;
@@ -124,30 +131,30 @@
 //     );
 //     return (found as any) ?? null;
 //   }, [session]);
-
+ 
 //   // Combined build data object (from buildMessage.buildData). If none, we display helpful instructions.
 //   // Replace your current buildMessage + buildData logic with this
 //   const buildData = useMemo(() => {
 //     if (!session?.messages) return null;
-
+ 
 //     // Try to find ANY message that contains AutoML-like data
 //     for (const msg of session.messages) {
 //       // Option 1: your original (type + buildData field)
 //       if (msg.type === "build-complete" && (msg as any).buildData) {
 //         return (msg as any).buildData;
 //       }
-
+ 
 //       // Option 2: message has the shape of your API response directly
 //       if ((msg as any).status === "success" && (msg as any).all_models) {
 //         return msg as any; // the whole response becomes buildData
 //       }
-
+ 
 //       // Option 3: sometimes stored in content or payloa
 //     }
-
+ 
 //     return null;
 //   }, [session]);
-
+ 
 //   console.log("=== BUILD DATA DEBUG ===");
 //   console.log("session:", session);
 //   console.log("buildMessage:", buildMessage);
@@ -155,12 +162,15 @@
 //   console.log("has analysis?:", !!buildData?.analysis);
 //   console.log("has suggestions?:", !!buildData?.suggestions);
 //   console.log("analysis content preview:", buildData?.analysis?.slice(0, 100));
-
+ 
 //   // Extract task type from buildData
 //   const taskType = buildData?.task_type || "Classification";
-
-//   const metricSpecs = metricsByTask[taskType] || [];
-
+ 
+//   const normalizedTaskType =
+//     taskType === "Multistep Forecasting" ? "Multi_Step_Forecasting" : taskType;
+ 
+//   const metricSpecs = metricsByTask[normalizedTaskType] || [];
+ 
 //   // Update sortBy based on task type
 //   useEffect(() => {
 //     if (buildData?.task_type === "Regression") {
@@ -169,50 +179,51 @@
 //       setSortBy("accuracy");
 //     }
 //   }, [buildData?.task_type]);
-
+ 
 //   // Compose dataset preview / models from buildData.results if available; otherwise empty
 //   const datasetInfo =
 //     buildData?.dataset ||
 //     buildData?.blob_file_used?.split("/").pop() ||
 //     buildData?.dataset_name ||
 //     "Unknown dataset";
-
+ 
 //   const datasetRows =
 //     (buildData?.rows ?? buildData?.results?.train?.class_distribution)
 //       ? null
 //       : null;
 //   // Models information — try to extract from buildData.results.all_models or from a `models` field
-//   const allModelsFromResults = buildData?.results?.all_models;
-
+//   const allModelsFromResults =
+//     buildData?.results?.all_models || buildData?.all_models;
+ 
 //   const modelsList = useMemo(() => {
 //     console.log("=== DEBUG MODEL PARSING ===");
 //     console.log("allModelsFromResults:", allModelsFromResults);
-
+ 
 //     if (!allModelsFromResults) {
 //       console.log(
 //         "allModelsFromResults is null/undefined - returning empty array",
 //       );
 //       return [];
 //     }
-
+ 
 //     console.log(
 //       "allModelsFromResults keys:",
 //       Object.keys(allModelsFromResults),
 //     );
-
+ 
 //     const models: Array<any> = [];
-
+ 
 //     // Iterate through each model in all_models
 //     for (const modelName of Object.keys(allModelsFromResults)) {
 //       const modelData = allModelsFromResults[modelName];
 //       console.log(`Processing model: ${modelName}`, modelData);
-
+ 
 //       // Get test metrics (prefer test, fallback to train)
 //       const metrics = modelData?.test || modelData?.train || {};
-
+ 
 //       // Get params if available
 //       const params = modelData?.train?.params || modelData?.params || {};
-
+ 
 //       models.push({
 //         name: modelName,
 //         type: "Model",
@@ -220,28 +231,28 @@
 //         metrics: metrics,
 //       });
 //     }
-
+ 
 //     console.log("Final models array:", models);
 //     return models;
 //   }, [allModelsFromResults]);
-
+ 
 //   const handleContinueChat = () => {
 //     if (!buildId) {
 //       // Fallback – just open if no buildId
 //       setIsOpen(true);
 //       return;
 //     }
-
+ 
 //     const targetSession = getSessionByBuildId(buildId);
-
+ 
 //     if (targetSession) {
 //       // 1. Switch to the correct session
 //       setCurrentSessionId(targetSession.id);
 //       setMessages(targetSession.messages || []);
-
+ 
 //       // 2. Navigate back to the page that has <Chatbot />
 //       navigate("/workflow/automl/jobs1"); // ← or whatever the real path to Jobs1 is
-
+ 
 //       // 3. Open chat after navigation (small delay helps)
 //       setTimeout(() => {
 //         setIsOpen(true);
@@ -252,10 +263,25 @@
 //       setTimeout(() => setIsOpen(true), 300);
 //     }
 //   };
-
+ 
+// const getFileName = (buildData: any) => {
+//   const path =
+//     buildData?.blob_file_used ||
+//     buildData?.dataset_name ||
+//     buildData?.dataset;
+ 
+//   if (!path) return "—";
+ 
+//   const fileName = path.split("/").pop() || "";
+ 
+//   // remove extension + replace underscores
+//   return fileName
+//     .replace(/\.[^/.]+$/, "") // remove .csv
+//     .replace(/_/g, " ");
+// };
 //   const formatAnalysisToMarkdown = (text: string) => {
 //     if (!text) return "";
-
+ 
 //     return (
 //       text
 //         // Headings
@@ -265,37 +291,27 @@
 //         .replace(/^Recommendations/gm, "\n\n### Recommendations\n")
 //         .replace(/^Next Steps/gm, "\n\n### Next Steps\n")
 //         .replace(/^Overall Verdict/gm, "\n\n### Overall Verdict\n")
-
+ 
 //         // Sub-headings
 //         .replace(/^([A-Za-z /()_-]+:)/gm, "\n\n**$1**\n")
-
+ 
 //         // Bullets
 //         .replace(/^\s*-\s/gm, "- ")
-
+ 
 //         // 👇 THIS LINE YOU ASKED ABOUT
 //         .replace(/^([A-Za-z ]+):/gm, "**$1:**")
-
+ 
 //         // Spacing
 //         .replace(/\n{2,}/g, "\n\n")
 //     );
 //   };
-
+ 
 //   // If we have no build data, show helpful instructions and option to open the chat (where build happened)
 //   if (!buildData) {
 //     return (
 //       <div className="min-h-screen bg-background">
 //         <header className="sticky top-0 bg-card backdrop-blur-sm border-b border-border z-40">
 //           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-//             {/* <motion.button
-//               initial={{ opacity: 0, x: -20 }}
-//               animate={{ opacity: 1, x: 0 }}
-//               onClick={() => navigate("/")}
-//               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-//             >
-//               <ArrowLeft className="w-4 h-4" />
-//               <span className="text-sm font-medium">Back to Home</span>
-//             </motion.button> */}
-
 //             <div className="flex items-center gap-3">
 //               <Button
 //                 ref={continueButtonRef}
@@ -316,7 +332,7 @@
 //             </div>
 //           </div>
 //         </header>
-
+ 
 //         <main className="max-w-7xl mx-auto p-6">
 //           <motion.div
 //             initial={{ opacity: 0, y: 20 }}
@@ -334,20 +350,22 @@
 //               <h2 className="text-sm font-semibold mb-4 text-foreground">
 //                 Run Info
 //               </h2>
-
+ 
 //               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
 //                 <div className="p-3 bg-secondary/30 rounded">
 //                   <p className="text-xs text-muted-foreground">Dataset</p>
 //                   <p className="font-medium">
-//                     {buildData?.blob_file_used?.split("/").pop()}
+//                     <span className="font-medium text-foreground">
+//                       {getFileName(buildData)}
+//                     </span>
 //                   </p>
 //                 </div>
-
+ 
 //                 <div className="p-3 bg-secondary/30 rounded">
 //                   <p className="text-xs text-muted-foreground">Task Type</p>
 //                   <p className="font-medium">{taskType}</p>
 //                 </div>
-
+ 
 //                 <div className="p-3 bg-secondary/30 rounded">
 //                   <p className="text-xs text-muted-foreground">
 //                     Primary Metric
@@ -359,7 +377,7 @@
 //               </div>
 //             </motion.div>
 //           </motion.div>
-
+ 
 //           <div className="glass-card rounded-xl p-6">
 //             <h2 className="text-lg font-semibold text-foreground mb-2">
 //               No build details found
@@ -379,14 +397,14 @@
 //               </li>
 //               <li>The build id in the URL is incorrect or trimmed.</li>
 //             </ul>
-
+ 
 //             <div className="flex gap-3">
 //               <Button variant="outline" onClick={() => navigate("/")}>
 //                 Back Home
 //               </Button>
 //               <Button onClick={handleContinueChat}>Open Chat</Button>
 //             </div>
-
+ 
 //             <p className="text-xs text-muted-foreground mt-4">
 //               Tip: Open the chat where you built the model — the build results
 //               are saved there and we will display them here once available.
@@ -396,7 +414,7 @@
 //       </div>
 //     );
 //   }
-
+ 
 //   // Build data exists — render the actual UI using buildData & modelsList
 //   // Format helper for numeric metrics
 //   const fmt = (v: any, isPercentage: boolean = false) => {
@@ -412,9 +430,9 @@
 //     }
 //     return String(v);
 //   };
-
+ 
 //   // ... (imports and hooks remain the same)
-
+ 
 //   return (
 //     <div className="min-h-screen bg-background">
 //       <header className="sticky top-0 bg-card backdrop-blur-sm border-b border-border z-40">
@@ -428,7 +446,7 @@
 //             {/* <ArrowLeft className="w-4 h-4" /> */}
 //             {/* <span className="text-sm font-medium">Back to Home</span> */}
 //           </motion.button>
-
+ 
 //           <div className="flex items-center gap-3">
 //             <Button
 //               variant="outline"
@@ -446,7 +464,7 @@
 //           </div>
 //         </div>
 //       </header>
-
+ 
 //       <main className="max-w-7xl mx-auto px-6 py-8">
 //         {/* Header Info */}
 //         <motion.div
@@ -465,14 +483,12 @@
 //             <p>
 //               Dataset:{" "}
 //               <span className="font-medium text-foreground">
-//                 {buildData?.blob_file_used?.split("/").pop() ||
-//                   buildData?.dataset_name ||
-//                   "sample11.csv"}
+//                 {getFileName(buildData)}
 //               </span>
 //             </p>
 //           </div>
 //         </motion.div>
-
+ 
 //         {/* Model Cards – one per model, stacked vertically */}
 //         <div className="space-y-8 mb-12">
 //           {Object.entries(allModelsFromResults || {}).map(
@@ -497,7 +513,7 @@
 //                     )}
 //                   </div>
 //                 </div>
-
+ 
 //                 {/* Metrics Table */}
 //                 <div className="p-6">
 //                   <div className="overflow-x-auto">
@@ -546,7 +562,7 @@
 //             ),
 //           )}
 //         </div>
-
+ 
 //         {/* Analysis Summary */}
 //         {buildData?.analysis && (
 //           <motion.section
@@ -555,7 +571,9 @@
 //             transition={{ delay: 0.2 }}
 //             className="bg-card border border-border rounded-xl p-7 mb-10"
 //           >
-//             <h2 className="text-2xl font-semibold mb-5 text-[hsl(var(--primary))]">Analysis Summary</h2>
+//             <h2 className="text-2xl font-semibold mb-5 text-[hsl(var(--primary))]">
+//               Analysis Summary
+//             </h2>
 //             <div className="prose prose-neutral dark:prose-invert max-w-none text-base leading-relaxed">
 //               <ReactMarkdown
 //                 remarkPlugins={[remarkGfm]}
@@ -577,7 +595,7 @@
 //                   strong: ({ children }) => (
 //                     <strong className="font-semibold">{children}</strong>
 //                   ),
-
+ 
 //                   // ✅ ADD THESE
 //                   table: ({ children }) => (
 //                     <table className="w-full border border-border my-4 text-sm">
@@ -602,7 +620,7 @@
 //             </div>
 //           </motion.section>
 //         )}
-
+ 
 //         {/* Suggestions */}
 //         {buildData?.suggestions?.length > 0 && (
 //           <motion.section
@@ -626,7 +644,7 @@
 //             </ul>
 //           </motion.section>
 //         )}
-
+ 
 //         {/* Actions */}
 //         <motion.div
 //           initial={{ opacity: 0 }}
@@ -647,11 +665,10 @@
 //     </div>
 //   );
 // };
-
+ 
 // export default ModalBuilding;
-
-// ModalBuilding.tsx
-import { useNavigate, useParams } from "react-router-dom";
+ 
+ import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -808,13 +825,6 @@ const ModalBuilding = () => {
     return null;
   }, [session]);
  
-  console.log("=== BUILD DATA DEBUG ===");
-  console.log("session:", session);
-  console.log("buildMessage:", buildMessage);
-  console.log("buildData:", buildData);
-  console.log("has analysis?:", !!buildData?.analysis);
-  console.log("has suggestions?:", !!buildData?.suggestions);
-  console.log("analysis content preview:", buildData?.analysis?.slice(0, 100));
  
   // Extract task type from buildData
   const taskType = buildData?.task_type || "Classification";
@@ -1084,7 +1094,7 @@ const getFileName = (buildData: any) => {
     return String(v);
   };
  
-  // ... (imports and hooks remain the same)
+
  
   return (
     <div className="min-h-screen bg-background">
@@ -1269,6 +1279,35 @@ const getFileName = (buildData: any) => {
                 }}
               >
                 {formatAnalysisToMarkdown(buildData.analysis)}
+              </ReactMarkdown>
+            </div>
+          </motion.section>
+        )}
+
+        {/* Query Response Summary */}
+        {buildData?.query_response && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-card border border-border rounded-xl p-7 mb-10"
+          >
+            <h2 className="text-2xl font-semibold mb-5 text-[hsl(var(--primary))]">
+              Forecast Summary
+            </h2>
+            <div className="prose prose-neutral dark:prose-invert max-w-none text-base leading-relaxed">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ children }) => (
+                    <p className="mb-3 leading-relaxed">{children}</p>
+                  ),
+                  strong: ({ children }) => (
+                    <strong className="font-semibold">{children}</strong>
+                  ),
+                }}
+              >
+                {formatAnalysisToMarkdown(buildData.query_response)}
               </ReactMarkdown>
             </div>
           </motion.section>

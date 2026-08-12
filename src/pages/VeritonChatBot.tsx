@@ -2029,16 +2029,49 @@ export default function VeritonChatBot() {
   }, [userId]);
 
   // ─── New Chat ──────────────────────────────────────────────
+  // const handleNewChat = async () => {
+  //   if (creatingThread) return;
+  //   setCreatingThread(true);
+  //   try {
+  //     const res = await fetch(`${BASE_URL}/create-thread`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         user_id: userId,
+  //         job_id: jobId || localStorage.getItem("current_job_id") || "",
+  //         title: "New Chat",
+  //       }),
+  //     });
+  //     const data = await res.json();
+  //     const newThreadId = data.thread_id || data.id || `thread_${Date.now()}`;
+  //     setThreadId(newThreadId);
+  //     localStorage.setItem("current_thread_id", newThreadId);
+  //     setMessages([]);
+  //     setActiveDataset(null);
+  //     setPipelineStep("idle");
+  //     setPipelineSelectedJobs([]);
+  //     setHistoryPanelOpen(false);
+  //   } catch {
+  //     setMessages([]);
+  //     setActiveDataset(null);
+  //     setPipelineStep("idle");
+  //   } finally {
+  //     setCreatingThread(false);
+  //   }
+  // };
+
   const handleNewChat = async () => {
     if (creatingThread) return;
     setCreatingThread(true);
     try {
+      const aivolveUser = getAivolveUser();
       const res = await fetch(`${BASE_URL}/create-thread`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: userId,
           job_id: jobId || localStorage.getItem("current_job_id") || "",
+          user_email: aivolveUser?.email || "",
           title: "New Chat",
         }),
       });
@@ -2046,6 +2079,12 @@ export default function VeritonChatBot() {
       const newThreadId = data.thread_id || data.id || `thread_${Date.now()}`;
       setThreadId(newThreadId);
       localStorage.setItem("current_thread_id", newThreadId);
+
+      // ✅ NEW: persist session_id returned inside context
+      if (data?.context?.session_id) {
+        localStorage.setItem("chatbot_session_id", data.context.session_id);
+      }
+
       setMessages([]);
       setActiveDataset(null);
       setPipelineStep("idle");
@@ -2311,11 +2350,30 @@ export default function VeritonChatBot() {
       finally { setLoading(false); } return;
     }
 
+    // if (isAutoMLIntent(content)) {
+    //   try {
+    //     const aivolveUser = getAivolveUser();
+    //     const res = await fetch(`${BASE_URL}/automl/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, job_id: jobId, thread_id: threadId, session_id: aivolveUser?.session_id || "", user_email: aivolveUser?.email || "", query: content }) });
+    //     const data = await res.json();
+    //     setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: data.message || "AutoML completed!", automlResult: data, timestamp: new Date() }]);
+    //   } catch { setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: "Failed to run AutoML.", error: true, timestamp: new Date() }]); }
+    //   finally { setLoading(false); } return;
+    // }
+
     if (isAutoMLIntent(content)) {
       try {
         const aivolveUser = getAivolveUser();
-        const res = await fetch(`${BASE_URL}/automl/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, job_id: jobId, thread_id: threadId, session_id: aivolveUser?.session_id || "", user_email: aivolveUser?.email || "", query: content }) });
+        const chatbotSessionId = localStorage.getItem("chatbot_session_id") || "";
+        const res = await fetch(`${BASE_URL}/automl/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, job_id: jobId, thread_id: threadId, session_id: chatbotSessionId, user_email: aivolveUser?.email || "", query: content }) });
         const data = await res.json();
+
+        // ✅ NEW: treat non-2xx or explicit failure payloads as errors
+        if (!res.ok || data?.status === "error" || data?.status === "failed" || data?.detail) {
+          const errMsg = data?.detail || data?.message || "AutoML job failed. Please try again.";
+          setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: errMsg, error: true, timestamp: new Date() }]);
+          return;
+        }
+
         setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: data.message || "AutoML completed!", automlResult: data, timestamp: new Date() }]);
       } catch { setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: "Failed to run AutoML.", error: true, timestamp: new Date() }]); }
       finally { setLoading(false); } return;

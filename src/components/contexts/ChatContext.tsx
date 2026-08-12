@@ -1,4 +1,4 @@
-// import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+//  import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
  
 // // ChatContext.tsx (top / near other types)
 // export interface BuildData {
@@ -60,7 +60,8 @@
 //   createdAt: Date;
 //   modalBuildId?: string; // Link session to a modal build
 //   sessionId?: string;    
-//   agentId?: string;      
+//   agentId?: string;
+//   lastUpdated: Date;      
 // }
  
 // interface ChatContextType {
@@ -166,6 +167,7 @@
 //   return context;
 // }
  
+
  import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
  
 // ChatContext.tsx (top / near other types)
@@ -198,6 +200,7 @@ export interface BuildData {
  
   // ⭐ ADD THESE TWO
   analysis?: string;
+  query_response?: string;
   suggestions?: string[];
  
   rows?: number | null;

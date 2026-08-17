@@ -1759,6 +1759,7 @@
 
 // export default Chatbot;
 
+
 // src/components/chatbot/Chatbot.tsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -2236,9 +2237,11 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
   };
 
   const fetchDatasetKpis = async (filePath: string, userEmail: string) => {
+    const loadingId = `kpi-loading-${Date.now()}`;
+
     try {
       const loadingMsg: Message = {
-        id: Date.now().toString(),
+        id: loadingId,
         role: "assistant",
         content: "Calculating dataset KPIs...",
         timestamp: new Date(),
@@ -2276,9 +2279,15 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
         type: "text",
       };
 
-      setMessages((prev) => [...prev, kpiMessage]);
+      // Remove the loading message, add the real result
+      setMessages((prev) => [
+        ...prev.filter((m) => m.id !== loadingId),
+        kpiMessage,
+      ]);
     } catch (err) {
       console.error("Dataset KPI fetch failed", err);
+      // Remove the loading message even on failure, so it doesn't linger
+      setMessages((prev) => prev.filter((m) => m.id !== loadingId));
     }
   };
 
@@ -2714,8 +2723,10 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
     setBuildStage(0);
     setBuildProgress(2);
 
+    const buildingMsgId = `building-${Date.now()}`;
+
     const buildingMsg: Message = {
-      id: Date.now().toString(),
+      id: buildingMsgId,
       role: "assistant",
       content: "Starting the model build process...",
       timestamp: new Date(),
@@ -2743,7 +2754,7 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
       const suggestions = apiResp?.suggestions || [];
 
       setMessages((prev) => [
-        ...prev,
+        ...prev.filter((m) => m.id !== buildingMsgId),
         {
           id: Date.now().toString(),
           role: "assistant",
@@ -2766,12 +2777,10 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
       return;
     }
 
-    console.log("API Response:", apiResp);
-
     // Display the response message in chatbot
+    // Display the response message in chatbot, removing the "Starting..." placeholder
     const responseContent =
-      [apiResp.response, apiResp.query_response].filter(Boolean).join("\n\n") ||
-      "Analysis complete.";
+      apiResp.query_response || apiResp.response || "Analysis complete.";
 
     const responseMessage: Message = {
       id: Date.now().toString(),
@@ -2780,7 +2789,10 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
       timestamp: new Date(),
       type: "text",
     };
-    setMessages((prev) => [...prev, responseMessage]);
+    setMessages((prev) => [
+      ...prev.filter((m) => m.id !== buildingMsgId),
+      responseMessage,
+    ]);
 
     // Display suggestions if available
     if (apiResp.suggestions && apiResp.suggestions.length > 0) {
@@ -2899,10 +2911,12 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
     setInput("");
     setIsTyping(true);
 
+    const processingId = `processing-${Date.now()}`;
+
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: processingId,
         role: "assistant",
         content:
           "Processing your request in the background. This may take 1–5 minutes...",
@@ -2918,6 +2932,7 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
       lowerInput.includes("create model");
     if (isBuildQuery) {
       setIsTyping(false);
+      setMessages((prev) => prev.filter((m) => m.id !== processingId));
       startBuildFlowWithBackend(currentInput);
       return;
     }
@@ -2927,6 +2942,7 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
       const apiResp = await runProcessTaskQuery(currentInput);
 
       setIsTyping(false);
+      setMessages((prev) => prev.filter((m) => m.id !== processingId));
 
       if (!apiResp) {
         setMessages((prev) => [
@@ -2942,31 +2958,14 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
         return;
       }
 
-      // Otherwise show normal assistant response
-      // Otherwise show normal assistant response
-      let formattedResponse = apiResp.response || "";
-
-      if (apiResp.query_response) {
-        formattedResponse += formattedResponse
-          ? `\n\n${apiResp.query_response}`
-          : apiResp.query_response;
-      }
+      // Show only query_response (fallback to response if query_response is missing)
+      let formattedResponse = apiResp.query_response || apiResp.response || "";
 
       if (apiResp.available_columns?.length) {
         formattedResponse += `
 
       **Available Columns:**
       ${apiResp.available_columns.map((c: string) => `• ${c}`).join("\n")}`;
-      }
-
-      if (
-        apiResp.suggestions?.length &&
-        !formattedResponse.toLowerCase().includes("suggestions")
-      ) {
-        formattedResponse += `
-
-      **Suggestions:**
-      ${apiResp.suggestions.map((s: string) => `• ${s}`).join("\n")}`;
       }
 
       const assistantMessage: Message = {
@@ -2985,14 +2984,15 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
           )
           .sort((a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()),
       );
-      // Show suggestions if present
+
+      // Show suggestions once, as its own message
       if (apiResp.suggestions?.length) {
         setMessages((prev) => [
           ...prev,
           {
-            id: Date.now().toString(),
+            id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: `Suggestions:\n${apiResp.suggestions
+            content: `**Suggestions:**\n${apiResp.suggestions
               .map((s: string) => `• ${s}`)
               .join("\n")}`,
             timestamp: new Date(),
@@ -3004,17 +3004,15 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
       console.error(err);
 
       setIsTyping(false);
-
-      setMessages((prev) => [
-        ...prev,
-        {
+      setMessages((prev) =>
+        [...prev.filter((m) => m.id !== processingId)].concat({
           id: Date.now().toString(),
           role: "assistant",
           content: "Error processing your request.",
           timestamp: new Date(),
           type: "text",
-        },
-      ]);
+        }),
+      );
     }
   };
 
@@ -3208,7 +3206,10 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
         .replace(/\s*•\s*/g, "\n• ")
 
         // ✅ Break before common point-transition words
-        .replace(/\s+(Also,|Lastly,|Currently,|However,|Additionally,)/g, "\n$1")
+        .replace(
+          /\s+(Also,|Lastly,|Currently,|However,|Additionally,)/g,
+          "\n$1",
+        )
 
         // ✅ Clean extra spacing
         .replace(/\n{3,}/g, "\n\n")
@@ -3857,3 +3858,4 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
 };
 
 export default Chatbot;
+ 

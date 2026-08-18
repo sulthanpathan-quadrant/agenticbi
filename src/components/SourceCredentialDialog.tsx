@@ -553,10 +553,10 @@ export function SourceCredentialDialog({
   const [warehouse, setWarehouse] = useState("");
 
   // SAP
-  const [sapHost, setSapHost] = useState("");
+  const [sapHost, setSapHost] = useState("78963a5f-a626-40d2-8f21-eed7980aaa8e.hana.prod-ap21.hanacloud.ondemand.com");
   const [sapPort, setSapPort] = useState("443");
-  const [sapUsername, setSapUsername] = useState("");
-  const [sapPassword, setSapPassword] = useState("");
+  const [sapUsername, setSapUsername] = useState("DBADMIN");
+  const [sapPassword, setSapPassword] = useState("Quadrant@2606");
  
   // Visibility toggles
   const [showAccessKeyId, setShowAccessKeyId] = useState(false);
@@ -661,10 +661,10 @@ export function SourceCredentialDialog({
     setShowAccessToken(false);
     setShowPassword(false);
 
-    setSapHost("");
+    setSapHost("78963a5f-a626-40d2-8f21-eed7980aaa8e.hana.prod-ap21.hanacloud.ondemand.com");
     setSapPort("443");
-    setSapUsername("");
-    setSapPassword("");
+    setSapUsername("DBADMIN");
+    setSapPassword("Quadrant@2606");
     setShowSapPassword(false);
  
     onOpenChange(false);

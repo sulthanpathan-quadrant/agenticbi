@@ -2482,7 +2482,26 @@ const handleFileSelection = (
       input.click();
     } else if (sourceId === "databases") {
       setDatabaseDialogOpen(true);
-    } else {
+    }
+
+
+  //  else if (sourceId === "sap") {
+  //   // Hardcoded SAP HANA credentials — skips the credential dialog entirely.
+  //   // ⚠️ See note above: this ships to the browser bundle as plaintext.
+  //   const hardcodedSapCredentials: SapCredentials = {
+  //     sap_host: "78963a5f-a626-40d2-8f21-eed7980aaa8e.hana.prod-ap21.hanacloud.ondemand.com",
+  //     sap_port: 443,
+  //     sap_username: "DBADMIN",
+  //     sap_password: "Quadrant@2606",
+  //   };
+
+  //   setSapCredentials(hardcodedSapCredentials);
+  //   setCurrentSource("sap");
+  //   setFilePickerOpen(true);
+  // }
+
+    
+    else {
       const source = sources.find((s) => s.id === sourceId);
 
       if (source?.requiresCredentials) {

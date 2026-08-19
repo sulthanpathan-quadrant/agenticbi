@@ -1,3 +1,4 @@
+// // src/components/chatbot/Chatbot.tsx
 // import { useState, useRef, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +27,7 @@
 // import { Message, BuildData } from "../contexts/ChatContext";
 // import ReactMarkdown from "react-markdown";
 // import remarkGfm from "remark-gfm";
+// import remarkBreaks from "remark-breaks";
 // import { Trash2 } from "lucide-react";
 
 // interface ChatSession {
@@ -268,6 +270,303 @@
 //     }
 //   };
 
+//   const formatOverviewResponse = (text: string): string => {
+//     if (!text) return "";
+
+//     // Split into paragraph blocks
+//     const blocks = text
+//       .split(/\n\n+/)
+//       .map((b) => b.trim())
+//       .filter(Boolean);
+
+//     const out: string[] = [];
+
+//     blocks.forEach((block) => {
+//       const lines = block
+//         .split("\n")
+//         .map((l) => l.trim())
+//         .filter(Boolean);
+
+//       lines.forEach((line) => {
+//         // Numbered section header, e.g. "1) Downtime concentration by machine"
+//         if (/^\d+\)\s/.test(line)) {
+//           out.push(`\n**${line}**`);
+//           return;
+//         }
+//         // Sub-item like "- What it is: ..."
+//         if (/^-\s/.test(line)) {
+//           out.push(`  • ${line.replace(/^-\s*/, "")}`);
+//           return;
+//         }
+//         // Section-style plain heading (no colon, short, capitalized), e.g. "What's going well"
+//         if (
+//           line.length < 60 &&
+//           !line.includes(":") &&
+//           /^[A-Z]/.test(line) &&
+//           !/[.]$/.test(line)
+//         ) {
+//           out.push(`\n**${line}**`);
+//           return;
+//         }
+//         // Otherwise treat as its own bullet point
+//         out.push(`• ${line}`);
+//       });
+//     });
+
+//     return out.join("\n");
+//   };
+
+//   const formatKpiSummary = (kpi: any): string => {
+//     if (!kpi || typeof kpi !== "object" || kpi.available === false) {
+//       return "No KPI data available for this dataset.";
+//     }
+
+//     const lines: string[] = ["**📊 Dataset KPIs**\n"];
+//     const skipKeys = new Set(["available"]);
+
+//     const toLabel = (key: string) =>
+//       key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+//     const formatValue = (val: any): string => {
+//       if (val === null || val === undefined) return "N/A";
+//       if (typeof val === "number")
+//         return Number.isInteger(val) ? val.toLocaleString() : val.toString();
+//       return String(val);
+//     };
+
+//     // Renders one "item" object that may have an insight/label plus other fields
+//     const renderItemObject = (item: any, indent = "  ") => {
+//       const label =
+//         item.status_label ||
+//         item.label ||
+//         item.name ||
+//         item.machine_id ||
+//         item.plant_id ||
+//         item.id ||
+//         null;
+
+//       const insight = item.insight || item.summary || item.description || null;
+
+//       if (label) {
+//         lines.push(`• **${label}**`);
+//       }
+
+//       // Any other scalar fields not already used as label/insight
+//       const usedKeys = new Set([
+//         "status_label",
+//         "label",
+//         "name",
+//         "machine_id",
+//         "plant_id",
+//         "id",
+//         "insight",
+//         "summary",
+//         "description",
+//       ]);
+//       const extras = Object.entries(item).filter(
+//         ([k, v]) =>
+//           !usedKeys.has(k) &&
+//           v !== null &&
+//           v !== undefined &&
+//           typeof v !== "object",
+//       );
+//       extras.forEach(([k, v]) => {
+//         lines.push(`${indent}${toLabel(k)}: ${formatValue(v)}`);
+//       });
+
+//       if (insight) {
+//         lines.push(`${indent}${insight}`);
+//       }
+
+//       // If there was no label/insight at all, just dump remaining fields
+//       if (!label && !insight && extras.length === 0) {
+//         Object.entries(item).forEach(([k, v]) => {
+//           if (typeof v !== "object") {
+//             lines.push(`• ${toLabel(k)}: ${formatValue(v)}`);
+//           }
+//         });
+//       }
+//     };
+
+//     // Renders a "metric with trend" object like { current, previous, trend, pct_change }
+//     const isTrendMetric = (obj: any) =>
+//       obj &&
+//       typeof obj === "object" &&
+//       ("current" in obj || "previous" in obj) &&
+//       "trend" in obj;
+
+//     const renderTrendMetric = (label: string, obj: any) => {
+//       const hasData = obj.current != null || obj.previous != null;
+//       if (hasData) {
+//         lines.push(
+//           `• ${label}: ${formatValue(obj.current)} (prev: ${formatValue(obj.previous)}, ${obj.trend}${
+//             obj.pct_change != null ? `, ${obj.pct_change}%` : ""
+//           })`,
+//         );
+//       } else {
+//         lines.push(`• ${label}: ${obj.trend}`);
+//       }
+//     };
+
+//     const renderSection = (key: string, value: any) => {
+//       const label = toLabel(key);
+
+//       // Array of objects (e.g. plant_health, top_machine_risks, model lists)
+//       if (Array.isArray(value)) {
+//         lines.push(`\n**${label}**`);
+//         if (value.length === 0) {
+//           lines.push(`• No ${label.toLowerCase()} to report.`);
+//           return;
+//         }
+//         value.forEach((item) => {
+//           if (item !== null && typeof item === "object") {
+//             renderItemObject(item);
+//           } else {
+//             lines.push(`• ${formatValue(item)}`);
+//           }
+//         });
+//         return;
+//       }
+
+//       // Nested object (e.g. summary, trend, kpi group)
+//       if (value !== null && typeof value === "object") {
+//         lines.push(`\n**${label}**`);
+
+//         const insight = value.insight;
+//         const otherEntries = Object.entries(value).filter(
+//           ([k]) => k !== "insight",
+//         );
+
+//         otherEntries.forEach(([subKey, subVal]) => {
+//           if (subVal === null || subVal === undefined) return;
+
+//           if (isTrendMetric(subVal)) {
+//             renderTrendMetric(toLabel(subKey), subVal);
+//           } else if (Array.isArray(subVal)) {
+//             lines.push(
+//               `• ${toLabel(subKey)}: ${subVal.map(formatValue).join(", ")}`,
+//             );
+//           } else if (typeof subVal === "object") {
+//             lines.push(`• **${toLabel(subKey)}:**`);
+//             Object.entries(subVal).forEach(([k2, v2]) => {
+//               if (v2 !== null && v2 !== undefined) {
+//                 lines.push(`  ${toLabel(k2)}: ${formatValue(v2)}`);
+//               }
+//             });
+//           } else {
+//             lines.push(`• ${toLabel(subKey)}: ${formatValue(subVal)}`);
+//           }
+//         });
+
+//         if (insight) lines.push(`\n${insight}`);
+//         return;
+//       }
+
+//       // Plain scalar at top level
+//       lines.push(`• **${label}:** ${formatValue(value)}`);
+//     };
+
+//     Object.entries(kpi).forEach(([key, value]) => {
+//       if (skipKeys.has(key)) return;
+//       renderSection(key, value);
+//     });
+
+//     return lines.join("\n");
+//   };
+
+//   const fetchDatasetKpis = async (filePath: string, userEmail: string) => {
+//     const loadingId = `kpi-loading-${Date.now()}`;
+
+//     try {
+//       const loadingMsg: Message = {
+//         id: loadingId,
+//         role: "assistant",
+//         content: "Calculating dataset KPIs...",
+//         timestamp: new Date(),
+//         type: "text",
+//       };
+//       setMessages((prev) => [...prev, loadingMsg]);
+
+//       const params = new URLSearchParams();
+//       params.append("file_path", filePath);
+//       params.append("user_email", userEmail);
+
+//       const response = await fetch(
+//         "https://api.veriton.ai/api/service3/dataset_kpis",
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/x-www-form-urlencoded",
+//             accept: "application/json",
+//           },
+//           body: params.toString(),
+//         },
+//       );
+
+//       const kpiData = await response.json();
+
+//       if (!response.ok) {
+//         throw new Error(kpiData.message || "Failed to fetch dataset KPIs");
+//       }
+
+//       const kpiMessage: Message = {
+//         id: (Date.now() + 1).toString(),
+//         role: "assistant",
+//         content: formatKpiSummary(kpiData),
+//         timestamp: new Date(),
+//         type: "text",
+//       };
+
+//       // Remove the loading message, add the real result
+//       setMessages((prev) => [
+//         ...prev.filter((m) => m.id !== loadingId),
+//         kpiMessage,
+//       ]);
+//     } catch (err) {
+//       console.error("Dataset KPI fetch failed", err);
+//       // Remove the loading message even on failure, so it doesn't linger
+//       setMessages((prev) => prev.filter((m) => m.id !== loadingId));
+//     }
+//   };
+
+//   const pollUploadFileStatus = async (
+//     jobId: string,
+//     userEmail: string,
+//     pollEverySeconds?: number,
+//   ): Promise<any> => {
+//     const pollInterval = (pollEverySeconds || 5) * 1000;
+
+//     return new Promise((resolve, reject) => {
+//       const poll = async () => {
+//         try {
+//           const pollResp = await fetch(
+//             `https://api.veriton.ai/api/service3/upload-file-status/${jobId}?user_email=${userEmail}`,
+//             { headers: { accept: "application/json" } },
+//           );
+
+//           if (!pollResp.ok) {
+//             throw new Error("Upload status polling failed");
+//           }
+
+//           const result = await pollResp.json();
+
+//           // Adjust this condition if the backend uses a different "done" signal
+//           if (result.status === "success" || result.overview_response) {
+//             resolve(result);
+//           } else if (result.status === "failed" || result.status === "error") {
+//             reject(result);
+//           } else {
+//             setTimeout(poll, pollInterval);
+//           }
+//         } catch (err) {
+//           reject(err);
+//         }
+//       };
+
+//       poll();
+//     });
+//   };
+
 //   const uploadDatasetFromPath = async (
 //     filePath: string,
 //     datasetName: string,
@@ -290,7 +589,6 @@
 //       setMessages((prev) => [...prev, uploadingMsg]);
 
 //       const params = new URLSearchParams();
-
 //       params.append("file_path", filePath);
 //       params.append("session_id", sessionId);
 //       params.append("user_email", userEmail);
@@ -308,22 +606,52 @@
 //         },
 //       );
 
-//       const data = await response.json();
+//       const startData = await response.json();
 
-//       if (!response.ok) throw new Error(data.message);
+//       if (!response.ok) throw new Error(startData.message);
+
+//       // upload_file_V now returns { status: "started", job_id, poll_every_seconds }
+//       // instead of the final result directly — poll until it's done.
+//       let data = startData;
+
+//       if (startData.status === "started" && startData.job_id) {
+//         data = await pollUploadFileStatus(
+//           startData.job_id,
+//           userEmail,
+//           startData.poll_every_seconds,
+//         );
+//       }
+
+//       if (!data) {
+//         throw new Error("Upload failed or returned no result.");
+//       }
 
 //       const assistantMessage: Message = {
 //         id: Date.now().toString(),
 //         role: "assistant",
-//         content: `${data.message}\n\n${data.overview_response}`,
+//         content: `${data.message}\n\n${formatOverviewResponse(data.overview_response)}`,
 //         timestamp: new Date(),
 //         type: "text",
 //       };
 
 //       setMessages((prev) => [...prev, assistantMessage]);
 //       setCurrentFileId(data.fileid);
+
+//       // After upload+analysis completes, fetch dataset KPIs and show them too
+//       await fetchDatasetKpis(filePath, userEmail);
 //     } catch (err) {
 //       console.error("Upload failed", err);
+//       setMessages((prev) => [
+//         ...prev,
+//         {
+//           id: Date.now().toString(),
+//           role: "assistant",
+//           content:
+//             "Something went wrong while uploading and analyzing the dataset.",
+//           timestamp: new Date(),
+//           type: "text",
+//         },
+//       ]);
 //     } finally {
 //       setIsUploadingDataset(false);
 //     }
@@ -633,8 +961,10 @@
 //     setBuildStage(0);
 //     setBuildProgress(2);
 
+//     const buildingMsgId = `building-${Date.now()}`;
+
 //     const buildingMsg: Message = {
-//       id: Date.now().toString(),
+//       id: buildingMsgId,
 //       role: "assistant",
 //       content: "Starting the model build process...",
 //       timestamp: new Date(),
@@ -662,7 +992,7 @@
 //       const suggestions = apiResp?.suggestions || [];
 
 //       setMessages((prev) => [
-//         ...prev,
+//         ...prev.filter((m) => m.id !== buildingMsgId),
 //         {
 //           id: Date.now().toString(),
 //           role: "assistant",
@@ -685,17 +1015,22 @@
 //       return;
 //     }
 
-//     console.log("API Response:", apiResp);
-
 //     // Display the response message in chatbot
+//     // Display the response message in chatbot, removing the "Starting..." placeholder
+//     const responseContent =
+//       apiResp.query_response || apiResp.response || "Analysis complete.";
+
 //     const responseMessage: Message = {
 //       id: Date.now().toString(),
 //       role: "assistant",
-//       content: apiResp.response || "Analysis complete.",
+//       content: responseContent,
 //       timestamp: new Date(),
 //       type: "text",
 //     };
-//     setMessages((prev) => [...prev, responseMessage]);
+//     setMessages((prev) => [
+//       ...prev.filter((m) => m.id !== buildingMsgId),
+//       responseMessage,
+//     ]);
 
 //     // Display suggestions if available
 //     if (apiResp.suggestions && apiResp.suggestions.length > 0) {
@@ -725,6 +1060,7 @@
 //       task_type: apiResp.task_type, // ← ADD THIS LINE
 //       target: apiResp.target, // ← ADD THIS LINE (optional but useful)
 //       analysis: apiResp.analysis,
+//       query_response: apiResp.query_response,
 //       suggestions: apiResp.suggestions,
 //       primary_metric: apiResp.primary_metric,
 //       primary_score: apiResp.primary_score,
@@ -813,10 +1149,12 @@
 //     setInput("");
 //     setIsTyping(true);
 
+//     const processingId = `processing-${Date.now()}`;
+
 //     setMessages((prev) => [
 //       ...prev,
 //       {
-//         id: Date.now().toString(),
+//         id: processingId,
 //         role: "assistant",
 //         content:
 //           "Processing your request in the background. This may take 1–5 minutes...",
@@ -832,6 +1170,7 @@
 //       lowerInput.includes("create model");
 //     if (isBuildQuery) {
 //       setIsTyping(false);
+//       setMessages((prev) => prev.filter((m) => m.id !== processingId));
 //       startBuildFlowWithBackend(currentInput);
 //       return;
 //     }
@@ -841,6 +1180,7 @@
 //       const apiResp = await runProcessTaskQuery(currentInput);
 
 //       setIsTyping(false);
+//       setMessages((prev) => prev.filter((m) => m.id !== processingId));
 
 //       if (!apiResp) {
 //         setMessages((prev) => [
@@ -856,24 +1196,14 @@
 //         return;
 //       }
 
-//       // Otherwise show normal assistant response
-//       let formattedResponse = apiResp.response || "";
+//       // Show only query_response (fallback to response if query_response is missing)
+//       let formattedResponse = apiResp.query_response || apiResp.response || "";
 
 //       if (apiResp.available_columns?.length) {
 //         formattedResponse += `
 
 //       **Available Columns:**
 //       ${apiResp.available_columns.map((c: string) => `• ${c}`).join("\n")}`;
-//       }
-
-//       if (
-//         apiResp.suggestions?.length &&
-//         !formattedResponse.toLowerCase().includes("suggestions")
-//       ) {
-//         formattedResponse += `
-
-//       **Suggestions:**
-//       ${apiResp.suggestions.map((s: string) => `• ${s}`).join("\n")}`;
 //       }
 
 //       const assistantMessage: Message = {
@@ -892,14 +1222,15 @@
 //           )
 //           .sort((a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime()),
 //       );
-//       // Show suggestions if present
+
+//       // Show suggestions once, as its own message
 //       if (apiResp.suggestions?.length) {
 //         setMessages((prev) => [
 //           ...prev,
 //           {
-//             id: Date.now().toString(),
+//             id: (Date.now() + 1).toString(),
 //             role: "assistant",
-//             content: `Suggestions:\n${apiResp.suggestions
+//             content: `**Suggestions:**\n${apiResp.suggestions
 //               .map((s: string) => `• ${s}`)
 //               .join("\n")}`,
 //             timestamp: new Date(),
@@ -911,17 +1242,15 @@
 //       console.error(err);
 
 //       setIsTyping(false);
-
-//       setMessages((prev) => [
-//         ...prev,
-//         {
+//       setMessages((prev) =>
+//         [...prev.filter((m) => m.id !== processingId)].concat({
 //           id: Date.now().toString(),
 //           role: "assistant",
 //           content: "Error processing your request.",
 //           timestamp: new Date(),
 //           type: "text",
-//         },
-//       ]);
+//         }),
+//       );
 //     }
 //   };
 
@@ -1108,8 +1437,17 @@
 //         // ✅ Ensure bullets start new line
 //         .replace(/\n?[-•]\s+/g, "\n• ")
 
-//         // ✅ Add spacing after sentences (safe version)
-//         .replace(/([a-z])\.\s+(?=[A-Z])/g, "$1.\n")
+//         // ✅ Break after sentence-ending periods (before next capitalized word)
+//         .replace(/([a-z0-9%])\.\s+(?=[A-Z])/g, "$1.\n")
+
+//         // ✅ Force a line break before every bullet marker, even mid-sentence
+//         .replace(/\s*•\s*/g, "\n• ")
+
+//         // ✅ Break before common point-transition words
+//         .replace(
+//           /\s+(Also,|Lastly,|Currently,|However,|Additionally,)/g,
+//           "\n$1",
+//         )
 
 //         // ✅ Clean extra spacing
 //         .replace(/\n{3,}/g, "\n\n")
@@ -1413,7 +1751,7 @@
 //                             if (!hasTable) {
 //                               return (
 //                                 <ReactMarkdown
-//                                   remarkPlugins={[remarkGfm]}
+//                                   remarkPlugins={[remarkGfm, remarkBreaks]}
 //                                   components={{
 //                                     p: ({ children }) => (
 //                                       <p className="mb-3 leading-relaxed text-sm">
@@ -1474,7 +1812,7 @@
 //                                 {beforeTable && (
 //                                   <div className="mb-5">
 //                                     <ReactMarkdown
-//                                       remarkPlugins={[remarkGfm]}
+//                                       remarkPlugins={[remarkGfm, remarkBreaks]}
 //                                       components={{
 //                                         p: ({ children }) => (
 //                                           <p className="mb-3 leading-relaxed text-sm text-foreground">
@@ -1499,7 +1837,7 @@
 //                                 {tablePart && (
 //                                   <div className="my-6 overflow-x-auto rounded-xl border border-border bg-card p-2">
 //                                     <ReactMarkdown
-//                                       remarkPlugins={[remarkGfm]}
+//                                       remarkPlugins={[remarkGfm, remarkBreaks]}
 //                                       components={{
 //                                         table: ({ children }) => (
 //                                           <table className="min-w-max text-xs border-collapse">
@@ -1532,7 +1870,7 @@
 //                                 {afterTable && (
 //                                   <div className="mt-6 space-y-3">
 //                                     <ReactMarkdown
-//                                       remarkPlugins={[remarkGfm]}
+//                                       remarkPlugins={[remarkGfm, remarkBreaks]}
 //                                       components={{
 //                                         p: ({ children }) => (
 //                                           <p className="mb-4 leading-relaxed text-sm text-foreground">
@@ -1758,7 +2096,7 @@
 // };
 
 // export default Chatbot;
-
+ 
 
 // src/components/chatbot/Chatbot.tsx
 import { useState, useRef, useEffect } from "react";
@@ -2236,60 +2574,60 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
     return lines.join("\n");
   };
 
-  const fetchDatasetKpis = async (filePath: string, userEmail: string) => {
-    const loadingId = `kpi-loading-${Date.now()}`;
+  // const fetchDatasetKpis = async (filePath: string, userEmail: string) => {
+  //   const loadingId = `kpi-loading-${Date.now()}`;
 
-    try {
-      const loadingMsg: Message = {
-        id: loadingId,
-        role: "assistant",
-        content: "Calculating dataset KPIs...",
-        timestamp: new Date(),
-        type: "text",
-      };
-      setMessages((prev) => [...prev, loadingMsg]);
+  //   try {
+  //     const loadingMsg: Message = {
+  //       id: loadingId,
+  //       role: "assistant",
+  //       content: "Calculating dataset KPIs...",
+  //       timestamp: new Date(),
+  //       type: "text",
+  //     };
+  //     setMessages((prev) => [...prev, loadingMsg]);
 
-      const params = new URLSearchParams();
-      params.append("file_path", filePath);
-      params.append("user_email", userEmail);
+  //     const params = new URLSearchParams();
+  //     params.append("file_path", filePath);
+  //     params.append("user_email", userEmail);
 
-      const response = await fetch(
-        "https://api.veriton.ai/api/service3/dataset_kpis",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            accept: "application/json",
-          },
-          body: params.toString(),
-        },
-      );
+  //     const response = await fetch(
+  //       "https://api.veriton.ai/api/service3/dataset_kpis",
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/x-www-form-urlencoded",
+  //           accept: "application/json",
+  //         },
+  //         body: params.toString(),
+  //       },
+  //     );
 
-      const kpiData = await response.json();
+  //     const kpiData = await response.json();
 
-      if (!response.ok) {
-        throw new Error(kpiData.message || "Failed to fetch dataset KPIs");
-      }
+  //     if (!response.ok) {
+  //       throw new Error(kpiData.message || "Failed to fetch dataset KPIs");
+  //     }
 
-      const kpiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: formatKpiSummary(kpiData),
-        timestamp: new Date(),
-        type: "text",
-      };
+  //     const kpiMessage: Message = {
+  //       id: (Date.now() + 1).toString(),
+  //       role: "assistant",
+  //       content: formatKpiSummary(kpiData),
+  //       timestamp: new Date(),
+  //       type: "text",
+  //     };
 
-      // Remove the loading message, add the real result
-      setMessages((prev) => [
-        ...prev.filter((m) => m.id !== loadingId),
-        kpiMessage,
-      ]);
-    } catch (err) {
-      console.error("Dataset KPI fetch failed", err);
-      // Remove the loading message even on failure, so it doesn't linger
-      setMessages((prev) => prev.filter((m) => m.id !== loadingId));
-    }
-  };
+  //     // Remove the loading message, add the real result
+  //     setMessages((prev) => [
+  //       ...prev.filter((m) => m.id !== loadingId),
+  //       kpiMessage,
+  //     ]);
+  //   } catch (err) {
+  //     console.error("Dataset KPI fetch failed", err);
+  //     // Remove the loading message even on failure, so it doesn't linger
+  //     setMessages((prev) => prev.filter((m) => m.id !== loadingId));
+  //   }
+  // };
 
   const pollUploadFileStatus = async (
     jobId: string,
@@ -2400,7 +2738,7 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
       setCurrentFileId(data.fileid);
 
       // After upload+analysis completes, fetch dataset KPIs and show them too
-      await fetchDatasetKpis(filePath, userEmail);
+      // await fetchDatasetKpis(filePath, userEmail);
     } catch (err) {
       console.error("Upload failed", err);
       setMessages((prev) => [
@@ -3858,4 +4196,3 @@ const Chatbot = ({ onShowAnalysis }: ChatbotProps) => {
 };
 
 export default Chatbot;
- 

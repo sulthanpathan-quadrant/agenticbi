@@ -206,6 +206,39 @@
 //       [tableName]: !prev[tableName],
 //     }));
 //   };
+
+//   // ✅ NEW: polls /create-dataset/status/{run_id} until it completes or fails
+//   const pollCreateDatasetStatus = async (
+//     runId: string,
+//     { intervalMs = 3000, maxAttempts = 60 } = {}
+//   ): Promise<any> => {
+//     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+//       const res = await fetch(
+//         `https://api.veriton.ai/api/service2/create-dataset/status/${runId}`
+//       );
+//       if (!res.ok) {
+//         throw new Error(`Status check failed (${res.status})`);
+//       }
+//       const data = await res.json();
+
+//       if (data.status === "completed") {
+//         if (data.result?.status === "success") {
+//           return data;
+//         }
+//         // completed but result itself indicates failure
+//         throw new Error(data.result?.message || data.error || "Dataset creation failed");
+//       }
+
+//       if (data.status === "failed") {
+//         throw new Error(data.error || "Dataset creation failed");
+//       }
+
+//       // status is "pending" / "running" / any in-progress state → wait and retry
+//       await new Promise((resolve) => setTimeout(resolve, intervalMs));
+//     }
+
+//     throw new Error("Dataset creation timed out. Please check history later.");
+//   };
   
 //   const handleSaveCustomTable = async () => {
 //     // NEW VALIDATION: Prevent save if dataset name is empty
@@ -310,12 +343,75 @@
 //   throw error;
 // }
 
+//       // const createResult = await createResponse.json();
+
+//       // toast({
+//       //   title: "Dataset Created",
+//       //   description: `"${customTableName}" created successfully`,
+//       //   duration: 2200,
+//       //   action: closeToastButton,
+//       // });
+
+//       // // ─── Optional / background transfer call (unchanged) ───
+//       // try {
+//       //   const transferResponse = await fetch(
+//       //     `https://api.veriton.ai/api/service2/transferfromonelaketoblob?user_id=${userId}&job_id=${jobId}`,
+//       //     {
+//       //       method: "POST",
+//       //       headers: {
+//       //         "Content-Type": "application/json",
+//       //       },
+//       //     }
+//       //   );
+
+//       //   // You can decide whether to toast or not — currently silent
+//       //   if (!transferResponse.ok) {
+//       //     console.warn("Transfer API responded with non-2xx status");
+//       //   }
+//       // } catch (transferErr) {
+//       //   console.error("Transfer API call failed (non-blocking):", transferErr);
+//       // }
+
+//       // // Refresh history + local state
+//       // setShowHistory(true);
+//       // fetchBackendDatasets();
+
+//       // const newTable: CustomTable = {
+//       //   name: customTableName,
+//       //   columns: customColumns,
+//       //   createdAt: new Date().toLocaleString(),
+//       // };
+
+//       // const updatedTables = [...localSavedTables, newTable];
+//       // setLocalSavedTables(updatedTables);
+
+//       // // Reset form
+//       // setCustomTableName("");
+//       // setCustomColumns([]);
+
 //       const createResult = await createResponse.json();
+
+//       // ✅ NEW: the API now returns { run_id, status: "pending", status_url }
+//       // instead of the finished dataset — so we must poll for completion.
+//       const runId = createResult?.run_id;
+//       if (!runId) {
+//         throw new Error("No run_id returned from create-dataset");
+//       }
+
+//       // toast({
+//       //   title: "Creating Dataset",
+//       //   description: `"${customTableName}" is being processed…`,
+//       //   duration: 2200,
+//       //   action: closeToastButton,
+//       // });
+
+//       // ✅ NEW: wait for the run to actually complete
+//       await pollCreateDatasetStatus(runId);
 
 //       toast({
 //         title: "Dataset Created",
 //         description: `"${customTableName}" created successfully`,
-//         duration: 2200,
+//         duration: 2000,
 //         action: closeToastButton,
 //       });
 
@@ -355,6 +451,7 @@
 //       // Reset form
 //       setCustomTableName("");
 //       setCustomColumns([]);
+
 //     } catch (error: any) {
 //       console.error("Create dataset error:", error);
 
@@ -668,6 +765,7 @@
 //   );
 // }
 
+
 import { useState, useEffect, useRef } from "react";
 import { WorkflowLayout } from "@/components/WorkflowLayout";
 import { Button } from "@/components/ui/button";
@@ -740,6 +838,42 @@ export default function DataCreation() {
 
 
 
+   // Base URL for the (currently undeployed) table-discovery service.
+  // Swap this back to https://api.veriton.ai/api/service2 once it's deployed.
+  const ONELAKE_BASE_URL = "https://api.veriton.ai/api/service";
+
+  // Polls /onelake/get-all-job-tables/status/{polling_job_id} until COMPLETED or FAILED
+  const pollTableDiscoveryStatus = async (
+    pollingJobId: string,
+    { intervalMs = 2000, maxAttempts = 60 } = {}
+  ): Promise<any> => {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const res = await fetch(
+        `${ONELAKE_BASE_URL}/onelake/get-all-job-tables/status/${pollingJobId}`,
+        { headers: { accept: "application/json" } }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Status check failed (${res.status})`);
+      }
+
+      const data = await res.json();
+
+      if (data.status === "COMPLETED") {
+        return data;
+      }
+
+      if (data.status === "FAILED") {
+        throw new Error(data.message || "Table discovery failed");
+      }
+
+      // status is "QUEUED" / "PROCESSING" / any in-progress state → wait and retry
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+
+    throw new Error("Table discovery timed out. Please try again.");
+  };
+
   useEffect(() => {
     if (!userId || !jobId) {
       toast({
@@ -755,14 +889,23 @@ export default function DataCreation() {
     const fetchTables = async () => {
       setLoadingTables(true);
       try {
-        const res = await fetch(
-          `https://api.veriton.ai/api/service2/onelake/get-all-job-tables?user_id=${userId}&job_id=${jobId}`
+        // Step 1: kick off table discovery — returns a polling_job_id
+        const startRes = await fetch(
+          `${ONELAKE_BASE_URL}/onelake/get-all-job-tables?user_id=${userId}&job_id=${jobId}`,
+          { headers: { accept: "application/json" } }
         );
-        // add tost message here
 
-        if (!res.ok) throw new Error(`please do: ${res.status}`);
-        const data = await res.json();
-        setAvailableTables(data.tables || []);
+        if (!startRes.ok) throw new Error(`please do: ${startRes.status}`);
+        const startData = await startRes.json();
+
+        const pollingJobId = startData?.polling_job_id;
+        if (!pollingJobId) {
+          throw new Error("No polling_job_id returned from get-all-job-tables");
+        }
+
+        // Step 2: poll until discovery completes
+        const finalData = await pollTableDiscoveryStatus(pollingJobId);
+        setAvailableTables(finalData.tables || []);
       } catch (err: any) {
         console.error("Tables fetch error:", err);
         toast({

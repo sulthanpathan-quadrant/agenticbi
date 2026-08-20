@@ -840,7 +840,7 @@ export default function DataCreation() {
 
    // Base URL for the (currently undeployed) table-discovery service.
   // Swap this back to https://api.veriton.ai/api/service2 once it's deployed.
-  const ONELAKE_BASE_URL = "https://api.veriton.ai/api/service";
+  const ONELAKE_BASE_URL = "https://api.veriton.ai/api/service2";
 
   // Polls /onelake/get-all-job-tables/status/{polling_job_id} until COMPLETED or FAILED
   const pollTableDiscoveryStatus = async (

@@ -51,7 +51,7 @@
 // } from "recharts";
 // import { toast } from "sonner";
 // import { ThemeToggle } from "@/components/ThemeToggle";
-
+// import Header from "@/components/layout/Header-main";
 // interface ApiJob {
 //   job_id: string;
 //   job_name: string;
@@ -128,63 +128,6 @@
 //     </button>
 //   );
 
-//   useEffect(() => {
-//     // Prevent calling multiple times in the same session
-//     // if (localStorage.getItem("aivolve_user")) {
-//     //   return; // already have it → skip
-//     // }
-
-//     const warmUpAutoML = async () => {
-//       try {
-//         const storedUser = localStorage.getItem("user");
-//         if (!storedUser) return;
-
-//         const baseUser = JSON.parse(storedUser);
-//         if (!baseUser?.email || !baseUser?.name) return;
-
-//         const formData = new URLSearchParams();
-//         formData.append("email", baseUser.email);
-//         formData.append("full_name", baseUser.name);
-
-//         const res = await fetch(
-//           "https://api.veriton.ai/api/service3/automl_register_login",
-//           {
-//             method: "POST",
-//             headers: {
-//               accept: "application/json",
-//               "Content-Type": "application/x-www-form-urlencoded",
-//             },
-//             body: formData.toString(),
-//           },
-//         );
-
-//         if (!res.ok) {
-//           console.warn("AutoML warm-up failed", res.status);
-//           return;
-//         }
-
-//         const data = await res.json();
-
-//         const aivolveUser = {
-//           ...data.user,
-//           agent_id: data.agent_id,
-//           agent_name: data.agent_name,
-//           session_id: data.session_id,
-//           total_chats: data.total_chats,
-//         };
-
-//         localStorage.setItem("aivolve_user", JSON.stringify(aivolveUser));
-//         window.dispatchEvent(new Event("storage"));
-
-//         console.log("AutoML account ready in background");
-//       } catch (err) {
-//         console.warn("AutoML background prep failed silently", err);
-//         // → We don't show error to user here — it's background
-//       }
-//     };
-
-//     warmUpAutoML();
-//   }, []); // ← empty deps = run once on mount
 
 //   // Load persisted job statuses from localStorage on mount
 //   useEffect(() => {
@@ -563,7 +506,7 @@
 //                 onClick={() => {
 //                   // Optional: double-check (but usually not needed)
 //                   if (!localStorage.getItem("aivolve_user")) {
-//                     toast.info("Preparing AutoML...", { duration: 2000 });
+//                     toast.info("Preparing Auto AI/ML...", { duration: 2000 });
 //                   }
 //                   navigate("/workflow/automl/jobs1");
 //                   // or window.location.href = "/workflow/automl" if you still prefer hard redirect
@@ -571,7 +514,7 @@
 //                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
 //               >
 //                 <Sparkles className="w-4 h-4" />
-//                 AutoML
+//                 Auto AI/ML
 //               </button>
 
 //               <div className="flex items-center gap-3">
@@ -1185,7 +1128,6 @@ import {
   Table as TableIcon,
   Plus,
   Search,
-  Calendar,
   Play,
   Eye,
   Edit,
@@ -1197,6 +1139,15 @@ import {
   Settings,
   Clock,
   Sparkles,
+  Network,
+  Key,
+  Link2,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  XCircle,
+  FileText,
+  ArrowRight,
 } from "lucide-react";
 import {
   PieChart,
@@ -1220,23 +1171,183 @@ interface ApiJob {
   created_at: string;
 }
 
-interface DetailedJobResponse {
+// ---------- view-job response types ----------
+
+interface IngestionItem {
+  source_type: string;
+  destination_path?: string;
+  s3path?: string[];
+  s3ServiceUrl?: string;
+  blobpath?: string[];
+  snowflake_table?: string[];
+  table?: string[];
+  container_name?: string;
+  file_path?: string[];
+  sap_host?: string;
+  sap_port?: number;
+  sap_username?: string;
+  sap_schema?: string;
+  sap_tables?: string[];
+  [key: string]: unknown;
+}
+
+interface IngestionTableResult {
+  table: string;
+  success: boolean;
+  rows: number;
+  size_mb: number;
+  blob_url: string | null;
+  error: string | null;
+}
+
+interface IngestionResult {
+  source: string;
+  effective_destination: string;
+  status: string;
+  response: {
+    message?: string;
+    results?: IngestionTableResult[];
+  };
+}
+
+interface JobSchedule {
+  frequency?: string;
+  time_utc?: string;
+  scheduled_at?: string;
+  active?: boolean;
+}
+
+interface JobCore {
+  job_id: string;
+  created_at: string;
+  status: string;
+  sources: string[];
+  items: IngestionItem[];
+  results: IngestionResult[];
+  post_processing?: {
+    blob_to_onelake_transfer?: {
+      triggered: boolean;
+      attempted_at?: string;
+      status?: string;
+      response?: {
+        files_transferred?: number;
+        onelake_paths?: string[];
+      };
+    };
+  };
+  completed_at?: string;
+  job_name: string;
+  schedule?: JobSchedule | null;
+}
+
+interface DatasetColumnMapping {
+  source_name: string;
+  source_type: string;
+  columns: string[];
+}
+
+interface CreateDataset {
+  job_id: string;
+  custom_table_name: string;
+  request_body: {
+    column_mappings: DatasetColumnMapping[];
+    join_type: string;
+  };
+  file_path: string;
+  rows: number;
+  columns: string[];
+  timestamp: string;
+}
+
+interface ViewJobResponse {
   user_id: string;
   job_id: string;
-  job_name: string;
-  created_at: string;
-  overall_job_status: string | null;
-  overall_last_job_run: string | null;
-  schedule: {
-    frequency?: string;
-    time_utc?: string;
-    scheduled_at?: string;
-  } | null;
-  datasource_paths: string[];
+  job: JobCore;
+  pipelines: unknown[];
+  create_datasets: CreateDataset[];
   dq_enabled: boolean;
   ner_enabled: boolean;
   business_logic_enabled: boolean;
-  business_logic_rules?: Record<string, string>;
+}
+
+// ---------- get_schema_metadata response types ----------
+
+interface SchemaColumn {
+  name: string;
+  data_type: string;
+  null_percentage: number;
+  distinct_count: number;
+  is_primary_key: boolean;
+  is_surrogate: boolean;
+  is_foreign_key: boolean;
+  display_label: string;
+  tooltip: string;
+}
+
+interface SchemaForeignKey {
+  column: string;
+  references_table: string;
+  references_column: string | null;
+}
+
+interface SchemaTable {
+  table_name: string;
+  table_type: "SOURCE" | "FACT" | "DIM" | string;
+  derived_from?: string;
+  is_normalized?: boolean;
+  row_count: number;
+  column_count: number;
+  null_percentage: number;
+  primary_keys: string[];
+  surrogate_keys: string[];
+  foreign_keys: SchemaForeignKey[];
+  columns: SchemaColumn[];
+}
+
+interface SchemaRelationship {
+  from_table: string;
+  from_column: string;
+  to_table: string;
+  to_column: string | null;
+  relationship_type: string;
+  description?: string;
+  confidence?: number | null;
+}
+
+interface SchemaSummary {
+  total_tables: number;
+  fact_tables: string[];
+  dimension_tables: string[];
+  physical_source_tables: string[];
+  total_relationships: number;
+  total_rows: number;
+}
+
+interface SchemaMetadataResponse {
+  user_id: string;
+  job_id: string;
+  analysis_timestamp: string;
+  model: {
+    type: string;
+    fact_table: string;
+    dimension_tables: string[];
+  };
+  tables: SchemaTable[];
+  relationships: SchemaRelationship[];
+  summary: SchemaSummary;
+  observations: string[];
+}
+
+interface PreviewDatasetResponse {
+  dataset: string;
+  user_id: string;
+  job_id: string;
+  total_rows: number;
+  total_columns: number;
+  columns: string[];
+  column_types: Record<string, string>;
+  preview_rows: Record<string, unknown>[];
+  preview_row_count: number;
 }
 
 interface Job {
@@ -1267,12 +1378,25 @@ const Jobs = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedJob, setSelectedJob] = useState<DetailedJobResponse | null>(
-    null,
-  );
+  const [selectedJob, setSelectedJob] = useState<ViewJobResponse | null>(null);
+  const [selectedSchema, setSelectedSchema] =
+    useState<SchemaMetadataResponse | null>(null);
   const [showJobModal, setShowJobModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-  const [autoMLLoading, setAutoMLLoading] = useState(false);
+  const [schemaLoading, setSchemaLoading] = useState(false);
+  const [schemaError, setSchemaError] = useState(false);
+  const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [previewOpenFor, setPreviewOpenFor] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [previewData, setPreviewData] = useState<
+    Record<string, PreviewDatasetResponse>
+  >({});
+  const [previewLoading, setPreviewLoading] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -1289,7 +1413,6 @@ const Jobs = () => {
       <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
     </button>
   );
-
 
   // Load persisted job statuses from localStorage on mount
   useEffect(() => {
@@ -1318,9 +1441,6 @@ const Jobs = () => {
 
   const handleLogout = () => {
     localStorage.clear();
-    // localStorage.removeItem("user");
-    // localStorage.removeItem("token");
-    // localStorage.removeItem("jobStatuses");
     toast.success("Logged out successfully", {
       action: closeToastButton,
     });
@@ -1538,58 +1658,273 @@ const Jobs = () => {
     }
 
     setModalLoading(true);
+    setSchemaLoading(true);
+    setSchemaError(false);
     setShowJobModal(true);
     setSelectedJob(null);
+    setSelectedSchema(null);
+    setExpandedTables({});
+    setPreviewOpenFor({});
+    setPreviewData({});
+    setPreviewLoading({});
 
-    try {
-      const response = await fetch(
-        `${API_BASE}/view-job?user_id=${userId}&job_id=${job.id}`,
-      );
+    const viewJobPromise = fetch(
+      `${API_BASE}/view-job?user_id=${userId}&job_id=${job.id}`,
+    ).then((res) => {
+      if (!res.ok) throw new Error(`Failed to fetch job details: ${res.status}`);
+      return res.json() as Promise<ViewJobResponse>;
+    });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch job details: ${response.status}`);
-      }
+    const schemaPromise = fetch(
+      `${API_BASE}/get_schema_metadata/${userId}?job_id=${job.id}`,
+    ).then((res) => {
+      if (!res.ok)
+        throw new Error(`Failed to fetch schema metadata: ${res.status}`);
+      return res.json() as Promise<SchemaMetadataResponse>;
+    });
 
-      const data: DetailedJobResponse = await response.json();
-      setSelectedJob(data);
-    } catch (error) {
-      console.error("Error fetching job details:", error);
+    const [viewJobResult, schemaResult] = await Promise.allSettled([
+      viewJobPromise,
+      schemaPromise,
+    ]);
+
+    if (viewJobResult.status === "fulfilled") {
+      setSelectedJob(viewJobResult.value);
+    } else {
+      console.error("Error fetching job details:", viewJobResult.reason);
       toast.error("Failed to load job details", {
         action: closeToastButton,
       });
-      setSelectedJob(null);
-    } finally {
-      setModalLoading(false);
     }
+    setModalLoading(false);
+
+    if (schemaResult.status === "fulfilled") {
+      setSelectedSchema(schemaResult.value);
+    } else {
+      console.error("Error fetching schema metadata:", schemaResult.reason);
+      setSchemaError(true);
+    }
+    setSchemaLoading(false);
   };
 
-  const getS3Path = (paths: any[] = []) => {
-    return (
-      paths.find(
-        (path) => typeof path === "string" && path.startsWith("s3://"),
-      ) || "N/A"
-    );
+  const toggleTableExpand = (key: string) => {
+    setExpandedTables((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const formatSchedule = (schedule: DetailedJobResponse["schedule"]) => {
+  const formatDate = (value?: string | null) => {
+    if (!value) return "N/A";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "N/A";
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatSchedule = (schedule?: JobSchedule | null) => {
     if (!schedule) return "N/A";
-    const parts = [];
+    const parts: string[] = [];
     if (schedule.frequency) parts.push(`Frequency: ${schedule.frequency}`);
     if (schedule.time_utc) parts.push(`Time (UTC): ${schedule.time_utc}`);
-    if (schedule.scheduled_at) {
-      const date = new Date(schedule.scheduled_at);
-      parts.push(
-        `Scheduled: ${date.toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        })}`,
-      );
-    }
+    if (schedule.scheduled_at)
+      parts.push(`Scheduled: ${formatDate(schedule.scheduled_at)}`);
+    if (typeof schedule.active === "boolean")
+      parts.push(schedule.active ? "Active" : "Inactive");
     return parts.join(" • ") || "N/A";
+  };
+
+  // Looks up the SOURCE-type schema entry for an ingested table so we can show its columns
+  const getSourceTableColumns = (tableName: string): SchemaColumn[] | null => {
+    if (!selectedSchema) return null;
+    const match = selectedSchema.tables?.find(
+      (t) =>
+        t.table_type === "SOURCE" &&
+        t.table_name.toLowerCase() === tableName.toLowerCase(),
+    );
+    return match ? match.columns : null;
+  };
+
+  // Dataset column-mapping source names come back prefixed with internal ids
+  // (e.g. "{user_id}_{internal_id}_fact_table") — strip those down to the plain table name.
+  const cleanSourceName = (sourceName: string): string => {
+    if (!sourceName) return sourceName;
+    let name = sourceName;
+    if (userId && name.startsWith(`${userId}_`)) {
+      name = name.slice(userId.length + 1);
+    }
+    name = name.replace(/^([0-9a-fA-F]{8,}(-[0-9a-fA-F]{4,}){0,4}_)+/, "");
+    return name || sourceName;
+  };
+
+  // "Built from" groups: prefer the explicit column_mappings from the API. If that's
+  // missing/empty (some jobs don't return it), fall back to inferring groups from the
+  // dataset's own column name prefixes (e.g. "employee_role" -> "Employee").
+  const getBuiltFromGroups = (
+    ds: CreateDataset,
+  ): { label: string; columns: string[] }[] => {
+    const mappings = ds.request_body?.column_mappings;
+    if (mappings && mappings.length > 0) {
+      return mappings.map((cm) => ({
+        label: cleanSourceName(cm.source_name),
+        columns: cm.columns,
+      }));
+    }
+
+    if (!ds.columns || ds.columns.length === 0) return [];
+
+    const groups: Record<string, string[]> = {};
+    const coreLabel = "Fact table";
+    ds.columns.forEach((col) => {
+      const underscoreIdx = col.indexOf("_");
+      if (underscoreIdx > 0) {
+        const prefix = col.slice(0, underscoreIdx);
+        const label = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+        (groups[label] ||= []).push(col);
+      } else {
+        (groups[coreLabel] ||= []).push(col);
+      }
+    });
+
+    // Keep the fact/core columns first, then alphabetical
+    return Object.entries(groups)
+      .sort(([a], [b]) => {
+        if (a === coreLabel) return -1;
+        if (b === coreLabel) return 1;
+        return a.localeCompare(b);
+      })
+      .map(([label, columns]) => ({ label, columns }));
+  };
+
+  const togglePreview = async (datasetName: string) => {
+    const isOpen = previewOpenFor[datasetName];
+    setPreviewOpenFor((prev) => ({ ...prev, [datasetName]: !isOpen }));
+
+    if (isOpen || previewData[datasetName] || !userId || !selectedJob) return;
+
+    setPreviewLoading((prev) => ({ ...prev, [datasetName]: true }));
+    try {
+      const res = await fetch(
+        `${API_BASE}/preview-dataset?user_id=${userId}&job_id=${selectedJob.job_id}&datasetname=${encodeURIComponent(datasetName)}`,
+      );
+      if (!res.ok) throw new Error(`Failed to fetch preview: ${res.status}`);
+      const data: PreviewDatasetResponse = await res.json();
+      setPreviewData((prev) => ({ ...prev, [datasetName]: data }));
+    } catch (error) {
+      console.error("Error fetching dataset preview:", error);
+      toast.error("Failed to load dataset preview", {
+        action: closeToastButton,
+      });
+    } finally {
+      setPreviewLoading((prev) => ({ ...prev, [datasetName]: false }));
+    }
+  };
+
+  const StepHeader = ({
+    number,
+    title,
+    icon: Icon,
+    subtitle,
+  }: {
+    number: number;
+    title: string;
+    icon: React.ElementType;
+    subtitle?: string;
+  }) => (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
+        {number}
+      </div>
+      <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+      <div>
+        <h3 className="text-lg font-semibold leading-tight">{title}</h3>
+        {subtitle && (
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderSchemaTableCard = (table: SchemaTable, index: number) => {
+    const key = `${table.table_name}-${table.table_type}-${index}`;
+    const expanded = !!expandedTables[key];
+    const typeStyles: Record<string, string> = {
+      SOURCE: "bg-gray-500/20 text-gray-600 border-gray-500/30",
+      FACT: "bg-blue-500/20 text-blue-600 border-blue-500/30",
+      DIM: "bg-purple-500/20 text-purple-600 border-purple-500/30",
+    };
+
+    return (
+      <Card key={key} className="p-4">
+        <button
+          className="w-full flex items-center justify-between gap-3 text-left"
+          onClick={() => toggleTableExpand(key)}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <Badge className={typeStyles[table.table_type] || typeStyles.SOURCE}>
+              {table.table_type}
+            </Badge>
+            <span className="font-medium truncate">{table.table_name}</span>
+          </div>
+          <div className="flex items-center gap-4 flex-shrink-0 text-sm text-muted-foreground">
+            <span>{table.row_count.toLocaleString()} rows</span>
+            <span>{table.column_count} cols</span>
+            {expanded ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </div>
+        </button>
+
+        {expanded && (
+          <div className="mt-4 border-t border-border pt-4">
+            {table.derived_from && table.derived_from !== table.table_name && (
+              <p className="text-xs text-muted-foreground mb-3">
+                Derived from{" "}
+                <span className="font-medium">{table.derived_from}</span>
+              </p>
+            )}
+            <div className="max-h-56 overflow-y-auto space-y-1.5">
+              {table.columns.map((col) => (
+                <div
+                  key={col.name}
+                  className="flex items-center justify-between gap-2 text-sm py-1"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="truncate">{col.display_label}</span>
+                    {col.is_primary_key && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        <Key className="w-2.5 h-2.5 mr-1" />
+                        PK
+                      </Badge>
+                    )}
+                    {col.is_foreign_key && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        <Link2 className="w-2.5 h-2.5 mr-1" />
+                        FK
+                      </Badge>
+                    )}
+                    {col.is_surrogate && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        AI ✨
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                    {col.data_type}
+                    {col.null_percentage > 0 && ` • ${col.null_percentage}% null`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+    );
   };
 
   return (
@@ -1598,17 +1933,6 @@ const Jobs = () => {
       <header className="border-b border-border backdrop-blur sticky">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Database className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg">Veritas</h1>
-                <p className="text-sm text-muted-foreground">
-                  Welcome, <span className="text-primary">{userName}</span>
-                </p>
-              </div> */}
-
             <div className="flex items-center gap-3 md:gap-4">
               {/* Logo */}
               <a href="/" className="flex-shrink-0">
@@ -1656,22 +1980,19 @@ const Jobs = () => {
               </button>
 
               <button
-                onClick={() => navigate("/datasets")} // or any route you prefer
+                onClick={() => navigate("/datasets")}
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
-                <TableIcon className="w-4 h-4" />{" "}
-                {/* Perfect icon for datasets */}
+                <TableIcon className="w-4 h-4" />
                 Datasets
               </button>
 
               <button
                 onClick={() => {
-                  // Optional: double-check (but usually not needed)
                   if (!localStorage.getItem("aivolve_user")) {
                     toast.info("Preparing Auto AI/ML...", { duration: 2000 });
                   }
                   navigate("/workflow/automl/jobs1");
-                  // or window.location.href = "/workflow/automl" if you still prefer hard redirect
                 }}
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -1814,21 +2135,10 @@ const Jobs = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                {/* <Button variant="outline" onClick={() => setViewMode("chart")}>
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Chart View
-                </Button> */}
-                {/* <Button onClick={() => navigate("/workflow/data-ingestion")}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Job
-                </Button> */}
                 <Button
                   onClick={() => {
-                    // Modern browsers support crypto.randomUUID()
                     const newJobId = crypto.randomUUID().replace(/-/g, "");
-
                     localStorage.setItem("current_job_id", newJobId);
-
                     navigate("/workflow/data-ingestion");
                   }}
                 >
@@ -2047,14 +2357,7 @@ const Jobs = () => {
                                 size="icon"
                                 variant="ghost"
                                 className="h-8 w-8"
-                                onClick={() =>
-                                  navigate(`/edit-job/${job.id}`, {
-                                    state: {
-                                      business_logic_rules:
-                                        selectedJob?.business_logic_rules || {},
-                                    },
-                                  })
-                                }
+                                onClick={() => navigate(`/edit-job/${job.id}`)}
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
@@ -2073,10 +2376,10 @@ const Jobs = () => {
 
       {/* Job Details Modal */}
       <Dialog open={showJobModal} onOpenChange={setShowJobModal}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
-          <DialogHeader className="flex flex-row items-center justify-between pb-4 ">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+          <DialogHeader className="flex flex-row items-center justify-between pb-4">
             <DialogTitle className="text-2xl font-bold">
-              Job Details - {selectedJob?.job_name || "Loading..."}
+              Job Details - {selectedJob?.job.job_name || "Loading..."}
             </DialogTitle>
             <DialogClose asChild>
               <Button variant="ghost" size="icon">
@@ -2091,16 +2394,17 @@ const Jobs = () => {
               <p className="text-muted-foreground">Loading job details...</p>
             </div>
           ) : selectedJob ? (
-            <>
-              <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="space-y-8 min-w-0">
+              {/* Overview cards */}
+              <div className="grid grid-cols-2 gap-4">
                 <Card className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <Settings className="w-5 h-5 text-primary" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm text-muted-foreground">Job Name</p>
-                    <p className="font-medium">
-                      {selectedJob.job_name || "N/A"}
+                    <p className="font-medium truncate">
+                      {selectedJob.job.job_name || "N/A"}
                     </p>
                   </div>
                 </Card>
@@ -2108,52 +2412,34 @@ const Jobs = () => {
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <Database className="w-5 h-5 text-primary" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Data Source</p>
-                    <p className="font-medium">
-                      {getS3Path(selectedJob.datasource_paths)}
+                  <div className="min-w-0">
+                    <p className="text-sm text-muted-foreground">Source(s)</p>
+                    <p className="font-medium truncate">
+                      {selectedJob.job.sources?.join(", ") || "N/A"}
                     </p>
                   </div>
                 </Card>
               </div>
 
-              <Card className="p-6 mb-6">
+              <Card className="p-6">
                 <div className="grid grid-cols-2 gap-8">
                   <div>
                     <h4 className="font-semibold mb-4">Job Information</h4>
                     <div className="space-y-3">
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Job Name:
-                        </p>
-                        <p className="font-medium">
-                          {selectedJob.job_name || "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">
                           Created At:
                         </p>
                         <p className="font-medium">
-                          {new Date(selectedJob.created_at).toLocaleString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                              hour12: true,
-                            },
-                          )}
+                          {formatDate(selectedJob.job.created_at)}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Data Source:
+                          Schedule:
                         </p>
                         <p className="font-medium">
-                          {getS3Path(selectedJob.datasource_paths)}
+                          {formatSchedule(selectedJob.job.schedule)}
                         </p>
                       </div>
                     </div>
@@ -2166,34 +2452,15 @@ const Jobs = () => {
                           Overall Status:
                         </p>
                         <Badge variant="outline">
-                          {selectedJob.overall_job_status || "N/A"}
+                          {selectedJob.job.status || "N/A"}
                         </Badge>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Last Run:
+                          Completed At:
                         </p>
                         <p className="font-medium">
-                          {selectedJob.overall_last_job_run
-                            ? new Date(
-                                selectedJob.overall_last_job_run,
-                              ).toLocaleString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                                hour: "numeric",
-                                minute: "2-digit",
-                                hour12: true,
-                              })
-                            : "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Schedule:
-                        </p>
-                        <p className="font-medium">
-                          {formatSchedule(selectedJob.schedule)}
+                          {formatDate(selectedJob.job.completed_at)}
                         </p>
                       </div>
                     </div>
@@ -2201,57 +2468,488 @@ const Jobs = () => {
                 </div>
               </Card>
 
-              <h3 className="text-lg font-semibold mb-4">Job Stages (3)</h3>
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Settings className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium">Stage 1</span>
-                      <Clock className="w-3 h-3 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <p className="font-medium mb-2">DQ Rules</p>
-                  {getStepBadge(
-                    selectedJob.dq_enabled ? "executed" : "skipped",
-                  )}
-                </Card>
+              {/* STEP 1: Data Ingestion */}
+              <div>
+                <StepHeader
+                  number={1}
+                  title="Data Ingestion"
+                  icon={Database}
+                  subtitle="Sources connected and tables pulled into the pipeline"
+                />
+                <div className="space-y-4">
+                  {selectedJob.job.results?.map((result, ridx) => {
+                    const isChatbotSource =
+                      result.source?.toLowerCase() === "chatbot";
+                    const tableCount = result.response?.results?.length || 0;
 
-                <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                      <Settings className="w-4 h-4 text-orange-500" />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium">Stage 2</span>
-                      <Clock className="w-3 h-3 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <p className="font-medium mb-2">NER</p>
-                  {getStepBadge(
-                    selectedJob.ner_enabled ? "executed" : "skipped",
-                  )}
-                </Card>
+                    if (isChatbotSource || tableCount === 0) {
+                      return (
+                        <Card key={ridx} className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-primary/20 text-primary border-primary/30 capitalize">
+                              {result.source}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              This dataset was created directly through the
+                              chatbot, without a separate ingestion step.
+                            </span>
+                          </div>
+                        </Card>
+                      );
+                    }
 
-                <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Settings className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium">Stage 3</span>
-                      <Clock className="w-3 h-3 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <p className="font-medium mb-2">Business Logic</p>
-                  {getStepBadge(
-                    selectedJob.business_logic_enabled ? "executed" : "skipped",
+                    return (
+                      <Card key={ridx} className="p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Badge className="bg-primary/20 text-primary border-primary/30 capitalize">
+                            {result.source}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {tableCount} table
+                            {tableCount !== 1 ? "s" : ""} ingested
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {result.response?.results?.map((t) => {
+                            const key = `ingest-${ridx}-${t.table}`;
+                            const expanded = !!expandedTables[key];
+                            const columns = getSourceTableColumns(t.table);
+                            return (
+                              <div
+                                key={t.table}
+                                className="border border-border rounded-md"
+                              >
+                                <button
+                                  className="w-full flex items-center justify-between gap-3 p-3 text-left"
+                                  onClick={() => toggleTableExpand(key)}
+                              >
+                                <span className="font-medium truncate">
+                                  {t.table}
+                                </span>
+                                <div className="flex items-center gap-4 flex-shrink-0 text-sm text-muted-foreground">
+                                  <span>{t.rows.toLocaleString()} rows</span>
+                                  <span>{t.size_mb} MB</span>
+                                  {t.success ? (
+                                    <span className="inline-flex items-center gap-1 text-green-600">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      Success
+                                    </span>
+                                  ) : (
+                                    <span
+                                      className="inline-flex items-center gap-1 text-red-600"
+                                      title={t.error || ""}
+                                    >
+                                      <XCircle className="w-3.5 h-3.5" />
+                                      Failed
+                                    </span>
+                                  )}
+                                  {expanded ? (
+                                    <ChevronUp className="w-4 h-4" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4" />
+                                  )}
+                                </div>
+                              </button>
+
+                              {expanded && (
+                                <div className="px-3 pb-3 border-t border-border pt-3">
+                                  {columns ? (
+                                    <div className="max-h-56 overflow-y-auto space-y-1.5">
+                                      {columns.map((col) => (
+                                        <div
+                                          key={col.name}
+                                          className="flex items-center justify-between gap-2 text-sm py-1"
+                                        >
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            <span className="truncate">
+                                              {col.display_label}
+                                            </span>
+                                            {col.is_primary_key && (
+                                              <Badge
+                                                variant="outline"
+                                                className="text-[10px] px-1.5 py-0"
+                                              >
+                                                <Key className="w-2.5 h-2.5 mr-1" />
+                                                PK
+                                              </Badge>
+                                            )}
+                                            {col.is_foreign_key && (
+                                              <Badge
+                                                variant="outline"
+                                                className="text-[10px] px-1.5 py-0"
+                                              >
+                                                <Link2 className="w-2.5 h-2.5 mr-1" />
+                                                FK
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                                            {col.data_type}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                      {schemaLoading
+                                        ? "Loading columns..."
+                                        : "Column details not available."}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                    );
+                  })}
+
+                  {(!selectedJob.job.results ||
+                    selectedJob.job.results.length === 0) && (
+                    <Card className="p-4">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-primary/20 text-primary border-primary/30">
+                          Chatbot
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          This dataset was created directly through the
+                          chatbot, without a separate ingestion step.
+                        </span>
+                      </div>
+                    </Card>
                   )}
-                </Card>
+                </div>
               </div>
-            </>
+
+              {/* STEP 2: Data Modeling */}
+              <div>
+                <StepHeader
+                  number={2}
+                  title="Data Modeling"
+                  icon={Network}
+                  subtitle="How the ingested tables were structured and related"
+                />
+                {schemaLoading ? (
+                  <div className="flex items-center gap-3 text-muted-foreground py-6">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Loading data model...
+                  </div>
+                ) : schemaError || !selectedSchema ? (
+                  <p className="text-sm text-muted-foreground">
+                    Data modeling results are not available for this job.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    <Card className="p-4">
+                      <div className="flex flex-wrap items-center gap-4">
+                        <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30">
+                          {selectedSchema.model?.type?.replace(/_/g, " ")}
+                        </Badge>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground">
+                            Fact table:
+                          </span>
+                          <span className="font-medium">
+                            {selectedSchema.model?.fact_table}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground">
+                            Dimensions:
+                          </span>
+                          <span className="font-medium">
+                            {selectedSchema.model?.dimension_tables?.join(", ")}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+                        <div>
+                          <p className="text-2xl font-semibold">
+                            {selectedSchema.summary?.total_tables}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Tables</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-semibold">
+                            {selectedSchema.summary?.total_relationships}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Relationships
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-semibold">
+                            {selectedSchema.summary?.total_rows?.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Total Rows
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <div className="space-y-2">
+                      {selectedSchema.tables
+                        ?.filter((table) => table.table_type !== "SOURCE")
+                        .map((table, idx) => renderSchemaTableCard(table, idx))}
+                      {selectedSchema.tables?.filter(
+                        (table) => table.table_type !== "SOURCE",
+                      ).length === 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          No fact or dimension tables were generated for this
+                          job.
+                        </p>
+                      )}
+                    </div>
+
+                    {selectedSchema.relationships?.length > 0 && (
+                      <Card className="p-4">
+                        <p className="text-sm font-medium mb-3">
+                          Relationships
+                        </p>
+                        <div className="space-y-2">
+                          {selectedSchema.relationships.map((rel, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 text-sm flex-wrap"
+                            >
+                              <span className="font-medium">
+                                {rel.from_table}.{rel.from_column}
+                              </span>
+                              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span className="font-medium">
+                                {rel.to_table}
+                                {rel.to_column ? `.${rel.to_column}` : ""}
+                              </span>
+                              <Badge variant="outline" className="text-xs">
+                                {rel.relationship_type}
+                              </Badge>
+                              {rel.description && (
+                                <span className="text-muted-foreground text-xs">
+                                  {rel.description}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* STEP 3: Dataset Created */}
+              <div>
+                <StepHeader
+                  number={3}
+                  title="Dataset Created"
+                  icon={FileText}
+                  subtitle="Final dataset assembled from the modeled tables"
+                />
+                <div className="space-y-4">
+                  {selectedJob.create_datasets?.map((ds, idx) => (
+                    <Card key={idx} className="p-4 min-w-0">
+                      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <TableIcon className="w-4 h-4 text-primary" />
+                          <span className="font-medium">
+                            {ds.custom_table_name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{ds.rows.toLocaleString()} rows</span>
+                          <span>{ds.columns.length} columns</span>
+                          <Badge variant="outline">
+                            {ds.request_body?.join_type} join
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {getBuiltFromGroups(ds).length > 0 && (
+                        <>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Built from:
+                          </p>
+                          <div className="space-y-2 mb-4">
+                            {getBuiltFromGroups(ds).map((group, gIdx) => (
+                              <div
+                                key={gIdx}
+                                className="text-sm border-l-2 border-primary/30 pl-3"
+                              >
+                                <p className="font-medium truncate">
+                                  {group.label}
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                  {group.columns.join(", ")}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      <div className="pt-3 border-t border-border min-w-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => togglePreview(ds.custom_table_name)}
+                        >
+                          {previewOpenFor[ds.custom_table_name] ? (
+                            <>
+                              <ChevronUp className="w-4 h-4 mr-2" />
+                              Hide Preview
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-4 h-4 mr-2" />
+                              Preview Data
+                            </>
+                          )}
+                        </Button>
+
+                        {previewOpenFor[ds.custom_table_name] && (
+                          <div className="mt-3">
+                            {previewLoading[ds.custom_table_name] ? (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Loading preview...
+                              </div>
+                            ) : previewData[ds.custom_table_name] ? (
+                              <div className="border border-border rounded-md max-h-80 overflow-auto w-full min-w-0">
+                                <table className="text-xs border-collapse">
+                                  <thead>
+                                    <tr>
+                                      {previewData[
+                                        ds.custom_table_name
+                                      ].columns.map((col) => (
+                                        <th
+                                          key={col}
+                                          className="text-left px-3 py-2 font-medium whitespace-nowrap bg-background border-b border-border sticky top-0 z-10"
+                                        >
+                                          {col}
+                                          <span className="block text-muted-foreground font-normal">
+                                            {
+                                              previewData[ds.custom_table_name]
+                                                .column_types[col]
+                                            }
+                                          </span>
+                                        </th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {previewData[
+                                      ds.custom_table_name
+                                    ].preview_rows.map((row, rIdx) => (
+                                      <tr
+                                        key={rIdx}
+                                        className="border-b border-border last:border-0"
+                                      >
+                                        {previewData[
+                                          ds.custom_table_name
+                                        ].columns.map((col) => (
+                                          <td
+                                            key={col}
+                                            className="px-3 py-2 whitespace-nowrap bg-background"
+                                          >
+                                            {row[col] === null ||
+                                            row[col] === undefined ? (
+                                              <span className="text-muted-foreground">
+                                                —
+                                              </span>
+                                            ) : (
+                                              String(row[col])
+                                            )}
+                                          </td>
+                                        ))}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                No preview available.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
+
+                  {(!selectedJob.create_datasets ||
+                    selectedJob.create_datasets.length === 0) && (
+                    <p className="text-sm text-muted-foreground">
+                      No dataset has been created for this job yet.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* STEP 4: Processing Rules */}
+              <div>
+                <StepHeader
+                  number={4}
+                  title="Processing Rules"
+                  icon={Settings}
+                  subtitle="Data quality, entity recognition, and business logic"
+                />
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Settings className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-medium">DQ Rules</span>
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                      </div>
+                    </div>
+                    {getStepBadge(
+                      selectedJob.dq_enabled ? "executed" : "skipped",
+                    )}
+                  </Card>
+
+                  <Card className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
+                        <Settings className="w-4 h-4 text-orange-500" />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-medium">NER</span>
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                      </div>
+                    </div>
+                    {getStepBadge(
+                      selectedJob.ner_enabled ? "executed" : "skipped",
+                    )}
+                  </Card>
+
+                  <Card className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Settings className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-medium">
+                          Business Logic
+                        </span>
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                      </div>
+                    </div>
+                    {getStepBadge(
+                      selectedJob.business_logic_enabled
+                        ? "executed"
+                        : "skipped",
+                    )}
+                  </Card>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
               No job details available

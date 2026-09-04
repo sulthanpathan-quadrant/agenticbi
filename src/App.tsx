@@ -194,6 +194,8 @@ import PowerBIDashboard1 from "./pages/PowerBIDashboard1";
 import PowerBIPage from "./pages/PowerBIPage";
 import Chatbot from "./components/chatbot/Chatbot";
 import VeritonChatBot from "./pages/VeritonChatBot";
+import ModernizeData from "./pages/ModernizeData";
+import StartChoice from "./pages/StartChoice";
 
 // ── Inline AuthSuccess — no separate file needed ──────────────────────────────
 // The OAuth popup redirects here → sets flag → closes itself
@@ -307,6 +309,9 @@ const App = () => (
                       <Route path="/workflow/automl-dashboard" element={<ProtectedRoute><AutoMLDashboard /></ProtectedRoute>} />
                       <Route path="/workflow/powerbi-flow" element={<ProtectedRoute><PowerBIPage /></ProtectedRoute>} />
                       <Route path="workflow/automl/*" element={<ProtectedRoute><AutoMLRoutes /></ProtectedRoute>} />
+
+                       <Route path="/start" element={<ProtectedRoute><StartChoice /></ProtectedRoute>} />
+                      <Route path="/modernize-data" element={<ProtectedRoute><ModernizeData /></ProtectedRoute>} />
                       
                       <Route path="/workflow/chatbot" element={<ProtectedRoute><VeritonChatBot /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />

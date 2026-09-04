@@ -945,7 +945,7 @@ const Auth = () => {
       });
 
       setTimeout(() => {
-        navigate("/jobs");
+        navigate("/start");
       }, 600);
     } catch (err) {
       console.error("Failed to save data platform:", err);
@@ -1186,9 +1186,15 @@ const Auth = () => {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               You're signed in
             </div>
-            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-hero-from to-hero-to bg-clip-text text-transparent">
+            {/* <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-hero-from to-hero-to bg-clip-text text-transparent">
               Choose your data platform
-            </h1>
+            </h1> */}
+              {/* <h1 className="inline-block text-5xl font-bold mb-4 py-1 leading-[1.15] bg-gradient-to-r from-hero-from to-hero-to bg-clip-text text-transparent overflow-visible">
+    Choose your data platform
+  </h1> */}
+            <h1 className="text-5xl font-bold mb-4 leading-[1.2] pb-1 bg-gradient-to-r from-hero-from to-hero-to bg-clip-text text-transparent">
+  Choose your data platform
+</h1>
             <p className="text-muted-foreground max-w-lg mx-auto text-base">
               Pick where your data lives. You can always change this later from settings.
             </p>

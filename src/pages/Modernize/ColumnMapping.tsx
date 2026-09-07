@@ -23,7 +23,7 @@ const API_BASE_URL = "https://veriton-udm-backend-cdgxcme7fbbmfyg5.westus3-01.az
  * a server-side file path (saved_to) — not the rows themselves.
  * ---------------------------------------------------------------
  */
-interface GenerateMappingResult {
+export interface GenerateMappingResult {
   row_count: number;
   low_confidence_count: number;
   reference_docs_loaded: number;
@@ -172,55 +172,75 @@ function confClass(confidence: number) {
   return "bg-destructive/15 text-destructive";
 }
 
-type GenerateState = "idle" | "generating" | "done" | "error";
+type Phase = "idle" | "generating" | "done" | "error";
 
 interface ColumnMappingProps {
   sessionId: string | null;
-  sourceMetadata: unknown;
-  targetMetadata: unknown;
+  sourceMetadata?: unknown;
+  targetMetadata?: unknown;
+
+  /*
+   * Generation results live in the parent (ModernizeData) so
+   * they survive navigating away from this step and back —
+   * this component only holds transient in-flight UI state
+   * (the "generating"/"error" phase, download-in-progress, etc).
+   */
+  mappingResult: GenerateMappingResult | null;
+  previewRows: MappingRow[];
+  exported: boolean;
+  onMappingResultChange: (result: GenerateMappingResult) => void;
+  onPreviewRowsChange: (rows: MappingRow[]) => void;
+  onExportedChange: (exported: boolean) => void;
+
   onBack: () => void;
   onNext: () => void;
 }
 
 export default function ColumnMapping({
   sessionId,
+  mappingResult,
+  previewRows,
+  exported,
+  onMappingResultChange,
+  onPreviewRowsChange,
+  onExportedChange,
   onBack,
   onNext,
 }: ColumnMappingProps) {
-  const [state, setState] = useState<GenerateState>("idle");
-  const [stats, setStats] = useState<GenerateMappingResult | null>(null);
-  const [previewRows, setPreviewRows] = useState<MappingRow[]>([]);
+  const [phase, setPhase] = useState<Phase>(
+    mappingResult ? "done" : "idle"
+  );
   const [error, setError] = useState<string | null>(null);
 
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  const [exported, setExported] = useState(false);
 
   /*
    * Generate the mapping, then immediately pull the first 5 rows
-   * from GET /mapping for the preview table.
+   * from GET /mapping for the preview table. Results are pushed
+   * up to the parent so they persist across navigation.
    */
   const handleGenerate = async () => {
     if (!sessionId) return;
 
-    setState("generating");
+    setPhase("generating");
     setError(null);
 
     try {
       const result = await generateMapping(sessionId);
-      setStats(result);
-
       const rows = await fetchMappingRows(sessionId);
-      setPreviewRows(rows.slice(0, 5));
 
-      setState("done");
+      onMappingResultChange(result);
+      onPreviewRowsChange(rows.slice(0, 5));
+
+      setPhase("done");
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
           : "Failed to generate mapping."
       );
-      setState("error");
+      setPhase("error");
     }
   };
 
@@ -233,7 +253,7 @@ export default function ColumnMapping({
     try {
       const blob = await downloadMappingCsv(sessionId);
       triggerBlobDownload(blob, "mapping_review.csv");
-      setExported(true);
+      onExportedChange(true);
     } catch (err) {
       setDownloadError(
         err instanceof Error
@@ -252,7 +272,7 @@ export default function ColumnMapping({
         desc="Veriton compares every source column against your UDM columns and proposes the best match — with a confidence score, plain-English reasoning and alternates."
       />
 
-      {state === "idle" && (
+      {phase === "idle" && (
         <div className="flex flex-col items-center rounded-2xl border border-border bg-card px-5 py-10 text-center">
           <button
             type="button"
@@ -271,7 +291,7 @@ export default function ColumnMapping({
         </div>
       )}
 
-      {state === "generating" && (
+      {phase === "generating" && (
         <div className="flex flex-col items-center rounded-2xl border border-border bg-card px-5 py-10 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <h3 className="mt-4 font-semibold text-foreground">
@@ -284,7 +304,7 @@ export default function ColumnMapping({
         </div>
       )}
 
-      {state === "error" && (
+      {phase === "error" && (
         <div className="flex flex-col items-center rounded-2xl border border-border bg-card px-5 py-10 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
             <AlertCircle className="h-7 w-7" />
@@ -304,27 +324,29 @@ export default function ColumnMapping({
         </div>
       )}
 
-      {state === "done" && stats && (
+      {phase === "done" && mappingResult && (
         <>
           <div className="mb-6 grid gap-4 sm:grid-cols-3">
             <Stat
-              value={String(stats.row_count)}
+              value={String(mappingResult.row_count)}
               label="Mapping rows generated"
             />
 
             <Stat
-              value={String(stats.row_count - stats.low_confidence_count)}
+              value={String(
+                mappingResult.row_count - mappingResult.low_confidence_count
+              )}
               label="High-confidence matches"
             />
 
             <Stat
-              value={String(stats.low_confidence_count)}
+              value={String(mappingResult.low_confidence_count)}
               label="Need attention (<70)"
             />
           </div>
 
           <p className="mb-3 text-xs font-medium text-muted-foreground">
-            Preview — first {previewRows.length} of {stats.row_count} rows
+            Preview — first {previewRows.length} of {mappingResult.row_count} rows
           </p>
 
           <div className="overflow-x-auto rounded-2xl border border-border bg-card">

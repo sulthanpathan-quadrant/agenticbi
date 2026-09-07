@@ -1,27 +1,25 @@
 import { useState } from "react";
-
 import { WorkflowHeader } from "@/components/WorkFlowHeader";
 
 import ModernizeSidebar from "./Modernize/ModernizeSidebar";
 import SourceConnection from "./Modernize/SourceConnection";
 import TargetConnection from "./Modernize/TargetConnection";
-
 import SourceMetadataAnalysis, {
   type SourceMetadataResult,
 } from "./Modernize/SourceMetadataAnalysis";
-
-import TargetMetadataAnalysis from "./Modernize/TargetMetadataAnalysis";
-
-import ColumnMapping from "./Modernize/ColumnMapping";
-import ReviewApprove from "./Modernize/ReviewApprove";
+import TargetMetadataAnalysis, {
+  type TargetMetadataResult,
+} from "./Modernize/TargetMetadataAnalysis";
+import ColumnMapping, {
+  type GenerateMappingResult,
+  type MappingRow,
+} from "./Modernize/ColumnMapping";
+import { ConnectionValues } from "./Modernize/ModernizeShared";
+import ReviewApprove, {
+  type UploadResponse,
+  type ValidationResponse,
+} from "./Modernize/ReviewApprove";
 import RunMigration from "./Modernize/RunMigration";
-import ValidateMigration from "./Modernize/ValidateMigration";
-
-import {
-  ConnectionValues,
-  type MetadataAnalysisResult,
-} from "./Modernize/ModernizeShared";
-
 
 export default function ModernizeData() {
   const [step, setStep] = useState(1);
@@ -37,36 +35,58 @@ export default function ModernizeData() {
     useState<string | null>(null);
 
   /*
-   * Source metadata returned from step2-source-metadata
-   * is raw/unclassified metadata.
+   * step2-source-metadata returns raw, unclassified source
+   * metadata — typed as SourceMetadataResult (defined in
+   * SourceMetadataAnalysis.tsx).
+   *
+   * step1-target-analysis returns the classified UDM model
+   * WITH a full columns array per table — typed as
+   * TargetMetadataResult (defined in TargetMetadataAnalysis.tsx),
+   * NOT the generic MetadataAnalysisResult from ModernizeShared,
+   * which has no columns field.
    */
   const [sourceMetadata, setSourceMetadata] =
     useState<SourceMetadataResult | null>(null);
 
-  /*
-   * Target metadata contains the classified UDM
-   * metadata returned from target analysis.
-   */
   const [targetMetadata, setTargetMetadata] =
-    useState<MetadataAnalysisResult | null>(null);
+    useState<TargetMetadataResult | null>(null);
 
+  /*
+   * Lifted out of ColumnMapping so the generated mapping,
+   * preview rows, and download status survive navigating away
+   * from that step and back — ColumnMapping is unmounted
+   * whenever `step` changes, so anything kept in its own local
+   * state would otherwise be lost.
+   */
+  const [mappingResult, setMappingResult] =
+    useState<GenerateMappingResult | null>(null);
 
-  // =====================================================
-  // MARK STEP AS COMPLETED
-  // =====================================================
+  const [mappingPreviewRows, setMappingPreviewRows] =
+    useState<MappingRow[]>([]);
+
+  const [mappingExported, setMappingExported] =
+    useState(false);
+
+  /*
+   * Same reasoning as the mapping state above: ReviewApprove
+   * unmounts on step change, so its selected file and API
+   * results need to live here to survive navigating away and
+   * back.
+   */
+  const [reviewFile, setReviewFile] =
+    useState<File | null>(null);
+
+  const [reviewUploadResult, setReviewUploadResult] =
+    useState<UploadResponse | null>(null);
+
+  const [reviewValidationResult, setReviewValidationResult] =
+    useState<ValidationResponse | null>(null);
 
   const complete = (id: number) => {
     setDone((current) =>
-      current.includes(id)
-        ? current
-        : [...current, id]
+      current.includes(id) ? current : [...current, id]
     );
   };
-
-
-  // =====================================================
-  // MOVE TO NEXT STEP
-  // =====================================================
 
   const go = (next: number) => {
     complete(step);
@@ -82,35 +102,19 @@ export default function ModernizeData() {
     }
   };
 
-
   return (
     <div className="h-screen bg-background overflow-hidden">
       <WorkflowHeader />
 
       <div className="flex h-[calc(100vh-5rem)]">
-
-        {/* =================================================
-            SIDEBAR
-        ================================================= */}
-
         <ModernizeSidebar
           step={step}
           done={done}
           onStepChange={setStep}
         />
 
-
-        {/* =================================================
-            MAIN CONTENT
-        ================================================= */}
-
         <main className="overflow-y-auto w-full px-6 lg:ml-60">
           <div className="p-8 max-w-7xl">
-
-
-            {/* =================================================
-                STEP 1 — SOURCE CONNECTION
-            ================================================= */}
 
             {step === 1 && (
               <SourceConnection
@@ -121,11 +125,6 @@ export default function ModernizeData() {
                 onNext={() => go(2)}
               />
             )}
-
-
-            {/* =================================================
-                STEP 2 — TARGET CONNECTION
-            ================================================= */}
 
             {step === 2 && (
               <TargetConnection
@@ -142,11 +141,6 @@ export default function ModernizeData() {
               />
             )}
 
-
-            {/* =================================================
-                STEP 3 — SOURCE METADATA ANALYSIS
-            ================================================= */}
-
             {step === 3 && (
               <SourceMetadataAnalysis
                 sessionId={sessionId}
@@ -157,11 +151,6 @@ export default function ModernizeData() {
                 onNext={() => go(4)}
               />
             )}
-
-
-            {/* =================================================
-                STEP 4 — TARGET METADATA ANALYSIS
-            ================================================= */}
 
             {step === 4 && (
               <TargetMetadataAnalysis
@@ -174,38 +163,35 @@ export default function ModernizeData() {
               />
             )}
 
-
-            {/* =================================================
-                STEP 5 — COLUMN MAPPING
-            ================================================= */}
-
             {step === 5 && (
               <ColumnMapping
                 sessionId={sessionId}
                 sourceMetadata={sourceMetadata}
                 targetMetadata={targetMetadata}
+                mappingResult={mappingResult}
+                previewRows={mappingPreviewRows}
+                exported={mappingExported}
+                onMappingResultChange={setMappingResult}
+                onPreviewRowsChange={setMappingPreviewRows}
+                onExportedChange={setMappingExported}
                 onBack={() => setStep(4)}
                 onNext={() => go(6)}
               />
             )}
 
-
-            {/* =================================================
-                STEP 6 — REVIEW & APPROVE
-            ================================================= */}
-
             {step === 6 && (
               <ReviewApprove
                 sessionId={sessionId}
+                file={reviewFile}
+                uploadResult={reviewUploadResult}
+                validationResult={reviewValidationResult}
+                onFileChange={setReviewFile}
+                onUploadResultChange={setReviewUploadResult}
+                onValidationResultChange={setReviewValidationResult}
                 onBack={() => setStep(5)}
                 onNext={() => go(7)}
               />
             )}
-
-
-            {/* =================================================
-                STEP 7 — RUN MIGRATION
-            ================================================= */}
 
             {step === 7 && (
               <RunMigration
@@ -215,24 +201,9 @@ export default function ModernizeData() {
               />
             )}
 
-
-            {/* =================================================
-                STEP 8 — VALIDATE MIGRATION
-            ================================================= */}
-
-            {step === 8 && (
-              <ValidateMigration
-                sourceConfig={sourceConfig}
-                targetConfig={targetConfig}
-                onBack={() => setStep(7)}
-                onDone={() => complete(8)}
-              />
-            )}
-
           </div>
         </main>
       </div>
     </div>
   );
 }
-

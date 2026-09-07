@@ -49,6 +49,12 @@ const KIND_LABEL: Record<DiagramNode["kind"], string> = {
   table: "TABLE",
 };
 
+// Approximate rendered box sizes, used to space nodes so they
+// don't overlap. Keep these in sync with the w-64/w-56 classes
+// below if those change.
+const FACT_BOX_WIDTH = 264;
+const DIM_BOX_WIDTH = 232;
+
 function ColumnList({ columns }: { columns: DiagramColumn[] }) {
   if (columns.length === 0) return null;
 
@@ -221,12 +227,34 @@ const nodeTypes = { fact: FactBox, dim: DimBox };
 const edgeTypes = { relationship: RelationshipEdge };
 
 /*
+ * Radius needed so that `count` boxes of `boxWidth`, evenly
+ * spaced around a circle with `gap` px between them, don't
+ * overlap. Derived from the chord-length formula:
+ *   chord = 2 * radius * sin(angleStep / 2) >= boxWidth + gap
+ */
+function ringRadius(count: number, boxWidth: number, gap: number, minRadius: number) {
+  if (count <= 1) return 0;
+
+  const angleStep = (2 * Math.PI) / count;
+  const needed = (boxWidth + gap) / (2 * Math.sin(angleStep / 2));
+
+  return Math.max(minRadius, needed);
+}
+
+/*
  * Read-only ER diagram. Reuses the layout idea from
- * StarSchemaDiagram (fact table(s) centered, everything else
+ * StarSchemaDiagram (fact tables centered, everything else
  * arranged radially around them) but drops all editing
  * machinery — no drag-to-connect, no delete, no entity panel —
  * since this is purely for displaying metadata analysis
  * results, not modeling a star schema.
+ *
+ * Layout: fact tables form a small, tightly-spaced inner ring
+ * (or sit dead center if there's only one), and every other
+ * table forms a much larger outer ring around them. Both radii
+ * are computed from the actual box width and node count so
+ * boxes never overlap regardless of how many facts/dimensions
+ * come back from the API.
  *
  * Clicking a relationship line highlights the two tables it
  * connects (yellow border) and dims every other table; clicking
@@ -249,32 +277,48 @@ export function MetadataDiagram({ nodes: inputNodes, edges: inputEdges }: Metada
     const factNodes = inputNodes.filter((n) => n.kind === "fact");
     const otherNodes = inputNodes.filter((n) => n.kind !== "fact");
 
-    const radius = Math.max(300, otherNodes.length * 60);
-    const angleStep = (2 * Math.PI) / Math.max(1, otherNodes.length);
-
     const toData = (node: DiagramNode) => ({
       ...node,
       dimmed: highlightedNodeIds ? !highlightedNodeIds.has(node.id) : false,
       highlighted: highlightedNodeIds ? highlightedNodeIds.has(node.id) : false,
     });
 
-    const factFlowNodes: Node[] = factNodes.map((node, index) => ({
-      id: node.id,
-      type: "fact",
-      position: { x: 0, y: index * 220 },
-      data: toData(node) as unknown as Record<string, unknown>,
-      draggable: false,
-    }));
+    // Facts: a single fact sits dead center; multiple facts form
+    // a small, tightly-packed ring of their own near the center.
+    const factRadius = ringRadius(factNodes.length, FACT_BOX_WIDTH, 50, 170);
+    const factAngleStep = (2 * Math.PI) / Math.max(1, factNodes.length);
+
+    const factFlowNodes: Node[] = factNodes.map((node, index) => {
+      const angle = index * factAngleStep - Math.PI / 2;
+
+      return {
+        id: node.id,
+        type: "fact",
+        position: {
+          x: Math.cos(angle) * factRadius,
+          y: Math.sin(angle) * factRadius,
+        },
+        data: toData(node) as unknown as Record<string, unknown>,
+        draggable: false,
+      };
+    });
+
+    // Dimensions/plain tables: one big outer ring, sized so it
+    // both clears the fact cluster and gives every dim box
+    // enough room around the circle.
+    const dimRingRadius = ringRadius(otherNodes.length, DIM_BOX_WIDTH, 60, 420);
+    const dimRadius = Math.max(dimRingRadius, factRadius + FACT_BOX_WIDTH / 2 + DIM_BOX_WIDTH / 2 + 120);
+    const dimAngleStep = (2 * Math.PI) / Math.max(1, otherNodes.length);
 
     const otherFlowNodes: Node[] = otherNodes.map((node, index) => {
-      const angle = index * angleStep - Math.PI / 2;
+      const angle = index * dimAngleStep - Math.PI / 2;
 
       return {
         id: node.id,
         type: "dim",
         position: {
-          x: Math.cos(angle) * radius,
-          y: Math.sin(angle) * radius,
+          x: Math.cos(angle) * dimRadius,
+          y: Math.sin(angle) * dimRadius,
         },
         data: toData(node) as unknown as Record<string, unknown>,
         draggable: false,
@@ -315,8 +359,8 @@ export function MetadataDiagram({ nodes: inputNodes, edges: inputEdges }: Metada
           onEdgeClick={(_, edge) => handleEdgeClick(edge.id)}
           onPaneClick={() => setSelectedEdgeId(null)}
           fitView
-          fitViewOptions={{ padding: 0.25, minZoom: 0.3, maxZoom: 1.1, duration: 500 }}
-          minZoom={0.2}
+          fitViewOptions={{ padding: 0.2, minZoom: 0.2, maxZoom: 1.1, duration: 500 }}
+          minZoom={0.15}
           maxZoom={1.6}
           panOnDrag
           zoomOnScroll

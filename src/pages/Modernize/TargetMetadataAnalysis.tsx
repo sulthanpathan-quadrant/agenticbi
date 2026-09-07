@@ -1,23 +1,59 @@
 import { useState } from "react";
 import { AlertCircle, ArrowRight, Loader2, Sparkles } from "lucide-react";
 
-import {
-  Footer,
-  StepHeader,
-  type AnalysisRelationship,
-  type AnalysisTable,
-  type ConnectionValues,
-  type MetadataAnalysisResult,
-} from "./ModernizeShared";
+import { Footer, StepHeader, type ConnectionValues } from "./ModernizeShared";
 import { DiagramEdge, DiagramNode, MetadataDiagram } from "./MetaDataDiagram";
 
+const API_BASE_URL =
+  "https://veriton-udm-backend-cdgxcme7fbbmfyg5.westus3-01.azurewebsites.net";
 
+/*
+ * step1-target-analysis now returns a full columns array per
+ * table (name, data_type, is_primary_key) in addition to the
+ * role/grain classification. This shape has more detail than
+ * the generic MetadataAnalysisResult type in ModernizeShared,
+ * so it's defined locally here to match the real response —
+ * same approach as SourceMetadataResult.
+ */
 
-const API_BASE_URL = "https://veriton-udm-backend-cdgxcme7fbbmfyg5.westus3-01.azurewebsites.net";
+export type TargetTableRole = "dimension" | "fact" | "bridge" | "unknown";
+
+export interface TargetMetadataColumn {
+  name: string;
+  data_type: string;
+  is_primary_key: boolean;
+}
+
+export interface TargetMetadataTable {
+  schema: string;
+  name: string;
+  role: TargetTableRole;
+  grain: string;
+  related_tables: string[];
+  outgoing_fk_count: number;
+  incoming_fk_count: number;
+  columns: TargetMetadataColumn[];
+}
+
+export interface TargetMetadataRelationship {
+  from_table: string;
+  from_columns: string[];
+  to_table: string;
+  to_columns: string[];
+  constraint_name: string;
+  cardinality: string;
+}
+
+export interface TargetMetadataResult {
+  summary: string;
+  tables: TargetMetadataTable[];
+  relationships: TargetMetadataRelationship[];
+  saved_to?: string;
+}
 
 const fetchTargetAnalysis = async (
   sessionId: string
-): Promise<MetadataAnalysisResult> => {
+): Promise<TargetMetadataResult> => {
   const response = await fetch(
     `${API_BASE_URL}/sessions/${sessionId}/step1-target-analysis`,
     {
@@ -40,7 +76,7 @@ const fetchTargetAnalysis = async (
 };
 
 // "dimension" -> "Lookup list" etc., so non-technical users understand.
-function friendlyRole(role: AnalysisTable["role"]) {
+function friendlyRole(role: TargetTableRole) {
   switch (role) {
     case "dimension":
       return "Lookup list";
@@ -60,7 +96,7 @@ function friendlyGrain(grain: string) {
   return grain.charAt(0).toUpperCase() + grain.slice(1);
 }
 
-function friendlyTargetSummary(result: MetadataAnalysisResult) {
+function friendlyTargetSummary(result: TargetMetadataResult) {
   const dimensions = result.tables.filter((t) => t.role === "dimension").length;
   const facts = result.tables.filter((t) => t.role === "fact").length;
   return `${result.tables.length} tables · ${dimensions} lookup lists · ${facts} activity tables · ${result.relationships.length} connection${result.relationships.length === 1 ? "" : "s"}`;
@@ -77,7 +113,9 @@ function shortName(qualified: string) {
   return qualified.split(".").pop() ?? qualified;
 }
 
-function TargetTableListItem({ table }: { table: AnalysisTable }) {
+function TargetTableListItem({ table }: { table: TargetMetadataTable }) {
+  const primaryKeyColumn = table.columns.find((col) => col.is_primary_key)?.name;
+
   return (
     <div className="rounded-xl border border-border bg-background p-4">
       <div className="flex items-center justify-between gap-3">
@@ -92,6 +130,20 @@ function TargetTableListItem({ table }: { table: AnalysisTable }) {
         <span className="shrink-0 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-primary">
           {friendlyRole(table.role)}
         </span>
+      </div>
+
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        <span>
+          {table.columns.length} column{table.columns.length === 1 ? "" : "s"}
+        </span>
+        {primaryKeyColumn && (
+          <span>
+            Key:{" "}
+            <span className="font-mono text-foreground">
+              {primaryKeyColumn}
+            </span>
+          </span>
+        )}
       </div>
 
       <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
@@ -117,7 +169,7 @@ function TargetTableListItem({ table }: { table: AnalysisTable }) {
 function TargetRelationshipListItem({
   relationship,
 }: {
-  relationship: AnalysisRelationship;
+  relationship: TargetMetadataRelationship;
 }) {
   return (
     <div className="border-b border-border px-4 py-3 last:border-0">
@@ -150,8 +202,8 @@ type PanelState = "idle" | "running" | "done" | "error";
 interface TargetMetadataAnalysisProps {
   sessionId: string | null;
   targetConfig: ConnectionValues | null;
-  targetMetadata: MetadataAnalysisResult | null;
-  onTargetMetadataChange: (metadata: MetadataAnalysisResult) => void;
+  targetMetadata: TargetMetadataResult | null;
+  onTargetMetadataChange: (metadata: TargetMetadataResult) => void;
   onBack: () => void;
   onNext: () => void;
 }
@@ -190,24 +242,36 @@ export default function TargetMetadataAnalysis({
       });
   };
 
-  /*
-   * NOTE: step1-target-analysis does not return column-level
-   * detail per table (unlike the source metadata response), so
-   * these diagram nodes render with an empty column list.
-   */
   const diagramNodes: DiagramNode[] = targetMetadata
-    ? targetMetadata.tables.map((table) => ({
-        id: `${table.schema}.${table.name}`,
-        label: table.name,
-        kind:
-          table.role === "fact"
-            ? "fact"
-            : table.role === "dimension"
-              ? "dimension"
-              : "table",
-        subtitle: `${friendlyRole(table.role)} · ${friendlyGrain(table.grain)}`,
-        columns: [],
-      }))
+    ? targetMetadata.tables.map((table) => {
+        const qualifiedName = `${table.schema}.${table.name}`;
+
+        // The API doesn't flag is_foreign_key directly, so a
+        // column counts as FK if this table is the "from_table"
+        // of a relationship that uses it.
+        const fkColumns = new Set(
+          targetMetadata.relationships
+            .filter((relationship) => relationship.from_table === qualifiedName)
+            .flatMap((relationship) => relationship.from_columns)
+        );
+
+        return {
+          id: qualifiedName,
+          label: table.name,
+          kind:
+            table.role === "fact"
+              ? "fact"
+              : table.role === "dimension"
+                ? "dimension"
+                : "table",
+          subtitle: `${friendlyRole(table.role)} · ${friendlyGrain(table.grain)}`,
+          columns: table.columns.map((col) => ({
+            name: col.name,
+            isPrimaryKey: col.is_primary_key,
+            isForeignKey: fkColumns.has(col.name),
+          })),
+        };
+      })
     : [];
 
   const diagramEdges: DiagramEdge[] = targetMetadata

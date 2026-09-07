@@ -12,18 +12,12 @@ import {
   StepHeader,
 } from "./ModernizeShared";
 
-interface ReviewApproveProps {
-  sessionId: string | null;
-  onBack: () => void;
-  onNext: () => void;
-}
-
-interface UploadResponse {
+export interface UploadResponse {
   row_count: number;
   saved_to: string;
 }
 
-interface ValidationResponse {
+export interface ValidationResponse {
   valid: boolean;
   errors: string[];
   warnings: string[];
@@ -31,24 +25,43 @@ interface ValidationResponse {
   rows_excluded: number;
 }
 
+interface ReviewApproveProps {
+  sessionId: string | null;
+
+  /*
+   * The selected file and both API results live in the parent
+   * (ModernizeData) so they survive navigating away from this
+   * step and back — ReviewApprove is unmounted whenever `step`
+   * changes, so local state here would otherwise be lost.
+   */
+  file: File | null;
+  uploadResult: UploadResponse | null;
+  validationResult: ValidationResponse | null;
+  onFileChange: (file: File | null) => void;
+  onUploadResultChange: (result: UploadResponse | null) => void;
+  onValidationResultChange: (result: ValidationResponse | null) => void;
+
+  onBack: () => void;
+  onNext: () => void;
+}
+
 export default function ReviewApprove({
   sessionId,
+  file,
+  uploadResult,
+  validationResult,
+  onFileChange,
+  onUploadResultChange,
+  onValidationResultChange,
   onBack,
   onNext,
 }: ReviewApproveProps) {
-  const [file, setFile] = useState<File | null>(null);
-
   const [uploading, setUploading] = useState(false);
-  const [uploaded, setUploaded] = useState(false);
-  const [uploadResult, setUploadResult] =
-    useState<UploadResponse | null>(null);
-
   const [validating, setValidating] = useState(false);
-  const [validated, setValidated] = useState(false);
-  const [validationResult, setValidationResult] =
-    useState<ValidationResponse | null>(null);
-
   const [error, setError] = useState<string | null>(null);
+
+  const uploaded = !!uploadResult;
+  const validated = !!validationResult?.valid;
 
   const handleFileChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -56,13 +69,9 @@ export default function ReviewApprove({
     const selectedFile =
       event.target.files?.[0] ?? null;
 
-    setFile(selectedFile);
-
-    setUploaded(false);
-    setUploadResult(null);
-
-    setValidated(false);
-    setValidationResult(null);
+    onFileChange(selectedFile);
+    onUploadResultChange(null);
+    onValidationResultChange(null);
 
     setError(null);
   };
@@ -82,7 +91,7 @@ export default function ReviewApprove({
 
     try {
       setUploading(true);
-      setUploaded(false);
+      onUploadResultChange(null);
       setError(null);
 
       const formData = new FormData();
@@ -120,8 +129,7 @@ export default function ReviewApprove({
       const result: UploadResponse =
         await response.json();
 
-      setUploadResult(result);
-      setUploaded(true);
+      onUploadResultChange(result);
 
       window.dispatchEvent(
         new CustomEvent("toast", {
@@ -165,8 +173,7 @@ export default function ReviewApprove({
 
     try {
       setValidating(true);
-      setValidated(false);
-      setValidationResult(null);
+      onValidationResultChange(null);
       setError(null);
 
       const response = await fetch(
@@ -197,7 +204,7 @@ export default function ReviewApprove({
         throw new Error(apiError);
       }
 
-      setValidationResult(result);
+      onValidationResultChange(result);
 
       if (!result.valid) {
         const validationErrors =
@@ -208,8 +215,6 @@ export default function ReviewApprove({
         setError(validationErrors);
         return;
       }
-
-      setValidated(true);
 
       window.dispatchEvent(
         new CustomEvent("toast", {
@@ -472,4 +477,3 @@ export default function ReviewApprove({
     </section>
   );
 }
-

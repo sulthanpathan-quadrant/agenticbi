@@ -553,10 +553,10 @@ export function SourceCredentialDialog({
   const [warehouse, setWarehouse] = useState("");
 
   // SAP
-  const [sapHost, setSapHost] = useState("78963a5f-a626-40d2-8f21-eed7980aaa8e.hana.prod-ap21.hanacloud.ondemand.com");
+  const [sapHost, setSapHost] = useState("431af96c-fde4-45af-8d7c-b1d76898c98a.hna0.prod-us10.hanacloud.ondemand.com");
   const [sapPort, setSapPort] = useState("443");
   const [sapUsername, setSapUsername] = useState("DBADMIN");
-  const [sapPassword, setSapPassword] = useState("Quadrant@2606");
+  const [sapPassword, setSapPassword] = useState("Quadrant@123");
  
   // Visibility toggles
   const [showAccessKeyId, setShowAccessKeyId] = useState(false);

@@ -18,7 +18,8 @@ export function WorkflowHeader() {
         localStorage.removeItem("current_dataset_path");
         localStorage.removeItem("current_onelake_path");
           localStorage.removeItem("current_thread_id");
-          localStorage.removeItem("ingestion_sources")
+          localStorage.removeItem("ingestion_sources");
+          sessionStorage.clear();
         
         navigate("/jobs");
     };

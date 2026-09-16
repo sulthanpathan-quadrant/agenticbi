@@ -342,7 +342,7 @@ export default function SourceMetadataAnalysis({
             <div className="flex flex-col gap-4">
               <div>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Tables ({sourceMetadata.tables.length})
+                  Source Tables ({sourceMetadata.tables.length})
                 </h3>
                 <div className="max-h-[270px] space-y-3 overflow-y-auto pr-1">
                   {sourceMetadata.tables.map((table) => (
@@ -357,7 +357,7 @@ export default function SourceMetadataAnalysis({
 
               <div>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Relationships ({sourceMetadata.relationships.length})
+                 Source Relationships ({sourceMetadata.relationships.length})
                 </h3>
                 <div className="max-h-[270px] overflow-y-auto rounded-xl border border-border">
                   {sourceMetadata.relationships.map((relationship) => (

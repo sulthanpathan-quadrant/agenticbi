@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   Eye,
@@ -139,6 +140,15 @@ interface ConnectionDialogProps {
   connectionId: string;
   connectionName: string;
   onConnect: (values: ConnectionValues) => void;
+  /*
+   * Optional prefill, e.g. hardcoded credentials for a given
+   * connector. Every field named here shows up already filled
+   * in the form; secret fields (password, etc.) still render
+   * masked via the existing type="password" + reveal toggle,
+   * so a prefilled password just looks like a filled-in dot
+   * field until the user clicks the eye icon to reveal it.
+   */
+  initialValues?: ConnectionValues;
 }
 
 export default function ConnectionDialog({
@@ -147,9 +157,10 @@ export default function ConnectionDialog({
   connectionId,
   connectionName,
   onConnect,
+  initialValues,
 }: ConnectionDialogProps) {
   const [values, setValues] =
-    useState<ConnectionValues>({});
+    useState<ConnectionValues>(initialValues ?? {});
 
   const [reveal, setReveal] =
     useState<Record<string, boolean>>({});
@@ -162,8 +173,16 @@ export default function ConnectionDialog({
       setValues({});
       setReveal({});
       setBusy(false);
+    } else {
+      /*
+       * Re-seed from initialValues every time the dialog opens
+       * (also covers connectionId changing while the dialog
+       * stays mounted, e.g. clicking a different source card).
+       */
+      setValues(initialValues ?? {});
     }
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, connectionId]);
 
   if (!open) {
     return null;

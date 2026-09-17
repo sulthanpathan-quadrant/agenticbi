@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -186,6 +187,57 @@ function confClass(confidence: number) {
   return "bg-destructive/15 text-destructive";
 }
 
+/*
+ * ---------------------------------------------------------------
+ * SIMULATED PROGRESS
+ * ---------------------------------------------------------------
+ * The backend doesn't stream real progress — step3-generate-mapping
+ * is a single POST that resolves only once the whole job is done,
+ * and that job typically takes 2-3 minutes for a full schema.
+ *
+ * So instead of a fixed per-tick increment (which would either
+ * finish in a few seconds or crawl forever depending on how long
+ * the job actually takes), progress is a function of *elapsed
+ * time* against an expected duration. It follows an easing curve
+ * that moves briskly at first, then slows as it approaches a 92%
+ * soft cap — so a job that finishes early still looks complete,
+ * and a job that runs long doesn't stall the bar dead on-screen.
+ * When the real response lands, we snap straight to 100% and hold
+ * briefly before showing the results.
+ * ---------------------------------------------------------------
+ */
+const EXPECTED_DURATION_MS = 150_000; // ~2.5 minutes, typical case
+const PROGRESS_TAU_MS = EXPECTED_DURATION_MS / 2; // controls easing rate
+const PROGRESS_CAP = 92;
+
+const GENERATION_STAGES: { threshold: number; label: string }[] = [
+  { threshold: 6, label: "Reading source schema metadata..." },
+  { threshold: 20, label: "Reading target UDM schema..." },
+  { threshold: 38, label: "Comparing source and target columns..." },
+  { threshold: 58, label: "Scoring match confidence..." },
+  { threshold: 75, label: "Finding alternate candidates..." },
+  { threshold: 88, label: "Cross-checking against reference docs..." },
+  { threshold: 92, label: "Writing mapping rows..." },
+];
+
+function getStageLabel(pct: number) {
+  for (const stage of GENERATION_STAGES) {
+    if (pct < stage.threshold) {
+      return stage.label;
+    }
+  }
+
+  return "Finalizing...";
+}
+
+function formatElapsed(ms: number) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 type Phase = "idle" | "generating" | "done" | "error";
 
 interface ColumnMappingProps {
@@ -239,6 +291,64 @@ export default function ColumnMapping({
 
   const [downloadError, setDownloadError] =
     useState<string | null>(null);
+
+  const [progress, setProgress] = useState(0);
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  // Tracks whether the real request has finished, so the ticker
+  // knows it's allowed to blow past the 92% soft cap.
+  const requestDoneRef = useRef(false);
+
+  // When the current generation run started, so progress is driven
+  // by elapsed time rather than a fixed per-tick increment.
+  const startTimeRef = useRef<number | null>(null);
+
+  /*
+   * ---------------------------------------------------------------
+   * PROGRESS TICKER
+   * ---------------------------------------------------------------
+   * Runs only while phase === "generating". Progress is derived
+   * from elapsed time via an easing curve toward PROGRESS_CAP, so
+   * the bar's pace matches the job's real ~2-3 minute duration
+   * instead of racing to 90% in a few seconds. Once the real
+   * request resolves, requestDoneRef flips and the bar is allowed
+   * to close out past the cap to 100%.
+   * ---------------------------------------------------------------
+   */
+  useEffect(() => {
+    if (phase !== "generating") {
+      return;
+    }
+
+    if (startTimeRef.current === null) {
+      startTimeRef.current = Date.now();
+    }
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - (startTimeRef.current ?? Date.now());
+      setElapsedMs(elapsed);
+
+      setProgress((prev) => {
+        if (prev >= 100) {
+          return prev;
+        }
+
+        if (requestDoneRef.current) {
+          const remaining = 100 - prev;
+          return Math.min(prev + Math.max(remaining * 0.5, 4), 100);
+        }
+
+        const eased =
+          PROGRESS_CAP * (1 - Math.exp(-elapsed / PROGRESS_TAU_MS));
+
+        // Never go backwards, even if the easing curve and a prior
+        // tick briefly disagree.
+        return Math.max(prev, Math.min(eased, PROGRESS_CAP));
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [phase]);
 
   /*
    * ---------------------------------------------------------------
@@ -310,6 +420,10 @@ export default function ColumnMapping({
       return;
     }
 
+    requestDoneRef.current = false;
+    startTimeRef.current = Date.now();
+    setProgress(0);
+    setElapsedMs(0);
     setPhase("generating");
     setError(null);
 
@@ -318,14 +432,23 @@ export default function ColumnMapping({
 
       const rows = await fetchMappingRows(sessionId);
 
+      requestDoneRef.current = true;
+      setProgress(100);
+
       onMappingResultChange(result);
 
       onPreviewRowsChange(
         rows.slice(0, 5)
       );
 
+      // Brief hold so the bar visibly reaches 100% before the
+      // results table replaces it.
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
       setPhase("done");
     } catch (err) {
+      requestDoneRef.current = true;
+
       setError(
         err instanceof Error
           ? err.message
@@ -405,8 +528,26 @@ export default function ColumnMapping({
           </h3>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Comparing every source column against the target UDM.
-            This usually takes a few seconds.
+            {getStageLabel(progress)}
+          </p>
+
+          <div className="mt-6 w-full max-w-sm">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            <div className="mt-2 flex items-center justify-between text-xs font-medium tabular-nums text-muted-foreground">
+              <span>{formatElapsed(elapsedMs)} elapsed</span>
+              <span>{Math.round(progress)}%</span>
+            </div>
+          </div>
+
+          <p className="mt-5 text-xs text-muted-foreground">
+            This usually takes 2–3 minutes for a full schema —
+            feel free to leave this tab open, it'll keep running.
           </p>
         </div>
       )}

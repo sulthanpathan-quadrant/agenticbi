@@ -1,3 +1,5 @@
+
+
 import { useState } from "react";
 import { Database, Loader2, Table2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -34,6 +36,34 @@ const TARGETS = [
     sub: "Unity Catalog",
   },
 ];
+
+/*
+ * ---------------------------------------------------------------
+ * HARDCODED CREDENTIALS
+ * ---------------------------------------------------------------
+ * Targets listed here skip the ConnectionDialog: clicking the
+ * card connects immediately and opens the schema picker.
+ *
+ * Snowflake field names must match what SchemaPickerDialog reads
+ * (account_identifier / username / password / warehouse) and what
+ * createSession sends (+ database / role).
+ *
+ * Keep these values identical to the Snowflake block in
+ * SourceConnection.tsx if both point at the same account.
+ *
+ * WARNING: this ships in the client bundle — devtools-readable.
+ * Move to env vars or the backend before deploying for real.
+ * ---------------------------------------------------------------
+ */
+const HARDCODED_CREDENTIALS: Record<string, ConnectionValues> = {
+  snowflake: {
+    account_identifier: "QPXJSGB-RY62199",
+    username: "navaneethhk",
+    password: "",
+    warehouse: "COMPUTE_WH",
+    role: "ACCOUNTADMIN",
+  },
+};
 
 const SENSITIVE_CREDENTIAL_KEYS = new Set([
   "password",
@@ -108,18 +138,25 @@ export default function TargetConnection({
    * ---------------------------------------------------------
    * CONNECTION SUCCESS
    * ---------------------------------------------------------
+   *
+   * The dialog is prefilled from HARDCODED_CREDENTIALS (see
+   * the initialValues prop passed to ConnectionDialog below),
+   * so `values` already contains them as submitted by the form.
+   * Re-merging here is a safety net in case the user edits a
+   * hardcoded field before hitting Connect.
    */
   const handleConnect = (
     values: ConnectionValues
   ) => {
-    if (!dialogFor) {
+    const connectorType = dialogFor;
+
+    if (!connectorType) {
       return;
     }
 
-    const connectorType = dialogFor;
-
     const config: ConnectionValues = {
       ...values,
+      ...(HARDCODED_CREDENTIALS[connectorType] ?? {}),
       target_type: connectorType,
     };
 
@@ -456,7 +493,6 @@ export default function TargetConnection({
   ) => {
     setTarget(targetId);
     setConnected(null);
-    setDialogFor(targetId);
     setSchemaPickerOpen(false);
     setError(null);
 
@@ -466,6 +502,8 @@ export default function TargetConnection({
     sessionStorage.removeItem(
       TARGET_STORAGE_KEY
     );
+
+    setDialogFor(targetId);
   };
 
   /*
@@ -651,7 +689,14 @@ export default function TargetConnection({
               item.id === dialogFor
           )?.name ?? ""
         }
-        onConnect={handleConnect}
+        onConnect={(values: ConnectionValues) =>
+          handleConnect(values)
+        }
+        initialValues={
+          dialogFor
+            ? HARDCODED_CREDENTIALS[dialogFor]
+            : undefined
+        }
       />
 
       <Footer
@@ -677,3 +722,4 @@ export default function TargetConnection({
     </section>
   );
 }
+

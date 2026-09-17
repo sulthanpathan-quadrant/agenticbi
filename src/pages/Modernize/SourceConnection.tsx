@@ -1,3 +1,5 @@
+
+
 import { useState } from "react";
 import { Database, Table2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -42,6 +44,47 @@ const SOURCES = [
     sub: "Cloud Storage",
   },
 ];
+
+/*
+ * ---------------------------------------------------------------
+ * HARDCODED CREDENTIALS
+ * ---------------------------------------------------------------
+ * Connectors listed here skip the ConnectionDialog entirely:
+ * clicking the source card connects immediately using these
+ * values, then opens the relevant schema picker.
+ *
+ * Field names must match what the pickers / the /sessions payload
+ * already read:
+ *   sqlserver -> host, database, username, password
+ *                (+ port / auth_mode / driver for /sessions)
+ *   snowflake -> account_identifier, username, password, warehouse
+ *
+ * WARNING: anything here ships inside the client bundle and is
+ * readable in devtools. Move to env vars or the backend before
+ * this goes anywhere real.
+ *
+ * To go back to the normal dialog flow for a connector, just
+ * delete its entry from this object — no other changes needed.
+ * ---------------------------------------------------------------
+ */
+const HARDCODED_CREDENTIALS: Record<string, ConnectionValues> = {
+  sqlserver: {
+    host: "agenticbisql.database.windows.net",
+    port: "1433",
+    database: "udm_mfg",
+    username: "agenticbi",
+    password: "Quadrant@123",
+    auth_mode: "sql",
+    driver: "ODBC Driver 17 for SQL Server",
+  },
+  snowflake: {
+    account_identifier: "QPXJSGB-RY62199",
+    username: "navaneethhk",
+    password: "",
+    warehouse: "COMPUTE_WH",
+    role: "ACCOUNTADMIN",
+  },
+};
 
 /*
  * Connectors that use the schema-only picker (SchemaPickerDialog).
@@ -107,18 +150,27 @@ export default function SourceConnection({
    * ---------------------------------------------------------
    * CONNECTION SUCCESS
    * ---------------------------------------------------------
+   *
+   * The dialog is prefilled from HARDCODED_CREDENTIALS (see
+   * the initialValues prop passed to ConnectionDialog below),
+   * so `values` already contains them as submitted by the form.
+   * We still re-merge here as a safety net in case the user
+   * edits a hardcoded field before hitting Connect and you'd
+   * rather that be ignored — remove this spread if you want
+   * user edits to win instead.
    */
   const handleConnect = (
     values: ConnectionValues
   ) => {
-    if (!dialogFor) {
+    const connectorType = dialogFor;
+
+    if (!connectorType) {
       return;
     }
 
-    const connectorType = dialogFor;
-
     const config: ConnectionValues = {
       ...values,
+      ...(HARDCODED_CREDENTIALS[connectorType] ?? {}),
       source_type: connectorType,
     };
 
@@ -340,7 +392,6 @@ export default function SourceConnection({
   ) => {
     setSource(sourceId);
     setConnected(null);
-    setDialogFor(sourceId);
     setFilePickerOpen(false);
     setSqlServerPickerOpen(false);
     setSchemaPickerOpen(false);
@@ -349,6 +400,8 @@ export default function SourceConnection({
     sessionStorage.removeItem(
       SOURCE_STORAGE_KEY
     );
+
+    setDialogFor(sourceId);
   };
 
   /*
@@ -577,7 +630,14 @@ export default function SourceConnection({
               item.id === dialogFor
           )?.name ?? ""
         }
-        onConnect={handleConnect}
+        onConnect={(values: ConnectionValues) =>
+          handleConnect(values)
+        }
+        initialValues={
+          dialogFor
+            ? HARDCODED_CREDENTIALS[dialogFor]
+            : undefined
+        }
       />
 
       <Footer
@@ -588,3 +648,4 @@ export default function SourceConnection({
     </section>
   );
 }
+

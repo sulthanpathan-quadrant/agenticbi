@@ -6,11 +6,11 @@ import {
   Plug,
   X,
 } from "lucide-react";
- 
+
 import type {
   ConnectionValues,
 } from "./ModernizeShared";
- 
+
 export type Field = {
   key: string;
   label: string;
@@ -18,7 +18,7 @@ export type Field = {
   secret?: boolean;
   optional?: boolean;
 };
- 
+
 export const FIELDS: Record<string, Field[]> = {
   sqlserver: [
     {
@@ -42,7 +42,7 @@ export const FIELDS: Record<string, Field[]> = {
       secret: true,
     },
   ],
- 
+
   sap: [
     {
       key: "sap_host",
@@ -65,7 +65,7 @@ export const FIELDS: Record<string, Field[]> = {
       secret: true,
     },
   ],
- 
+
   snowflake: [
     {
       key: "account_identifier",
@@ -87,7 +87,7 @@ export const FIELDS: Record<string, Field[]> = {
       placeholder: "XXXX",
     },
   ],
- 
+
   azure: [
     {
       key: "connection_string",
@@ -96,7 +96,7 @@ export const FIELDS: Record<string, Field[]> = {
       secret: true,
     },
   ],
- 
+
   fabric: [
     {
       key: "tenant_id",
@@ -114,7 +114,7 @@ export const FIELDS: Record<string, Field[]> = {
       secret: true,
     },
   ],
- 
+
   databricks: [
     {
       key: "host",
@@ -132,7 +132,23 @@ export const FIELDS: Record<string, Field[]> = {
     },
   ],
 };
+
+const DEMO_DEFAULTS: Record<string, ConnectionValues> = {
+  sqlserver: {
+    host: import.meta.env.VITE_DEMO_SQLSERVER_HOST ?? "",
+    database: import.meta.env.VITE_DEMO_SQLSERVER_DATABASE ?? "",
+    username: import.meta.env.VITE_DEMO_SQLSERVER_USERNAME ?? "",
+    password: import.meta.env.VITE_DEMO_SQLSERVER_PASSWORD ?? "",
+  },
+  snowflake: {
+    account_identifier: import.meta.env.VITE_DEMO_SNOWFLAKE_ACCOUNT_IDENTIFIER ?? "",
+    username: import.meta.env.VITE_DEMO_SNOWFLAKE_USERNAME ?? "",
+    password: import.meta.env.VITE_DEMO_SNOWFLAKE_PASSWORD ?? "",
+    warehouse: import.meta.env.VITE_DEMO_SNOWFLAKE_WAREHOUSE ?? "",
+  },
  
+};
+
 interface ConnectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -140,7 +156,7 @@ interface ConnectionDialogProps {
   connectionName: string;
   onConnect: (values: ConnectionValues) => void;
 }
- 
+
 export default function ConnectionDialog({
   open,
   onOpenChange,
@@ -150,37 +166,39 @@ export default function ConnectionDialog({
 }: ConnectionDialogProps) {
   const [values, setValues] =
     useState<ConnectionValues>({});
- 
+
   const [reveal, setReveal] =
     useState<Record<string, boolean>>({});
- 
+
   const [busy, setBusy] =
     useState(false);
- 
+
   useEffect(() => {
-    if (!open) {
-      setValues({});
-      setReveal({});
-      setBusy(false);
-    }
-  }, [open]);
- 
+  if (!open) {
+    setValues({});
+    setReveal({});
+    setBusy(false);
+  } else {
+    setValues({ ...(DEMO_DEFAULTS[connectionId] ?? {}) });
+  }
+}, [open, connectionId]);
+
   if (!open) {
     return null;
   }
- 
+
   const fields =
     FIELDS[connectionId] ?? [];
- 
+
   const valid = fields.every(
     (field) =>
       field.optional ||
       (values[field.key] ?? "").trim() !== ""
   );
- 
+
   const submit = () => {
     setBusy(true);
- 
+
     /*
      * No API call here.
      *
@@ -192,37 +210,37 @@ export default function ConnectionDialog({
      */
     window.setTimeout(() => {
       setBusy(false);
- 
+
       onConnect(values);
- 
+
       onOpenChange(false);
     }, 300);
   };
- 
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       />
- 
+
       <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
- 
+
         <div className="flex items-center gap-3 border-b border-border px-6 py-4">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-primary">
             <Plug className="h-5 w-5" />
           </span>
- 
+
           <div className="flex-1">
             <h2 className="font-semibold text-foreground">
               Connect to {connectionName}
             </h2>
- 
+
             <p className="text-xs text-muted-foreground">
               Credentials are used only to read metadata.
             </p>
           </div>
- 
+
           <button
             type="button"
             onClick={() => onOpenChange(false)}
@@ -232,9 +250,9 @@ export default function ConnectionDialog({
             <X className="h-4 w-4" />
           </button>
         </div>
- 
+
         <div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-5">
- 
+
           {fields.map((field) => (
             <div
               key={field.key}
@@ -245,14 +263,14 @@ export default function ConnectionDialog({
                 className="text-sm font-medium text-foreground"
               >
                 {field.label}
- 
+
                 {field.optional && (
                   <span className="ml-1 text-xs text-muted-foreground">
                     (optional)
                   </span>
                 )}
               </label>
- 
+
               <div className="relative">
                 <input
                   id={field.key}
@@ -277,7 +295,7 @@ export default function ConnectionDialog({
                   }
                   className="h-11 w-full rounded-xl border border-border bg-background px-3 pr-11 text-sm text-foreground outline-none focus:border-primary"
                 />
- 
+
                 {field.secret && (
                   <button
                     type="button"
@@ -306,7 +324,7 @@ export default function ConnectionDialog({
             </div>
           ))}
         </div>
- 
+
         <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
           <button
             type="button"
@@ -315,7 +333,7 @@ export default function ConnectionDialog({
           >
             Cancel
           </button>
- 
+
           <button
             type="button"
             onClick={submit}
@@ -325,7 +343,7 @@ export default function ConnectionDialog({
             {busy && (
               <Loader2 className="h-4 w-4 animate-spin" />
             )}
- 
+
             {busy
               ? "Connecting..."
               : "Connect"}
@@ -335,4 +353,3 @@ export default function ConnectionDialog({
     </div>
   );
 }
- 

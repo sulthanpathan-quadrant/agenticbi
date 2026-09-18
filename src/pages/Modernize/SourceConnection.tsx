@@ -1,25 +1,25 @@
 import { useState } from "react";
 import { Database, Table2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
- 
+
 import ConnectionDialog from "./ConnectionDialog";
 import { FilePickerDialog } from "@/components/FilePickerDialog";
- 
+
 import {
   ConnectedBar,
   Footer,
   StepHeader,
   type ConnectionValues,
 } from "./ModernizeShared";
- 
+
 import {
   SchemaPickerDialog,
   SchemaPickerTableOption,
 } from "./SchemaPickerDialog";
- 
+
 import { toast } from "@/hooks/use-toast";
 import { SqlServerCredentials, SqlServerPickerDialog, SqlServerTableOption } from "./SqlServerPickerDialog";
- 
+
 const SOURCES = [
   {
     id: "sqlserver",
@@ -42,7 +42,7 @@ const SOURCES = [
     sub: "Cloud Storage",
   },
 ];
- 
+
 /*
  * Connectors that use the schema-only picker (SchemaPickerDialog).
  * SQL Server has its own dedicated dialog. Azure keeps using the
@@ -50,22 +50,22 @@ const SOURCES = [
  * has no schema/table concept.
  */
 const SCHEMA_PICKER_SOURCES = new Set(["sap", "snowflake"]);
- 
+
 const SENSITIVE_CREDENTIAL_KEYS = new Set([
   "password",
   "sap_password",
   "client_secret",
   "access_token",
 ]);
- 
+
 const SOURCE_STORAGE_KEY = "modernize_source_connection";
- 
+
 interface SourceConnectionProps {
   value: ConnectionValues | null;
   onConnected: (config: ConnectionValues) => void;
   onNext: () => void;
 }
- 
+
 export default function SourceConnection({
   value,
   onConnected,
@@ -74,35 +74,35 @@ export default function SourceConnection({
   const [source, setSource] = useState<string | null>(
     value?.source_type ?? null
   );
- 
+
   const [connected, setConnected] = useState<string | null>(
     value?.source_type ?? null
   );
- 
+
   const [creds, setCreds] = useState<ConnectionValues>(
     value ?? {}
   );
- 
+
   const [dialogFor, setDialogFor] =
     useState<string | null>(null);
- 
+
   const [filePickerOpen, setFilePickerOpen] =
     useState(false);
- 
+
   const [sqlServerPickerOpen, setSqlServerPickerOpen] =
     useState(false);
- 
+
   const [schemaPickerOpen, setSchemaPickerOpen] =
     useState(false);
- 
+
   const [error, setError] =
     useState<string | null>(null);
- 
+
   const sourceName =
     SOURCES.find(
       (item) => item.id === connected
     )?.name ?? "";
- 
+
   /*
    * ---------------------------------------------------------
    * CONNECTION SUCCESS
@@ -114,18 +114,18 @@ export default function SourceConnection({
     if (!dialogFor) {
       return;
     }
- 
+
     const connectorType = dialogFor;
- 
+
     const config: ConnectionValues = {
       ...values,
       source_type: connectorType,
     };
- 
+
     setCreds(config);
     setConnected(connectorType);
     setError(null);
- 
+
     /*
      * Store credentials immediately.
      *
@@ -137,15 +137,15 @@ export default function SourceConnection({
       SOURCE_STORAGE_KEY,
       JSON.stringify(config)
     );
- 
+
     onConnected(config);
- 
+
     setDialogFor(null);
- 
+
     const connectedName =
       SOURCES.find((item) => item.id === connectorType)?.name ??
       connectorType;
- 
+
     if (connectorType === "sqlserver") {
       /*
        * No "connected" card for SQL Server — a toast
@@ -156,7 +156,7 @@ export default function SourceConnection({
         title: "Connected to SQL Server",
         description: "Select a schema to load its tables.",
       });
- 
+
       setSqlServerPickerOpen(true);
     } else if (SCHEMA_PICKER_SOURCES.has(connectorType)) {
       /*
@@ -167,7 +167,7 @@ export default function SourceConnection({
         title: `Connected to ${connectedName}`,
         description: "Select a schema to load its tables.",
       });
- 
+
       setSchemaPickerOpen(true);
     } else {
       /*
@@ -177,7 +177,7 @@ export default function SourceConnection({
       setFilePickerOpen(true);
     }
   };
- 
+
   /*
    * ---------------------------------------------------------
    * SAVE SOURCE CONFIGURATION
@@ -195,17 +195,17 @@ export default function SourceConnection({
         [],
       ...extra,
     };
- 
+
     setCreds(config);
- 
+
     sessionStorage.setItem(
       SOURCE_STORAGE_KEY,
       JSON.stringify(config)
     );
- 
+
     onConnected(config);
   };
- 
+
   /*
    * ---------------------------------------------------------
    * FILE PICKER SELECTION (Azure only now)
@@ -230,17 +230,17 @@ export default function SourceConnection({
         file.name ??
         file.id
     );
- 
+
     const returnedCredentials =
       pickerCredentials &&
-      typeof pickerCredentials === "object"
+        typeof pickerCredentials === "object"
         ? (pickerCredentials as Record<string, unknown>)
         : {};
- 
+
     const extra: Partial<ConnectionValues> = {
       tables: selectedNames,
     };
- 
+
     if (
       typeof returnedCredentials.database ===
       "string"
@@ -248,7 +248,7 @@ export default function SourceConnection({
       extra.database =
         returnedCredentials.database;
     }
- 
+
     if (
       typeof returnedCredentials.schema ===
       "string"
@@ -256,7 +256,7 @@ export default function SourceConnection({
       extra.schema =
         returnedCredentials.schema;
     }
- 
+
     Object.entries(returnedCredentials).forEach(
       ([key, val]) => {
         if (
@@ -268,11 +268,11 @@ export default function SourceConnection({
         }
       }
     );
- 
+
     saveSourceConfiguration(extra);
     setFilePickerOpen(false);
   };
- 
+
   /*
    * ---------------------------------------------------------
    * SQL SERVER PICKER SELECTION
@@ -290,15 +290,15 @@ export default function SourceConnection({
     const extra: Partial<ConnectionValues> = {
       tables: tables.map((table) => table.fullPath),
     };
- 
+
     if (pickerCredentials?.schema) {
       extra.schema = pickerCredentials.schema;
     }
- 
+
     saveSourceConfiguration(extra);
     setSqlServerPickerOpen(false);
   };
- 
+
   /*
    * ---------------------------------------------------------
    * SCHEMA PICKER SELECTION (SAP / Snowflake)
@@ -314,7 +314,7 @@ export default function SourceConnection({
     const extra: Partial<ConnectionValues> = {
       tables: tables.map((table) => table.fullPath),
     };
- 
+
     if (pickerCredentials) {
       Object.entries(pickerCredentials).forEach(([key, val]) => {
         if (
@@ -325,11 +325,11 @@ export default function SourceConnection({
         }
       });
     }
- 
+
     saveSourceConfiguration(extra);
     setSchemaPickerOpen(false);
   };
- 
+
   /*
    * ---------------------------------------------------------
    * SOURCE CARD CLICK
@@ -339,18 +339,10 @@ export default function SourceConnection({
     sourceId: string
   ) => {
     setSource(sourceId);
-    setConnected(null);
     setDialogFor(sourceId);
-    setFilePickerOpen(false);
-    setSqlServerPickerOpen(false);
-    setSchemaPickerOpen(false);
     setError(null);
- 
-    sessionStorage.removeItem(
-      SOURCE_STORAGE_KEY
-    );
   };
- 
+
   /*
    * ---------------------------------------------------------
    * CONTINUE
@@ -358,10 +350,10 @@ export default function SourceConnection({
    */
   const handleNext = () => {
     if (!connected) return;
- 
+
     onNext();
   };
- 
+
   /*
    * SAP / Snowflake credentials shape expected by the schema
    * picker's underlying api.ts calls.
@@ -370,76 +362,73 @@ export default function SourceConnection({
     connected === "sap"
       ? "sap"
       : connected === "snowflake"
-      ? "snowflake"
-      : null;
- 
+        ? "snowflake"
+        : null;
+
   const schemaPickerCredentials =
     connected === "snowflake"
       ? {
-          account_identifier: creds.account_identifier ?? "",
-          username: creds.username ?? "",
-          password: creds.password ?? "",
-          warehouse: creds.warehouse ?? "",
-        }
+        account_identifier: creds.account_identifier ?? "",
+        username: creds.username ?? "",
+        password: creds.password ?? "",
+        warehouse: creds.warehouse ?? "",
+      }
       : connected === "sap"
-      ? {
+        ? {
           sap_host: creds.sap_host ?? "",
           sap_port: Number(creds.sap_port ?? 0),
           sap_username: creds.sap_username ?? "",
           sap_password: creds.sap_password ?? "",
         }
-      : null;
- 
+        : null;
+
   return (
     <section>
       <StepHeader
         title="Connect to the Data Source"
         desc="Connect the system you are migrating from, then continue to connect the target UDM."
       />
- 
+
       <h2 className="mb-4 text-lg font-semibold text-foreground">
         Select a Source
       </h2>
- 
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {SOURCES.map((item) => {
           const isSelected =
             source === item.id;
- 
+
           return (
             <Card
               key={item.id}
-              className={`cursor-pointer border border-border p-6 transition-colors group ${
-                isSelected
+              className={`cursor-pointer border border-border p-6 transition-colors group ${isSelected
                   ? "border-primary bg-accent/30"
                   : "hover:bg-accent/30"
-              }`}
+                }`}
               onClick={() =>
                 handleSourceClick(item.id)
               }
             >
               <div className="flex flex-col items-center space-y-3 text-center">
                 <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-lg border transition-colors ${
-                    isSelected
+                  className={`flex h-12 w-12 items-center justify-center rounded-lg border transition-colors ${isSelected
                       ? "border-primary bg-primary/10"
                       : "border-border bg-card group-hover:border-primary"
-                  }`}
+                    }`}
                 >
                   <Database
-                    className={`h-6 w-6 transition-colors ${
-                      isSelected
+                    className={`h-6 w-6 transition-colors ${isSelected
                         ? "text-primary"
                         : "text-muted-foreground group-hover:text-primary"
-                    }`}
+                      }`}
                   />
                 </div>
- 
+
                 <div>
                   <p className="text-sm font-medium text-foreground">
                     {item.name}
                   </p>
- 
+
                   <p className="text-xs text-muted-foreground">
                     {item.sub}
                   </p>
@@ -449,7 +438,7 @@ export default function SourceConnection({
           );
         })}
       </div>
- 
+
       {/*
        * SQL Server, SAP, and Snowflake all skip the "connected"
        * card — a toast confirms the connection instead (see
@@ -464,7 +453,7 @@ export default function SourceConnection({
           }
         />
       )}
- 
+
       {/*
        * -------------------------------------------------------
        * SELECTED TABLES — list view (replaces the old chip/pill
@@ -481,7 +470,7 @@ export default function SourceConnection({
               {creds.schema ? `${creds.schema} — ` : ""}
               Selected tables ({creds.tables.length})
             </p>
- 
+
             <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
               {creds.tables.map((table) => (
                 <div
@@ -495,13 +484,13 @@ export default function SourceConnection({
             </div>
           </div>
         )}
- 
+
       {error && (
         <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
- 
+
       {/*
        * -------------------------------------------------------
        * SQL SERVER PICKER (dedicated, schema-only)
@@ -520,7 +509,7 @@ export default function SourceConnection({
           onSelect={handleSqlServerSelect}
         />
       )}
- 
+
       {/*
        * -------------------------------------------------------
        * SAP / SNOWFLAKE PICKER (schema-only, new component —
@@ -537,7 +526,7 @@ export default function SourceConnection({
           onSelect={handleSchemaPickerSelect}
         />
       )}
- 
+
       {/*
        * -------------------------------------------------------
        * AZURE FILE PICKER
@@ -560,12 +549,13 @@ export default function SourceConnection({
           isAzure
         />
       )}
- 
+
       <ConnectionDialog
         open={dialogFor !== null}
         onOpenChange={(open) => {
           if (!open) {
             setDialogFor(null);
+            setSource(connected);
           }
         }}
         connectionId={
@@ -579,7 +569,7 @@ export default function SourceConnection({
         }
         onConnect={handleConnect}
       />
- 
+
       <Footer
         onNext={handleNext}
         disabled={!connected}
@@ -588,5 +578,3 @@ export default function SourceConnection({
     </section>
   );
 }
- 
- 

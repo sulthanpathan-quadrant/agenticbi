@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Database, Loader2, Table2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
- 
+
 import ConnectionDialog from "./ConnectionDialog";
- 
+
 import {
   Footer,
   StepHeader,
@@ -14,9 +14,9 @@ import {
   SchemaPickerTableOption,
   SchemaConnectorType,
 } from "./SchemaPickerDialog";
- 
+
 import { toast } from "@/hooks/use-toast";
- 
+
 const TARGETS = [
   {
     id: "fabric",
@@ -34,17 +34,17 @@ const TARGETS = [
     sub: "Unity Catalog",
   },
 ];
- 
+
 const SENSITIVE_CREDENTIAL_KEYS = new Set([
   "password",
   "sap_password",
   "client_secret",
   "access_token",
 ]);
- 
+
 const SOURCE_STORAGE_KEY = "modernize_source_connection";
 const TARGET_STORAGE_KEY = "modernize_target_connection";
- 
+
 interface TargetConnectionProps {
   value: ConnectionValues | null;
   sourceConfig: ConnectionValues | null;
@@ -53,7 +53,7 @@ interface TargetConnectionProps {
   onBack: () => void;
   onNext: () => void;
 }
- 
+
 interface CreateSessionPayload {
   source: Record<string, unknown>;
   target: Record<string, unknown>;
@@ -66,7 +66,7 @@ interface CreateSessionPayload {
   };
   use_demo_data: boolean;
 }
- 
+
 export default function TargetConnection({
   value,
   sourceConfig,
@@ -78,32 +78,32 @@ export default function TargetConnection({
   const [target, setTarget] = useState<string | null>(
     value?.target_type ?? null
   );
- 
+
   const [connected, setConnected] = useState<string | null>(
     value?.target_type ?? null
   );
- 
+
   const [creds, setCreds] = useState<ConnectionValues>(
     value ?? {}
   );
- 
+
   const [dialogFor, setDialogFor] =
     useState<string | null>(null);
- 
+
   const [schemaPickerOpen, setSchemaPickerOpen] =
     useState(false);
- 
+
   const [creatingSession, setCreatingSession] =
     useState(false);
- 
+
   const [error, setError] =
     useState<string | null>(null);
- 
+
   const targetName =
     TARGETS.find(
       (item) => item.id === connected
     )?.name ?? "";
- 
+
   /*
    * ---------------------------------------------------------
    * CONNECTION SUCCESS
@@ -115,36 +115,36 @@ export default function TargetConnection({
     if (!dialogFor) {
       return;
     }
- 
+
     const connectorType = dialogFor;
- 
+
     const config: ConnectionValues = {
       ...values,
       target_type: connectorType,
     };
- 
+
     setCreds(config);
     setConnected(connectorType);
     setError(null);
- 
+
     sessionStorage.setItem(
       TARGET_STORAGE_KEY,
       JSON.stringify(config)
     );
- 
+
     onConnected(config);
- 
+
     setDialogFor(null);
- 
+
     const connectedName =
       TARGETS.find((item) => item.id === connectorType)?.name ??
       connectorType;
- 
+
     toast({
       title: `Connected to ${connectedName}`,
       description: "Select a schema to load its tables.",
     });
- 
+
     /*
      * All three targets (Fabric, Snowflake, Databricks) use the
      * schema-only picker: pick a schema/lakehouse, every table
@@ -152,7 +152,7 @@ export default function TargetConnection({
      */
     setSchemaPickerOpen(true);
   };
- 
+
   /*
    * ---------------------------------------------------------
    * SCHEMA PICKER SELECTION
@@ -163,13 +163,13 @@ export default function TargetConnection({
     pickerCredentials?: Record<string, unknown>
   ) => {
     const selectedTables = tables.map((table) => table.fullPath);
- 
+
     const config: ConnectionValues = {
       ...creds,
       target_type: connected ?? "",
       tables: selectedTables,
     };
- 
+
     if (pickerCredentials) {
       Object.entries(pickerCredentials).forEach(([key, val]) => {
         if (
@@ -180,19 +180,19 @@ export default function TargetConnection({
         }
       });
     }
- 
+
     setCreds(config);
- 
+
     sessionStorage.setItem(
       TARGET_STORAGE_KEY,
       JSON.stringify(config)
     );
- 
+
     onConnected(config);
- 
+
     setSchemaPickerOpen(false);
   };
- 
+
   /*
    * ---------------------------------------------------------
    * CREATE SESSION
@@ -202,10 +202,10 @@ export default function TargetConnection({
     if (!connected) {
       return;
     }
- 
+
     setCreatingSession(true);
     setError(null);
- 
+
     try {
       /*
        * Always read the latest source configuration
@@ -218,34 +218,34 @@ export default function TargetConnection({
         sessionStorage.getItem(
           SOURCE_STORAGE_KEY
         );
- 
+
       const storedTarget =
         sessionStorage.getItem(
           TARGET_STORAGE_KEY
         );
- 
+
       const source =
         storedSource
           ? JSON.parse(storedSource)
           : sourceConfig;
- 
+
       const targetConfig =
         storedTarget
           ? JSON.parse(storedTarget)
           : creds;
- 
+
       if (!source) {
         throw new Error(
           "Source connection details are missing."
         );
       }
- 
+
       if (!targetConfig) {
         throw new Error(
           "Target connection details are missing."
         );
       }
- 
+
       /*
        * -----------------------------------------------------
        * SOURCE PAYLOAD
@@ -293,7 +293,7 @@ export default function TargetConnection({
         password:
           source.password ?? "",
       };
- 
+
       /*
        * -----------------------------------------------------
        * TARGET PAYLOAD
@@ -331,27 +331,27 @@ export default function TargetConnection({
         password:
           targetConfig.password ?? "",
       };
- 
+
       const payload: CreateSessionPayload = {
         source: sourcePayload,
         target: targetPayload,
- 
+
         /*
          * Keep these values aligned with the backend
          * /sessions contract you provided.
          */
         env_file: ".env",
- 
+
         llm: {
           provider: "anthropic",
           model: "claude-sonnet-4-5",
           max_retries: 3,
           request_timeout_s: 120,
         },
- 
+
         use_demo_data: false,
       };
- 
+
       console.log(
         "Creating migration session:",
         {
@@ -366,7 +366,7 @@ export default function TargetConnection({
           },
         }
       );
- 
+
       /*
        * -----------------------------------------------------
        * CALL BACKEND
@@ -383,9 +383,9 @@ export default function TargetConnection({
           body: JSON.stringify(payload),
         }
       );
- 
+
       const result = await response.json();
- 
+
       if (!response.ok) {
         throw new Error(
           result?.detail ||
@@ -393,27 +393,27 @@ export default function TargetConnection({
           "Failed to create migration session."
         );
       }
- 
+
       if (!result?.session_id) {
         throw new Error(
           "Session was created but no session_id was returned."
         );
       }
- 
+
       /*
        * -----------------------------------------------------
        * SUCCESS
        * -----------------------------------------------------
        */
- 
+
       const newSessionId =
         String(result.session_id);
- 
+
       /*
        * Pass session ID to ModernizeData.
        */
       onSessionCreated(newSessionId);
- 
+
       /*
        * IMPORTANT:
        * Only clear credentials AFTER /sessions succeeds.
@@ -421,11 +421,11 @@ export default function TargetConnection({
       sessionStorage.removeItem(
         SOURCE_STORAGE_KEY
       );
- 
+
       sessionStorage.removeItem(
         TARGET_STORAGE_KEY
       );
- 
+
       /*
        * Continue to Metadata Analysis.
        */
@@ -435,7 +435,7 @@ export default function TargetConnection({
         "Create session failed:",
         err
       );
- 
+
       setError(
         err instanceof Error
           ? err.message
@@ -445,7 +445,7 @@ export default function TargetConnection({
       setCreatingSession(false);
     }
   };
- 
+
   /*
    * ---------------------------------------------------------
    * TARGET CARD CLICK
@@ -455,19 +455,10 @@ export default function TargetConnection({
     targetId: string
   ) => {
     setTarget(targetId);
-    setConnected(null);
     setDialogFor(targetId);
-    setSchemaPickerOpen(false);
     setError(null);
- 
-    /*
-     * Previous target configuration is no longer valid.
-     */
-    sessionStorage.removeItem(
-      TARGET_STORAGE_KEY
-    );
   };
- 
+
   /*
    * ---------------------------------------------------------
    * CONTINUE
@@ -480,13 +471,13 @@ export default function TargetConnection({
     ) {
       return;
     }
- 
+
     /*
      * Create the backend session first.
      */
     void createSession();
   };
- 
+
   /*
    * Credentials shape expected by the schema picker's
    * underlying api.ts calls, per target connector.
@@ -495,83 +486,80 @@ export default function TargetConnection({
     connected === "fabric"
       ? "fabric"
       : connected === "snowflake"
-      ? "snowflake"
-      : connected === "databricks"
-      ? "databricks"
-      : null;
- 
+        ? "snowflake"
+        : connected === "databricks"
+          ? "databricks"
+          : null;
+
   const schemaPickerCredentials =
     connected === "fabric"
       ? {
-          tenant_id: creds.tenant_id ?? "",
-          client_id: creds.client_id ?? "",
-          client_secret: creds.client_secret ?? "",
-        }
+        tenant_id: creds.tenant_id ?? "",
+        client_id: creds.client_id ?? "",
+        client_secret: creds.client_secret ?? "",
+      }
       : connected === "snowflake"
-      ? {
+        ? {
           account_identifier: creds.account_identifier ?? "",
           username: creds.username ?? "",
           password: creds.password ?? "",
           warehouse: creds.warehouse ?? "",
         }
-      : connected === "databricks"
-      ? {
-          host: creds.host ?? "",
-          warehouse_id: creds.warehouse_id ?? "",
-          access_token: creds.access_token ?? "",
-        }
-      : null;
- 
+        : connected === "databricks"
+          ? {
+            host: creds.host ?? "",
+            warehouse_id: creds.warehouse_id ?? "",
+            access_token: creds.access_token ?? "",
+          }
+          : null;
+
   return (
     <section>
       <StepHeader
         title="Connect the Target UDM"
         desc="Pick the platform holding your UDM and connect to it before reviewing source and target metadata."
       />
- 
+
       <h2 className="mb-4 text-lg font-semibold text-foreground">
         Select a Target
       </h2>
- 
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         {TARGETS.map((item) => {
           const isSelected =
             target === item.id;
- 
+
           return (
             <Card
               key={item.id}
-              className={`group cursor-pointer border border-border p-6 transition-colors ${
-                isSelected
+              className={`group cursor-pointer border border-border p-6 transition-colors ${isSelected
                   ? "border-primary bg-accent/30"
                   : "hover:bg-accent/30"
-              }`}
+                }`}
               onClick={() =>
                 handleTargetClick(item.id)
               }
             >
               <div className="flex flex-col items-center space-y-3 text-center">
                 <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-lg border transition-colors ${
-                    isSelected
+                  className={`flex h-12 w-12 items-center justify-center rounded-lg border transition-colors ${isSelected
                       ? "border-primary bg-primary/10"
                       : "border-border bg-card group-hover:border-primary"
-                  }`}
+                    }`}
                 >
                   <Database
-                    className={`h-6 w-6 transition-colors ${
-                      isSelected
+                    className={`h-6 w-6 transition-colors ${isSelected
                         ? "text-primary"
                         : "text-muted-foreground group-hover:text-primary"
-                    }`}
+                      }`}
                   />
                 </div>
- 
+
                 <div>
                   <p className="text-sm font-medium text-foreground">
                     {item.name}
                   </p>
- 
+
                   <p className="text-xs text-muted-foreground">
                     {item.sub}
                   </p>
@@ -581,7 +569,7 @@ export default function TargetConnection({
           );
         })}
       </div>
- 
+
       {/*
        * -------------------------------------------------------
        * SELECTED TABLES — list view (replaces the old chip/pill
@@ -597,7 +585,7 @@ export default function TargetConnection({
               {creds.schema ? `${creds.schema} — ` : ""}
               Selected tables ({creds.tables.length})
             </p>
- 
+
             <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
               {creds.tables.map((table) => (
                 <div
@@ -611,13 +599,13 @@ export default function TargetConnection({
             </div>
           </div>
         )}
- 
+
       {error && (
         <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
- 
+
       {/*
        * -------------------------------------------------------
        * SCHEMA PICKER (schema-only, new component — replaces
@@ -634,12 +622,13 @@ export default function TargetConnection({
           onSelect={handleSchemaPickerSelect}
         />
       )}
- 
+
       <ConnectionDialog
         open={dialogFor !== null}
         onOpenChange={(open) => {
           if (!open) {
             setDialogFor(null);
+            setTarget(connected);
           }
         }}
         connectionId={
@@ -653,7 +642,7 @@ export default function TargetConnection({
         }
         onConnect={handleConnect}
       />
- 
+
       <Footer
         onBack={onBack}
         onNext={handleNext}
@@ -667,7 +656,7 @@ export default function TargetConnection({
             : "Continue to metadata analysis"
         }
       />
- 
+
       {creatingSession && (
         <div className="mt-4 flex items-center justify-end gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -677,4 +666,3 @@ export default function TargetConnection({
     </section>
   );
 }
- 

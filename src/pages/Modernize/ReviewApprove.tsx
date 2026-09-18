@@ -477,6 +477,7 @@
 //     </section>
 //   );
 // }
+
 import { useState } from "react";
 import {
   FileSpreadsheet,
@@ -539,6 +540,79 @@ interface ReviewApproveProps {
   onNext: () => void;
 }
 
+// The API returns a couple of stock reason strings verbatim. We rewrite
+// them into friendlier copy for display; anything else (e.g. a custom
+// reviewer note) is shown as-is.
+const REASON_REWRITES: Array<[string, string]> = [
+  [
+    "Target-only row: documents a target column with no source counterpart, so there is no data to migrate.",
+    "No matching source column found. Data will not be migrated to this target column.",
+  ],
+  [
+    "Reviewer marked N/A -- explicitly reviewed and excluded from migration. Reviewer note: No suitable target column in UDM; skip migration.",
+    "Reviewer marked this as N/A. No suitable target column was found in the UDM, so this data will not be migrated.",
+  ],
+];
+
+function getDisplayReason(reason: string): string {
+  const match = REASON_REWRITES.find(([original]) => original === reason);
+  return match ? match[1] : reason;
+}
+
+// The validation API returns one error string per offending line, which can
+// mean dozens of near-identical messages for the same underlying issue
+// (e.g. every empty reviewer_decision, or every column pointing at the same
+// missing target table). We collapse those known patterns into a single,
+// actionable message per issue instead of listing every line.
+const EMPTY_DECISION_PATTERN = /^Line \d+: reviewer_decision '' is invalid/;
+const MISSING_TARGET_TABLE_PATTERN =
+  /^Line \d+: target table '([^']+)' does not exist in the UDM metadata\.$/;
+
+function summarizeValidationErrors(errors: string[]): string[] {
+  let emptyDecisionCount = 0;
+  const missingTargetTables = new Map<string, number>();
+  const other: string[] = [];
+
+  for (const err of errors) {
+    if (EMPTY_DECISION_PATTERN.test(err)) {
+      emptyDecisionCount += 1;
+      continue;
+    }
+
+    const tableMatch = err.match(MISSING_TARGET_TABLE_PATTERN);
+
+    if (tableMatch) {
+      const table = tableMatch[1];
+      missingTargetTables.set(
+        table,
+        (missingTargetTables.get(table) ?? 0) + 1
+      );
+      continue;
+    }
+
+    other.push(err);
+  }
+
+  const summary: string[] = [];
+
+  if (emptyDecisionCount > 0) {
+    summary.push(
+      "Reviewer decisions are required for all columns. Please select Approved, Changed, or N/A for each applicable column before re-uploading the file."
+    );
+  }
+
+  for (const [table, count] of missingTargetTables) {
+    summary.push(
+      `Target table '${table}' does not exist in the UDM metadata (${count} column${count === 1 ? "" : "s"
+      } affected).`
+    );
+  }
+
+  summary.push(...other);
+
+  return summary;
+}
+
 export default function ReviewApprove({
   sessionId,
   file,
@@ -552,7 +626,7 @@ export default function ReviewApprove({
 }: ReviewApproveProps) {
   const [uploading, setUploading] = useState(false);
   const [validating, setValidating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string[] | null>(null);
   const [showExcludedReasons, setShowExcludedReasons] = useState(false);
 
   const uploaded = !!uploadResult;
@@ -588,14 +662,14 @@ export default function ReviewApprove({
     const targetFile = fileToUpload ?? file;
 
     if (!targetFile) {
-      setError("Please select the reviewed CSV file.");
+      setError(["Please select the reviewed CSV file."]);
       return;
     }
 
     if (!sessionId) {
-      setError(
-        "Session ID is missing. Please complete the previous steps first."
-      );
+      setError([
+        "Session ID is missing. Please complete the previous steps first.",
+      ]);
       return;
     }
 
@@ -611,6 +685,7 @@ export default function ReviewApprove({
         `https://veriton-udm-backend-cdgxcme7fbbmfyg5.westus3-01.azurewebsites.net/sessions/${sessionId}/mapping/upload-csv`,
         {
           method: "POST",
+          cache: "no-store",
           headers: {
             accept: "application/json",
           },
@@ -656,11 +731,11 @@ export default function ReviewApprove({
         err
       );
 
-      setError(
+      setError([
         err instanceof Error
           ? err.message
-          : "Failed to upload the reviewed CSV."
-      );
+          : "Failed to upload the reviewed CSV.",
+      ]);
     } finally {
       setUploading(false);
     }
@@ -682,16 +757,14 @@ export default function ReviewApprove({
 
   const handleValidate = async () => {
     if (!sessionId) {
-      setError(
-        "Session ID is missing. Please complete the previous steps first."
-      );
+      setError([
+        "Session ID is missing. Please complete the previous steps first.",
+      ]);
       return;
     }
 
     if (!uploaded) {
-      setError(
-        "Please upload the reviewed CSV before validating it."
-      );
+      setError(["Please upload the reviewed CSV before validating it."]);
       return;
     }
 
@@ -702,9 +775,10 @@ export default function ReviewApprove({
       setShowExcludedReasons(false);
 
       const response = await fetch(
-        `https://veriton-udm-backend-cdgxcme7fbbmfyg5.westus3-01.azurewebsites.net/sessions/${sessionId}/step5-validate`,
+        `https://veriton-udm-backend-cdgxcme7fbbmfyg5.westus3-01.azurewebsites.net/sessions/${sessionId}/step5-validate?_=${Date.now()}`,
         {
           method: "POST",
+          cache: "no-store",
           headers: {
             accept: "application/json",
           },
@@ -722,11 +796,12 @@ export default function ReviewApprove({
       }
 
       if (!response.ok) {
-        const apiError =
-          result.errors?.join(", ") ||
-          "Failed to validate the uploaded CSV.";
+        const apiErrors =
+          result.errors?.length > 0
+            ? summarizeValidationErrors(result.errors)
+            : ["Failed to validate the uploaded CSV."];
 
-        throw new Error(apiError);
+        throw new Error(apiErrors.join("\n"));
       }
 
       onValidationResultChange(result);
@@ -734,8 +809,8 @@ export default function ReviewApprove({
       if (!result.valid) {
         const validationErrors =
           result.errors?.length > 0
-            ? result.errors.join("\n")
-            : "The uploaded CSV failed validation.";
+            ? summarizeValidationErrors(result.errors)
+            : ["The uploaded CSV failed validation."];
 
         setError(validationErrors);
         return;
@@ -757,9 +832,10 @@ export default function ReviewApprove({
       );
 
       setError(
-        err instanceof Error
+        (err instanceof Error
           ? err.message
           : "Failed to validate the uploaded CSV."
+        ).split("\n")
       );
     } finally {
       setValidating(false);
@@ -770,7 +846,7 @@ export default function ReviewApprove({
     <section>
       <StepHeader
         title="Business Review & Re-Upload"
-        desc="Review the AI-generated mappings in Excel, select the appropriate reviewer decision for each row, and upload the reviewed CSV."
+        desc="Review the AI-generated mappings in Excel, select the appropriate reviewer decision for each column, and upload the reviewed CSV."
       />
 
       {/* Reviewer decision heading */}
@@ -822,7 +898,7 @@ export default function ReviewApprove({
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             The source column does not have a valid or
             required UDM mapping. It will be excluded from
-            the migration while the row remains recorded
+            the migration while the column remains recorded
             for traceability.
           </p>
         </div>
@@ -930,7 +1006,7 @@ export default function ReviewApprove({
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border border-border bg-card p-3">
                     <div className="text-xs text-muted-foreground">
-                      Rows to migrate
+                      Columns to migrate
                     </div>
 
                     <div className="mt-1 text-lg font-semibold text-foreground">
@@ -942,7 +1018,7 @@ export default function ReviewApprove({
 
                   <div className="rounded-lg border border-border bg-card p-3">
                     <div className="text-xs text-muted-foreground">
-                      Rows excluded
+                      Columns excluded
                     </div>
 
                     <div className="mt-1 flex items-center justify-between gap-2">
@@ -977,19 +1053,19 @@ export default function ReviewApprove({
                   </div>
                 </div>
 
-                {/* Excluded row reasons */}
+                {/* Excluded column reasons */}
                 {showExcludedReasons &&
                   !!validationResult.excluded_rows?.length && (
                     <div className="mt-4 rounded-lg border border-border bg-card p-3">
                       <div className="text-sm font-semibold text-foreground">
-                        Why these rows were excluded
+                        Why these columns were excluded
                       </div>
 
                       <ul className="mt-2 space-y-3">
                         {validationResult.excluded_rows.map(
                           (row, index) => {
                             /*
-                             * Target-only rows (a UDM column with no source
+                             * Target-only columns (a UDM column with no source
                              * counterpart) store the literal string "N/A" in
                              * source_table/source_column, not a blank value —
                              * so falling back to "—" never triggers and the
@@ -1006,29 +1082,29 @@ export default function ReviewApprove({
                               : `${(row.target_fact_or_dim || "—").split(".").pop()}.${row.target_column || "—"
                               }`;
 
+                            const displayReason = getDisplayReason(
+                              row.reason
+                            );
+
                             return (
                               <li
                                 key={index}
                                 className="rounded-md border border-border/60 bg-background p-3 text-sm"
                               >
                                 <div className="flex flex-wrap items-center gap-2">
-                                  {!hasSource && (
-                                    <span className="rounded-md bg-blue-500/15 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
-                                      Target-only
-                                    </span>
-                                  )}
+                                  <span
+                                    className="rounded-md bg-purple-500/15 px-2 py-0.5 text-xs font-semibold text-purple-600 dark:text-purple-400"
+                                  >
+                                    {hasSource ? "Source table" : "Target table"}
+                                  </span>
 
                                   <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
                                     {label}
                                   </span>
-
-                                  <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-                                    {row.reviewer_decision || "blank"}
-                                  </span>
                                 </div>
 
                                 <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                                  {row.reason}
+                                  {displayReason}
                                 </p>
                               </li>
                             );
@@ -1062,13 +1138,18 @@ export default function ReviewApprove({
       )}
 
       {/* Validation / upload error */}
-      {error && (
-        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-
-          <div className="whitespace-pre-line">
-            {error}
+      {error && error.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            Please review before continuing
           </div>
+
+          <ul className="mt-2 list-disc space-y-1 pl-9 text-sm leading-6 text-foreground">
+            {error.map((message, index) => (
+              <li key={index}>{message}</li>
+            ))}
+          </ul>
         </div>
       )}
 
